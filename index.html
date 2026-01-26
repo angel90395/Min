@@ -3,42 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GPX 封閉不重疊優化器 v3</title>
+    <title>GPX 全域封閉不重疊優化器</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; background: #fff; }
-        #header { padding: 10px 15px; background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center; z-index: 1001; }
-        #controls { padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; overflow-y: auto; max-height: 40vh; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        #controls { width: 100%; max-height: 40vh; overflow-y: auto; background: #fff; z-index: 2000; padding: 15px; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         #map { flex: 1; width: 100%; z-index: 1; }
-        .card { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #dee2e6; border-left: 5px solid #27ae60; }
-        textarea { width: 100%; height: 50px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .btn-gen { background: #2980b9; color: white; }
-        .btn-download { background: #27ae60; color: white; display: none; }
-        #status { font-size: 12px; color: #2980b9; font-weight: bold; }
+        .card { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-left: 5px solid #007bff; }
+        textarea { width: 100%; height: 60px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; padding: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .btn-gen { background: #007bff; color: white; }
+        .btn-download { background: #28a745; color: white; display: none; }
+        #status { font-size: 13px; color: #007bff; font-weight: bold; margin-top: 5px; }
+        
         @media (min-width: 768px) {
             body { flex-direction: row; }
-            #controls { width: 380px; height: 100vh; max-height: 100vh; border-right: 1px solid #ddd; }
+            #controls { width: 400px; height: 100vh; max-height: 100vh; border-right: 1px solid #ddd; }
         }
     </style>
 </head>
 <body>
 
 <div id="controls">
-    <h2 style="margin: 0 0 10px 0; font-size: 1.2rem;">軌跡規律生成器</h2>
-    
+    <h2 style="margin: 0 0 10px 0; font-size: 1.2rem;">全域封閉軌跡優化</h2>
     <div class="card">
-        <strong>1. 手動輸入座標 (緯, 經):</strong>
+        <strong>1. 貼上座標 (緯, 經):</strong>
         <textarea id="coordInput" placeholder="43.694, 10.444"></textarea>
     </div>
-
-    <div class="card" style="border-left-color: #f1c40f;">
+    <div class="card" style="border-left-color: #ffc107;">
         <strong>2. 上傳 GPX 檔案:</strong>
-        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; font-size: 13px; margin-top: 5px;">
+        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; margin-top: 5px;">
     </div>
-
-    <button class="btn-gen" onclick="generateOptimizedRoute()">執行優化與閉合預覽</button>
-    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載封閉式軌跡檔案</button>
+    <button class="btn-gen" onclick="runOptimization()">執行全域封閉優化</button>
+    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載最優化 GPX</button>
     <div id="status"></div>
 </div>
 
@@ -52,13 +49,13 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    let pathLayer, markerLayer, finalRoutePoints = [];
+    let pathLayer, markerLayer, finalPoints = [];
 
-    async function generateOptimizedRoute() {
+    async function runOptimization() {
         let centers = [];
         const status = document.getElementById('status');
         
-        // 解析文字
+        // 解析資料
         const text = document.getElementById('coordInput').value.trim();
         if (text) {
             text.split('\n').forEach(l => {
@@ -66,8 +63,6 @@
                 if (p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
             });
         }
-
-        // 解析 GPX (支援所有標籤與特殊字元)
         const fileInput = document.getElementById('gpxFile');
         if (fileInput.files.length > 0) {
             const content = await fileInput.files[0].text();
@@ -78,104 +73,9 @@
             }
         }
 
-        if (centers.length === 0) return alert("請輸入或選擇有效座標檔案！");
+        if (centers.length === 0) return alert("請輸入座標或提供 GPX 檔案");
 
-        // 1. 全域路徑排序 (TSP)
-        let sorted = solveTSP(centers);
+        // 1. 全域路徑排序 (TSP 閉合環線優化)
+        let sortedCenters = solveTSPCycle(centers);
 
-        // 2. 生成封閉且不重疊的 Z 字點位
-        finalRoutePoints = buildFinalLoop(sorted);
-
-        // 3. 繪製預覽
-        if (pathLayer) map.removeLayer(pathLayer);
-        if (markerLayer) map.removeLayer(markerLayer);
-
-        pathLayer = L.polyline(finalRoutePoints.map(p => [p[1], p[0]]), {color: '#2980b9', weight: 4, opacity: 0.8}).addTo(map);
-        markerLayer = L.featureGroup(sorted.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: '#e74c3c', fillOpacity: 1}))).addTo(map);
-        
-        map.fitBounds(pathLayer.getBounds(), {padding: [40, 40]});
-        
-        status.innerText = `優化完成：已串聯 ${sorted.length} 組圓心。`;
-        document.getElementById('downloadBtn').style.display = 'block';
-    }
-
-    // TSP：確保大路徑不交叉
-    function solveTSP(pts) {
-        let unvisited = [...pts];
-        let current = unvisited.shift();
-        let result = [current];
-        while (unvisited.length > 0) {
-            let bIdx = 0, minDist = Infinity;
-            for (let i = 0; i < unvisited.length; i++) {
-                let d = turf.distance(turf.point(current), turf.point(unvisited[i]));
-                if (d < minDist) { minDist = d; bIdx = i; }
-            }
-            current = unvisited.splice(bIdx, 1)[0];
-            result.push(current);
-        }
-        return result;
-    }
-
-    // 核心演算法：生成 Z 字、動態對接、防止重疊、路徑閉合
-    function buildFinalLoop(centers) {
-        let fullPath = [];
-        const r = 41; // 82公尺直徑的一半
-
-        for (let i = 0; i < centers.length; i++) {
-            const curr = centers[i];
-            const cp = turf.point(curr);
-            
-            // 四個頂點
-            const v = {
-                nw: turf.destination(cp, r, 315, {units:'meters'}).geometry.coordinates,
-                ne: turf.destination(cp, r, 45, {units:'meters'}).geometry.coordinates,
-                sw: turf.destination(cp, r, 225, {units:'meters'}).geometry.coordinates,
-                se: turf.destination(cp, r, 135, {units:'meters'}).geometry.coordinates
-            };
-
-            // 根據進出口關係，自動選擇不重疊的組內序列
-            // 我們使用 4 種候選排列
-            const candidates = [
-                [v.sw, v.se, curr, v.nw, v.ne],
-                [v.se, v.sw, curr, v.ne, v.nw],
-                [v.nw, v.ne, curr, v.se, v.sw],
-                [v.ne, v.nw, curr, v.sw, v.se]
-            ];
-
-            let bestGroup = candidates[0];
-
-            if (fullPath.length > 0) {
-                const lastPoint = fullPath[fullPath.length - 1];
-                let minD = Infinity;
-                // 挑選入口離上一點最近的排列，避免連接線穿過中心
-                candidates.forEach(c => {
-                    const d = turf.distance(turf.point(lastPoint), turf.point(c[0]));
-                    if (d < minD) { minD = d; bestGroup = c; }
-                });
-            }
-            
-            fullPath.push(...bestGroup);
-        }
-
-        // 強制閉合：連回整個軌跡的第一個點
-        fullPath.push(fullPath[0]); 
-        
-        return fullPath;
-    }
-
-    function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Closed_NoOverlap_Track</name><trkseg>`;
-        finalRoutePoints.forEach(pt => {
-            gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`;
-        });
-        gpx += `\n</trkseg></trk></gpx>`;
-        
-        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `optimized_loop_${Date.now()}.gpx`;
-        a.click();
-    }
-</script>
-</body>
-</html>
+        // 2. 生成不交叉的組內 Z 字並對
