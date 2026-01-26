@@ -2,171 +2,44 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>GPX 高階 TSP 優化生成器</title>
+    <title>GPX 高階 TSP & Z型軌跡生成器 (支援多格式上傳)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #ececec; }
-        #sidebar { width: 380px; padding: 20px; background: white; border-right: 1px solid #ddd; overflow-y: auto; z-index: 1000; box-shadow: 4px 0 10px rgba(0,0,0,0.1); }
+        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #f4f4f4; }
+        #sidebar { width: 400px; padding: 20px; background: white; border-right: 1px solid #ddd; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 1000; }
         #map { flex: 1; }
-        .card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #007bff; }
-        h2 { margin-top: 0; color: #333; font-size: 1.25rem; }
-        button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add { background: #6c757d; color: white; }
-        .btn-gen { background: #007bff; color: white; font-size: 1.1rem; }
+        .card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-left: 5px solid #007bff; }
+        h2 { margin-top: 0; color: #333; font-size: 1.2rem; }
+        textarea { width: 100%; height: 120px; margin-top: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; resize: vertical; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-gen { background: #007bff; color: white; }
         .btn-gen:hover { background: #0056b3; }
         .btn-download { background: #28a745; color: white; display: none; }
-        input { width: 90px; padding: 6px; margin: 3px; border: 1px solid #ccc; border-radius: 4px; }
-        .info { font-size: 0.85rem; color: #555; margin-bottom: 10px; }
+        .info { font-size: 0.8rem; color: #666; line-height: 1.4; }
+        .debug-info { color: #d9534f; font-weight: bold; font-size: 0.8rem; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2>GPX TSP 軌跡優化器</h2>
-    <p class="info">自動計算最短圓心路徑 (TSP) 並生成不重疊 Z 字軌跡。</p>
+    <h2>GPX 軌跡優化 (繁中修正版)</h2>
+    <p class="info">
+        1. 直接貼上座標，格式：<code>緯度, 經度</code><br>
+        2. 或上傳 GPX/TXT 檔案 (支援 wpt, trkpt, rtept)<br>
+        3. 每組中心點會生成直徑 82m 的 Z 字型路徑。
+    </p>
     
-    <div id="coordContainer">
-        <div class="card">
-            <strong>起始點:</strong><br>
-            <input type="number" step="any" class="lon" placeholder="經度">
-            <input type="number" step="any" class="lat" placeholder="緯度">
-        </div>
+    <div class="card">
+        <strong>1. 輸入座標點 (每行一個):</strong>
+        <textarea id="coordInput" placeholder="40.9787100, 39.8320820&#10;40.9790000, 39.8330000"></textarea>
     </div>
 
-    <button class="btn-add" onclick="addInputField()">＋ 新增圓心座標</button>
-    
     <div class="card" style="border-left-color: #ffc107;">
-        <strong>批次上傳:</strong>
-        <input type="file" id="gpxFile" accept=".gpx" style="width: 100%; margin-top: 10px;">
+        <strong>2. 或上傳檔案 (GPX):</strong>
+        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; margin-top: 10px;">
     </div>
     
-    <button class="btn-gen" onclick="processAll()">1. 計算 TSP 並預覽</button>
-    <button id="downloadBtn" class="btn-download" onclick="downloadGPX()">2. 下載優化 GPX</button>
-</div>
-
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
-<script>
-    const map = L.map('map').setView([23.5, 121], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    let pathLayer, markerLayer;
-    let finalGPXPath = [];
-
-    function addInputField() {
-        const container = document.getElementById('coordContainer');
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `<strong>點 ${container.children.length + 1}:</strong><br>
-                         <input type="number" step="any" class="lon" placeholder="經度">
-                         <input type="number" step="any" class="lat" placeholder="緯度">`;
-        container.appendChild(div);
-    }
-
-    async function processAll() {
-        let rawCenters = [];
-        
-        // 讀取輸入
-        document.querySelectorAll('.lon').forEach((el, i) => {
-            const lat = document.querySelectorAll('.lat')[i].value;
-            if (el.value && lat) rawCenters.push([parseFloat(el.value), parseFloat(lat)]);
-        });
-
-        // 讀取檔案
-        const fileInput = document.getElementById('gpxFile');
-        if (fileInput.files.length > 0) {
-            const text = await fileInput.files[0].text();
-            const xml = new DOMParser().parseFromString(text, "text/xml");
-            xml.querySelectorAll('trkpt').forEach(pt => {
-                rawCenters.push([parseFloat(pt.getAttribute('lon')), parseFloat(pt.getAttribute('lat'))]);
-            });
-        }
-
-        if (rawCenters.length === 0) return alert("請提供座標點！");
-
-        // --- TSP 演算法實作 (最近鄰法) ---
-        let sortedCenters = solveTSP(rawCenters);
-
-        // --- 生成 Z 字規律 ---
-        finalGPXPath = generateZPattern(sortedCenters);
-        
-        render(sortedCenters, finalGPXPath);
-        document.getElementById('downloadBtn').style.display = 'block';
-    }
-
-    function solveTSP(points) {
-        if (points.length <= 2) return points;
-        let unvisited = [...points];
-        let curr = unvisited.splice(0, 1)[0]; // 從第一個點開始
-        let result = [curr];
-
-        while (unvisited.length > 0) {
-            let nearestIdx = 0;
-            let minDist = Infinity;
-            for (let i = 0; i < unvisited.length; i++) {
-                let d = turf.distance(turf.point(curr), turf.point(unvisited[i]));
-                if (d < minDist) {
-                    minDist = d;
-                    nearestIdx = i;
-                }
-            }
-            curr = unvisited.splice(nearestIdx, 1)[0];
-            result.push(curr);
-        }
-        return result;
-    }
-
-    function generateZPattern(centers) {
-        let path = [];
-        const r = 41; // 半徑 41m
-
-        centers.forEach((centerArr, idx) => {
-            const c = turf.point(centerArr);
-            const pts = {
-                nw: turf.destination(c, r, 315, {units: 'meters'}).geometry.coordinates,
-                ne: turf.destination(c, r, 45, {units: 'meters'}).geometry.coordinates,
-                sw: turf.destination(c, r, 225, {units: 'meters'}).geometry.coordinates,
-                se: turf.destination(c, r, 135, {units: 'meters'}).geometry.coordinates,
-                center: centerArr
-            };
-
-            // Z字標準序列
-            let group = [pts.sw, pts.se, pts.center, pts.nw, pts.ne];
-
-            if (path.length > 0) {
-                const last = path[path.length - 1];
-                // 比較 正向(SW起) 或 反向(NE起) 哪一個接上一點比較順
-                const dNormal = turf.distance(last, pts.sw);
-                const dReverse = turf.distance(last, pts.ne);
-                if (dReverse < dNormal) group.reverse();
-            }
-            path.push(...group);
-        });
-        return path;
-    }
-
-    function render(centers, fullPath) {
-        if (pathLayer) map.removeLayer(pathLayer);
-        if (markerLayer) map.removeLayer(markerLayer);
-
-        pathLayer = L.polyline(fullPath.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3}).addTo(map);
-        markerLayer = L.featureGroup(centers.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: 'red'}))).addTo(map);
-        
-        map.fitBounds(pathLayer.getBounds(), {padding: [40, 40]});
-    }
-
-    function downloadGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="TSP-Z-Gen"><trk><name>Optimized TSP Z-Track</name><trkseg>`;
-        finalGPXPath.forEach(pt => gpx += `<trkpt lat="${pt[1].toFixed(7)}" lon="${pt[0].toFixed(7)}"></trkpt>`);
-        gpx += `</trkseg></trk></gpx>`;
-        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `tsp_optimized_track.gpx`;
-        a.click();
-    }
-</script>
-</body>
-</html>
+    <button class="btn-gen" onclick="processData()">執行優化與地圖預覽</button>
+    <button id="downloadBtn" class="btn-download" onclick="downloadGPX()">下載生成的 GPX</button>
+    
+    <div id="status"
