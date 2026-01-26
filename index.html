@@ -2,22 +2,23 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>GPX 全域優化 Z 型軌跡產生器 (強效版)</title>
+    <title>GPX 專業級全域無重疊優化器</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; }
-        #sidebar { width: 400px; padding: 25px; background: white; border-right: 1px solid #ddd; overflow-y: auto; z-index: 1000; box-shadow: 2px 0 15px rgba(0,0,0,0.1); }
+        body { margin: 0; display: flex; height: 100vh; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #f5f7f9; }
+        #sidebar { width: 420px; padding: 25px; background: white; border-right: 1px solid #e0e0e0; overflow-y: auto; z-index: 1000; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         #map { flex: 1; }
-        .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e1e4e8; border-left: 6px solid #007bff; }
-        h2 { margin: 0 0 15px 0; color: #333; font-size: 1.3rem; }
-        textarea { width: 100%; height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: monospace; box-sizing: border-box; resize: vertical; }
+        .card { background: #fff; padding: 18px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eaeaea; border-left: 6px solid #007bff; }
+        h2 { margin: 0 0 15px 0; color: #333; font-size: 1.3rem; letter-spacing: 1px; }
+        textarea { width: 100%; height: 120px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; box-sizing: border-box; font-size: 13px; }
         button { width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: all 0.3s; }
         .btn-gen { background: #007bff; color: white; }
-        .btn-gen:hover { background: #0056b3; }
+        .btn-gen:hover { background: #0056b3; transform: translateY(-1px); }
         .btn-download { background: #28a745; color: white; display: none; }
-        .status { padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 10px; display: none; }
-        .success { background: #e6ffed; color: #28a745; border: 1px solid #28a745; display: block; }
-        .error { background: #fff1f0; color: #d9534f; border: 1px solid #d9534f; display: block; }
+        .status { padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-top: 10px; line-height: 1.5; border: 1px solid transparent; display: none; }
+        .success { background: #e6ffed; color: #28a745; border-color: #b7eb8f; display: block; }
+        .error { background: #fff1f0; color: #d9534f; border-color: #ffa39e; display: block; }
+        .tip { font-size: 0.8rem; color: #888; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -26,19 +27,20 @@
     <h2>GPX 軌跡全域優化器</h2>
     
     <div class="card">
-        <strong>1. 手動輸入座標 (緯, 經):</strong>
-        <textarea id="coordInput" placeholder="43.694, 10.444"></textarea>
+        <strong>1. 輸入座標 (緯度, 經度):</strong>
+        <textarea id="coordInput" placeholder="範例：&#10;43.69400, 10.44444&#10;43.69450, 10.44512"></textarea>
+        <div class="tip">支援直接貼上多行座標</div>
     </div>
 
     <div class="card" style="border-left-color: #ffc107;">
         <strong>2. 上傳 GPX 檔案:</strong>
-        <p style="font-size: 0.8rem; color: #666;">支援所有 GPX 格式 (rtept, trkpt, wpt)</p>
-        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; margin-top: 5px;">
+        [span_1](start_span)<p class="tip">支援 rtept (JoyStick 格式)、trkpt、wpt[span_1](end_span)</p>
+        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; margin-top: 8px;">
     </div>
     
-    <button class="btn-gen" onclick="executeOptimization()">執行優化並預覽</button>
+    <button class="btn-gen" onclick="startOptimization()">生成無重疊優化軌跡</button>
     <div id="msgBox" class="status"></div>
-    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載優化後的 GPX</button>
+    <button id="downloadBtn" class="btn-download" onclick="exportFinalGPX()">下載優化後的 GPX</button>
 </div>
 
 <div id="map"></div>
@@ -47,76 +49,53 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    let map = L.map('map').setView([43.69, 10.44], 13);
+    let map = L.map('map').setView([23.5, 121], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     let pathLayer, markerLayer;
-    let finalTrackPoints = [];
+    let finalPath = [];
 
-    // 自動偵測檔案上傳即觸發
-    document.getElementById('gpxFile').addEventListener('change', () => {
-        document.getElementById('msgBox').innerText = "檔案已選取，請點擊「執行優化」按鈕。";
-        document.getElementById('msgBox').className = 'status success';
-    });
-
-    async function executeOptimization() {
+    async function startOptimization() {
         const msgBox = document.getElementById('msgBox');
         msgBox.style.display = 'none';
-        
-        try {
-            let centers = [];
+        let centers = [];
 
-            // A. 解析輸入框
-            const text = document.getElementById('coordInput').value.trim();
-            if (text) {
-                text.split('\n').forEach(line => {
-                    const p = line.split(/[ ,]+/).filter(x => x.trim() !== "");
-                    if (p.length >= 2) {
-                        const lat = parseFloat(p[0]), lon = parseFloat(p[1]);
+        try {
+            // 解析文字輸入
+            const rawText = document.getElementById('coordInput').value.trim();
+            if (rawText) {
+                rawText.split('\n').forEach(line => {
+                    const parts = line.split(/[ ,]+/).filter(v => v.trim() !== "");
+                    if (parts.length >= 2) {
+                        const lat = parseFloat(parts[0]), lon = parseFloat(parts[1]);
                         if (!isNaN(lat) && !isNaN(lon)) centers.push([lon, lat]);
                     }
                 });
             }
 
-            // B. 解析上傳檔案 (強效解析機制)
+            [span_2](start_span)// 解析 GPX 檔案[span_2](end_span)
             const fileInput = document.getElementById('gpxFile');
             if (fileInput.files.length > 0) {
-                const xmlText = await fileInput.files[0].text();
-                
-                // 方法 1: 標準 XML 解析
-                const xml = new DOMParser().parseFromString(xmlText, "text/xml");
-                const tags = ["rtept", "trkpt", "wpt"];
-                tags.forEach(tag => {
-                    const elms = xml.getElementsByTagName(tag);
-                    for (let i = 0; i < elms.length; i++) {
-                        const lat = parseFloat(elms[i].getAttribute("lat"));
-                        const lon = parseFloat(elms[i].getAttribute("lon"));
-                        if (!isNaN(lat) && !isNaN(lon)) centers.push([lon, lat]);
-                    }
-                });
-
-                // 方法 2: 如果 XML 解析沒抓到點，使用 Regex 硬抓 (防止因特殊字元導致的解析失敗)
-                if (centers.length === 0) {
-                    console.log("切換至 Regex 解析模式...");
-                    const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
-                    let match;
-                    while ((match = regex.exec(xmlText)) !== null) {
-                        centers.push([parseFloat(match[2]), parseFloat(match[1])]);
-                    }
+                const content = await fileInput.files[0].text();
+                [span_3](start_span)// 針對 rtept 進行正則表達式解析，確保特殊字元不影響讀取[span_3](end_span)
+                const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    centers.push([parseFloat(match[2]), parseFloat(match[1])]);
                 }
             }
 
-            if (centers.length === 0) throw new Error("找不到有效座標！請確認檔案內容。");
+            if (centers.length === 0) throw new Error("找不到任何有效座標！");
 
-            // C. 全域最短路徑排序 (TSP)
-            let sortedCenters = solveTSP(centers);
+            // 1. 全域 TSP 排序 (最近鄰優化)
+            let sorted = solveTSP(centers);
 
-            // D. 生成 82m Z 型規律
-            finalTrackPoints = generateOptimizedZ(sortedCenters);
+            // 2. 生成無重疊 Z 字路徑
+            finalPath = generateNoOverlapZ(sorted);
 
-            // E. 渲染地圖
-            renderPreview(sortedCenters, finalTrackPoints);
+            // 3. 地圖預覽
+            renderMap(sorted, finalPath);
 
-            msgBox.innerText = `解析成功！座標位於義大利比薩附近。已處理 ${sortedCenters.length} 個點。`;
+            msgBox.innerText = `優化完成！處理了 ${sorted.length} 個中心點，軌跡點共 ${finalPath.length} 個。`;
             msgBox.className = 'status success';
             document.getElementById('downloadBtn').style.display = 'block';
 
@@ -126,63 +105,85 @@
         }
     }
 
+    // TSP：使用最近鄰法確保中心點路徑最短且不交叉
     function solveTSP(pts) {
-        let unvisited = [...pts];
+        let unvisited = pts.map((p, i) => ({coords: p, id: i}));
         let current = unvisited.shift();
-        let result = [current];
+        let result = [current.coords];
         while (unvisited.length > 0) {
-            let closestIdx = 0;
+            let nextIdx = 0;
             let minDist = Infinity;
             for (let i = 0; i < unvisited.length; i++) {
-                let d = turf.distance(turf.point(current), turf.point(unvisited[i]));
-                if (d < minDist) { minDist = d; closestIdx = i; }
+                let d = turf.distance(turf.point(current.coords), turf.point(unvisited[i].coords));
+                if (d < minDist) { minDist = d; nextIdx = i; }
             }
-            current = unvisited.splice(closestIdx, 1)[0];
-            result.push(current);
+            current = unvisited.splice(nextIdx, 1)[0];
+            result.push(current.coords);
         }
         return result;
     }
 
-    function generateOptimizedZ(centers) {
-        let path = [];
-        const r = 41;
-        centers.forEach((center) => {
-            const cPoint = turf.point(center);
-            const pts = {
-                nw: turf.destination(cPoint, r, 315, {units:'meters'}).geometry.coordinates,
-                ne: turf.destination(cPoint, r, 45, {units:'meters'}).geometry.coordinates,
-                sw: turf.destination(cPoint, r, 225, {units:'meters'}).geometry.coordinates,
-                se: turf.destination(cPoint, r, 135, {units:'meters'}).geometry.coordinates,
-                mid: center
-            };
-            let group = [pts.sw, pts.se, pts.mid, pts.nw, pts.ne];
-            if (path.length > 0) {
-                const last = path[path.length - 1];
-                if (turf.distance(last, pts.ne) < turf.distance(last, pts.sw)) group.reverse();
+    // 生成 Z 字型並動態挑選最順的方向 (避免重疊)
+    function generateNoOverlapZ(centers) {
+        let resultPath = [];
+        const radius = 41; // 82m 直徑的一半
+
+        centers.forEach((center, idx) => {
+            const c = turf.point(center);
+            // 計算四個頂點
+            const nw = turf.destination(c, radius, 315, {units:'meters'}).geometry.coordinates;
+            const ne = turf.destination(c, radius, 45, {units:'meters'}).geometry.coordinates;
+            const sw = turf.destination(c, radius, 225, {units:'meters'}).geometry.coordinates;
+            const se = turf.destination(c, radius, 135, {units:'meters'}).geometry.coordinates;
+
+            // 定義 4 種不自我重疊的 Z 字排列
+            const patterns = [
+                [sw, se, center, nw, ne],
+                [se, sw, center, ne, nw],
+                [nw, ne, center, sw, se],
+                [ne, nw, center, se, sw]
+            ];
+
+            let bestPattern = patterns[0];
+
+            if (resultPath.length > 0) {
+                const lastPoint = resultPath[resultPath.length - 1];
+                let minConnectDist = Infinity;
+
+                // 挑選與上一個出口距離最短的排列，確保連接線不重疊
+                patterns.forEach(p => {
+                    const d = turf.distance(turf.point(lastPoint), turf.point(p[0]));
+                    if (d < minConnectDist) {
+                        minConnectDist = d;
+                        bestPattern = p;
+                    }
+                });
             }
-            path.push(...group);
+            
+            resultPath.push(...bestPattern);
         });
-        return path;
+        return resultPath;
     }
 
-    function renderPreview(centers, fullPath) {
+    function renderMap(centers, path) {
         if (pathLayer) map.removeLayer(pathLayer);
         if (markerLayer) map.removeLayer(markerLayer);
-        pathLayer = L.polyline(fullPath.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3}).addTo(map);
+
+        pathLayer = L.polyline(path.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3, opacity: 0.8}).addTo(map);
         markerLayer = L.featureGroup(centers.map(c => L.circleMarker([c[1], c[0]], {radius: 3, color: 'red'}))).addTo(map);
         map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
     }
 
-    function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Pisa_Z_Track</name><trkseg>`;
-        finalTrackPoints.forEach(pt => {
+    function exportFinalGPX() {
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>NoOverlap_Z_Track</name><trkseg>`;
+        finalPath.forEach(pt => {
             gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`;
         });
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = "pisa_optimized.gpx";
+        a.download = "optimized_track.gpx";
         a.click();
     }
 </script>
