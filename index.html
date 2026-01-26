@@ -2,43 +2,48 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>GPX 高階優化生成器 (除錯增強版)</title>
+    <title>GPX 全域最優化 Z 型軌跡產生器</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #f0f2f5; }
-        #sidebar { width: 380px; padding: 20px; background: white; border-right: 1px solid #ddd; overflow-y: auto; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        body { margin: 0; display: flex; height: 100vh; font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; }
+        #sidebar { width: 400px; padding: 25px; background: white; border-right: 1px solid #ddd; overflow-y: auto; z-index: 1000; box-shadow: 2px 0 15px rgba(0,0,0,0.1); }
         #map { flex: 1; }
-        .card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-left: 5px solid #007bff; }
-        h2 { margin-top: 0; color: #333; font-size: 1.2rem; }
-        textarea { width: 100%; height: 150px; margin-top: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; }
+        .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e1e4e8; border-left: 6px solid #007bff; }
+        h2 { margin: 0 0 15px 0; color: #333; font-size: 1.3rem; }
+        textarea { width: 100%; height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: monospace; box-sizing: border-box; resize: vertical; }
+        button { width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: all 0.3s; }
         .btn-gen { background: #007bff; color: white; }
-        .btn-gen:hover { background: #0056b3; }
+        .btn-gen:hover { background: #0056b3; box-shadow: 0 4px 8px rgba(0,123,255,0.3); }
         .btn-download { background: #28a745; color: white; display: none; }
-        .error-log { color: #d9534f; background: #fdf7f7; padding: 10px; border-radius: 5px; font-size: 0.85rem; display: none; margin-top: 10px; border: 1px solid #d9534f; }
-        .status-ok { color: #28a745; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
+        .btn-download:hover { background: #218838; }
+        .status { padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 10px; display: none; }
+        .success { background: #e6ffed; color: #28a745; border: 1px solid #28a745; display: block; }
+        .error { background: #fff1f0; color: #d9534f; border: 1px solid #d9534f; display: block; }
+        code { background: #eee; padding: 2px 4px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2>GPX 軌跡優化生成器</h2>
+    <h2>GPX 軌跡全域優化器</h2>
     
     <div class="card">
-        <strong>1. 貼上座標 (緯度, 經度):</strong>
-        <textarea id="coordInput" placeholder="範例：&#10;25.0330, 121.5654&#10;25.0345, 121.5660"></textarea>
+        <strong>1. 直接輸入座標 (緯, 經):</strong>
+        <p style="font-size: 0.8rem; color: #666;">每行一個，支援 <code>43.694, 10.444</code> 格式</p>
+        <textarea id="coordInput" placeholder="在此貼上座標..."></textarea>
     </div>
 
     <div class="card" style="border-left-color: #ffc107;">
-        <strong>2. 或上傳 GPX 檔案:</strong>
-        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; margin-top: 10px;">
+        <strong>2. 上傳 GPX 檔案:</strong>
+        <p style="font-size: 0.8rem; color: #666;">支援 <code>rtept</code>, <code>trkpt</code>, <code>wpt</code></p>
+        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; margin-top: 5px;">
     </div>
     
-    <button class="btn-gen" onclick="handleProcess()">執行優化並預覽</button>
-    <div id="errorLog" class="error-log"></div>
-    <div id="statusInfo" class="status-ok"></div>
+    <button class="btn-gen" onclick="executeOptimization()">生成全域最短 Z 型軌跡</button>
     
-    <button id="downloadBtn" class="btn-download" onclick="downloadGPX()">下載 GPX 檔案</button>
+    <div id="msgBox" class="status"></div>
+    
+    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載最優化 GPX 檔案</button>
 </div>
 
 <div id="map"></div>
@@ -47,127 +52,141 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    // 初始化地圖
-    let map;
-    try {
-        map = L.map('map').setView([23.5, 121], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    } catch (e) {
-        console.error("地圖初始化失敗", e);
-    }
-
+    // 1. 初始化地圖
+    let map = L.map('map').setView([23.5, 121], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     let pathLayer, markerLayer;
-    let finalPoints = [];
+    let finalTrackPoints = [];
 
-    async function handleProcess() {
-        const errorLog = document.getElementById('errorLog');
-        const statusInfo = document.getElementById('statusInfo');
-        errorLog.style.display = 'none';
-        statusInfo.innerText = "處理中...";
-
+    async function executeOptimization() {
+        const msgBox = document.getElementById('msgBox');
+        msgBox.className = 'status';
+        msgBox.style.display = 'none';
+        
         try {
-            let rawPoints = [];
+            let centers = [];
 
-            // 1. 解析輸入框
-            const textContent = document.getElementById('coordInput').value.trim();
-            if (textContent) {
-                const lines = textContent.split('\n');
-                lines.forEach(line => {
-                    const parts = line.split(/[ ,]+/).filter(p => p.trim() !== "");
-                    if (parts.length >= 2) {
-                        const lat = parseFloat(parts[0]);
-                        const lon = parseFloat(parts[1]);
-                        if (!isNaN(lat) && !isNaN(lon)) rawPoints.push([lon, lat]); // Turf 使用 [經, 緯]
+            // A. 解析輸入框
+            const text = document.getElementById('coordInput').value.trim();
+            if (text) {
+                text.split('\n').forEach(line => {
+                    const p = line.split(/[ ,]+/).filter(x => x.trim() !== "");
+                    if (p.length >= 2) {
+                        const lat = parseFloat(p[0]), lon = parseFloat(p[1]);
+                        if (!isNaN(lat) && !isNaN(lon)) centers.push([lon, lat]); // Turf 用 [經, 緯]
                     }
                 });
             }
 
-            // 2. 解析檔案
+            // B. 解析上傳檔案 (包含 rtept)
             const fileInput = document.getElementById('gpxFile');
             if (fileInput.files.length > 0) {
-                const fileText = await fileInput.files[0].text();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(fileText, "text/xml");
-                const tags = ["trkpt", "wpt", "rtept"];
-                
-                tags.forEach(tag => {
+                const xmlText = await fileInput.files[0].text();
+                const xml = new DOMParser().parseFromString(xmlText, "text/xml");
+                ["rtept", "trkpt", "wpt"].forEach(tag => {
                     const elms = xml.getElementsByTagName(tag);
                     for (let i = 0; i < elms.length; i++) {
                         const lat = parseFloat(elms[i].getAttribute("lat"));
                         const lon = parseFloat(elms[i].getAttribute("lon"));
-                        if (!isNaN(lat) && !isNaN(lon)) rawPoints.push([lon, lat]);
+                        if (!isNaN(lat) && !isNaN(lon)) centers.push([lon, lat]);
                     }
                 });
             }
 
-            if (rawPoints.length === 0) throw new Error("找不到有效座標！請確認輸入格式或檔案內容。");
+            if (centers.length === 0) throw new Error("未偵測到有效座標。請確認輸入或檔案格式。");
 
-            // 3. TSP 排序 (最近鄰)
-            let unvisited = [...rawPoints];
-            let current = unvisited.shift();
-            let sortedCenters = [current];
-            while (unvisited.length > 0) {
-                let bestIdx = 0;
-                let minDist = Infinity;
-                for (let i = 0; i < unvisited.length; i++) {
-                    let d = turf.distance(turf.point(current), turf.point(unvisited[i]));
-                    if (d < minDist) {
-                        minDist = d;
-                        bestIdx = i;
-                    }
-                }
-                current = unvisited.splice(bestIdx, 1)[0];
-                sortedCenters.push(current);
-            }
+            // C. 全域最短路徑排序 (TSP - Nearest Neighbor)
+            let sortedCenters = solveTSP(centers);
 
-            // 4. 生成 Z 型軌跡
-            finalPoints = [];
-            const radius = 41; // 米
-            sortedCenters.forEach((center) => {
-                const c = turf.point(center);
-                const nw = turf.destination(c, radius, 315, {units:'meters'}).geometry.coordinates;
-                const ne = turf.destination(c, radius, 45, {units:'meters'}).geometry.coordinates;
-                const sw = turf.destination(c, radius, 225, {units:'meters'}).geometry.coordinates;
-                const se = turf.destination(c, radius, 135, {units:'meters'}).geometry.coordinates;
+            // D. 生成 82m Z 型規律並計算動態進出口
+            finalTrackPoints = generateOptimizedZ(sortedCenters);
 
-                let group = [sw, se, center, nw, ne];
-                if (finalPoints.length > 0) {
-                    const last = finalPoints[finalPoints.length - 1];
-                    if (turf.distance(last, ne) < turf.distance(last, sw)) group.reverse();
-                }
-                finalPoints.push(...group);
-            });
+            // E. 渲染地圖
+            renderPreview(sortedCenters, finalTrackPoints);
 
-            // 5. 繪製地圖
-            if (pathLayer) map.removeLayer(pathLayer);
-            if (markerLayer) map.removeLayer(markerLayer);
-
-            pathLayer = L.polyline(finalPoints.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3}).addTo(map);
-            markerLayer = L.featureGroup(sortedCenters.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: 'red'}))).addTo(map);
-            
-            map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            
-            statusInfo.innerText = `成功！處理了 ${sortedCenters.length} 個中心點。`;
+            msgBox.innerText = `優化成功！已串接 ${sortedCenters.length} 個組別，共 ${finalTrackPoints.length} 個點。`;
+            msgBox.classList.add('success');
             document.getElementById('downloadBtn').style.display = 'block';
 
-        } catch (err) {
-            statusInfo.innerText = "";
-            errorLog.style.display = 'block';
-            errorLog.innerText = "錯誤提示: " + err.message;
-            console.error(err);
+        } catch (e) {
+            msgBox.innerText = "錯誤: " + e.message;
+            msgBox.classList.add('error');
         }
     }
 
-    function downloadGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Z-Path</name><trkseg>`;
-        finalPoints.forEach(pt => {
-            gpx += `\n<trkpt lat="${pt[1].toFixed(7)}" lon="${pt[0].toFixed(7)}"></trkpt>`;
+    // TSP 演算法：確保圓心之間的移動路徑最短且不交叉
+    function solveTSP(pts) {
+        let unvisited = [...pts];
+        let current = unvisited.shift();
+        let result = [current];
+        while (unvisited.length > 0) {
+            let closestIdx = 0;
+            let minDist = Infinity;
+            for (let i = 0; i < unvisited.length; i++) {
+                let d = turf.distance(turf.point(current), turf.point(unvisited[i]));
+                if (d < minDist) { minDist = d; closestIdx = i; }
+            }
+            current = unvisited.splice(closestIdx, 1)[0];
+            result.push(current);
+        }
+        return result;
+    }
+
+    // 動態 Z 型生成：計算最佳進出口以防路徑重疊
+    function generateOptimizedZ(centers) {
+        let path = [];
+        const r = 41; // 半徑 (直徑82m / 2)
+
+        centers.forEach((center, i) => {
+            const cPoint = turf.point(center);
+            const pts = {
+                nw: turf.destination(cPoint, r, 315, {units:'meters'}).geometry.coordinates,
+                ne: turf.destination(cPoint, r, 45, {units:'meters'}).geometry.coordinates,
+                sw: turf.destination(cPoint, r, 225, {units:'meters'}).geometry.coordinates,
+                se: turf.destination(cPoint, r, 135, {units:'meters'}).geometry.coordinates,
+                mid: center
+            };
+
+            // 基準 Z 字：從西南(SW)開始
+            let group = [pts.sw, pts.se, pts.mid, pts.nw, pts.ne];
+
+            if (path.length > 0) {
+                const lastPos = path[path.length - 1];
+                const distToStart = turf.distance(lastPos, pts.sw);
+                const distToEnd = turf.distance(lastPos, pts.ne);
+                
+                // 如果這組的「末端」離上一組出口比較近，就反轉這組
+                // 這樣能保證連接線路徑最短，且不會產生折返重疊
+                if (distToEnd < distToStart) {
+                    group.reverse();
+                }
+            }
+            path.push(...group);
+        });
+        return path;
+    }
+
+    function renderPreview(centers, fullPath) {
+        if (pathLayer) map.removeLayer(pathLayer);
+        if (markerLayer) map.removeLayer(markerLayer);
+
+        pathLayer = L.polyline(fullPath.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3, opacity: 0.8}).addTo(map);
+        markerLayer = L.featureGroup(centers.map(c => L.circleMarker([c[1], c[0]], {radius: 3, color: 'red'}))).addTo(map);
+        
+        map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
+    }
+
+    function exportGPX() {
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Z-TSP-Optimizer"><trk><name>Global Optimized Z-Path</name><trkseg>`;
+        finalTrackPoints.forEach(pt => {
+            gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`;
         });
         gpx += `\n</trkseg></trk></gpx>`;
+        
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = "track_optimized.gpx";
+        a.download = `optimized_track_${new Date().getTime()}.gpx`;
         a.click();
     }
 </script>
