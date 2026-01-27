@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GPX 軌跡產生器 - 無重疊優化版</title>
+    <title>皮克敏種花收果路徑生成器</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -25,14 +25,14 @@
 <body>
 
 <div id="controls">
-    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">軌跡規律產生器 (無重疊)</h2>
+    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">請選擇你想要生成的模式</h2>
     
     <div class="card">
         <strong>1. 選擇生成模式:</strong>
         <select id="pathMode">
-            <option value="z-shape">Z 字型路線 (無重疊)</option>
-            <option value="square">正方形路線 (不穿心)</option>
-            <option value="linear">座標串接 (封閉環線)</option>
+            <option value="z-shape">Z 字型路線</option>
+            <option value="square">正方形路線</option>
+            <option value="linear">座標串接</option>
         </select>
     </div>
 
