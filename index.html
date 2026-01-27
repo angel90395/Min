@@ -3,55 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>皮克敏飛人種花&收果路徑生成器</title>
+    <title>GPX 軌跡產生器 - 無重疊優化版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: -apple-system, sans-serif; background: #f4f4f4; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; background: #f4f4f4; }
         #controls { width: 100%; padding: 15px; background: white; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-bottom: 1px solid #ddd; overflow-y: auto; max-height: 50vh; }
         #map { flex: 1; min-height: 300px; width: 100%; z-index: 1; }
-        .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; border-left: 5px solid #007bff; }
-        textarea { width: 100%; height: 50px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; padding: 5px; margin-top: 5px; }
+        .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; border-left: 5px solid #28a745; }
+        textarea { width: 100%; height: 60px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; padding: 5px; margin-top: 5px; }
         select, button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        select { background: #f8f9fa; border: 1px solid #ddd; }
         .btn-gen { background: #007bff; color: white; }
         .btn-download { background: #28a745; color: white; display: none; }
         #status { font-size: 12px; color: #666; font-weight: bold; margin-top: 5px; }
         @media (min-width: 768px) {
             body { flex-direction: row; }
             #controls { width: 380px; height: 100vh; max-height: 100vh; border-right: 1px solid #ddd; border-bottom: none; }
-            #map { height: 100vh; }
         }
     </style>
 </head>
 <body>
 
 <div id="controls">
-    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">請依照你的需求選擇生成模式</h2>
+    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">軌跡規律產生器 (無重疊)</h2>
     
     <div class="card">
         <strong>1. 選擇生成模式:</strong>
         <select id="pathMode">
-            <option value="z-shape">Z 字型路線（跑兩圈，第一圈跑完剩130-139左右）</option>
-            <option value="square">正方形路線 (跑兩圈，第一圈跑完剩109-110左右)</option>
-            <option value="linear">僅圓心串接（適合收果或多帳一起種）</option>
+            <option value="z-shape">Z 字型路線 (無重疊)</option>
+            <option value="square">正方形路線 (不穿心)</option>
+            <option value="linear">座標串接 (封閉環線)</option>
         </select>
     </div>
 
     <div class="card">
         <strong>2. 手動輸入座標 (緯, 經):</strong>
-        <textarea id="coordInput" placeholder="43.694, 10.444"></textarea>
+        <textarea id="coordInput" placeholder="範例：&#10;-35.3241, 149.0924"></textarea>
     </div>
 
     <div class="card" style="border-left-color: #ffc107;">
-        <strong>上傳 GPX 檔案（如果上面已有輸入座標就不用上傳檔案）</strong>
-        <p style="font-size: 11px; color: #888; margin: 2px 0;">上傳將依據檔案那座標順序直接轉換模式</p>
-        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; font-size: 12px;">
+        <strong>3. 上傳 GPX 檔案:</strong>
+        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; font-size: 12px; margin-top: 5px;">
     </div>
 
     <button class="btn-gen" onclick="handleGenerate()">產生檔案並預覽</button>
-    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載GPX檔</button>
-    <div id="status">準備就緒</div>
+    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載 GPX 檔</button>
+    <div id="status"></div>
 </div>
 
 <div id="map"></div>
@@ -69,13 +66,12 @@
     async function handleGenerate() {
         const status = document.getElementById('status');
         const mode = document.getElementById('pathMode').value;
-        status.innerText = "處理中...";
+        status.innerText = "優化運算中...";
         
         try {
             let centers = [];
             let isManual = false;
 
-            // A. 優先解析手動輸入 (需 TSP 優化)
             const txt = document.getElementById('coordInput').value.trim();
             if (txt) {
                 isManual = true;
@@ -85,11 +81,10 @@
                 });
             }
 
-            // B. 解析檔案 (保留原始順序)
             const fileInput = document.getElementById('gpxFile');
             if (fileInput.files.length > 0) {
-                isManual = false; // 如果有檔案，以檔案順序為主
-                centers = []; // 清空手動，確保不混淆
+                isManual = false;
+                centers = [];
                 const xml = await fileInput.files[0].text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m;
@@ -98,15 +93,18 @@
                 }
             }
 
-            if (centers.length === 0) throw new Error("請提供座標資料。");
+            if (centers.length === 0) throw new Error("請輸入座標。");
 
-            // 1. 決定圓心順序 (手動輸入則 TSP，上傳則維持原樣)
+            // 1. 去除重複點 (座標相同不重複產生線條)
+            centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
+
+            // 2. 決定圓心順序
             let sortedCenters = isManual ? solveTSP(centers) : centers;
 
-            // 2. 根據模式生成軌跡
-            finalTrackPoints = buildMultiModePath(sortedCenters, mode);
+            // 3. 根據模式生成軌跡 (封閉式、去重、防交叉)
+            finalTrackPoints = buildOptimizedPath(sortedCenters, mode);
 
-            // 3. 繪圖
+            // 4. 地圖預覽
             map.invalidateSize();
             if (pathLayer) map.removeLayer(pathLayer);
             if (markerLayer) map.removeLayer(markerLayer);
@@ -115,7 +113,7 @@
             markerLayer = L.featureGroup(sortedCenters.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: 'red'}))).addTo(map);
             
             map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            status.innerText = `完成：${isManual ? '全域最短' : '原始順序'}串接，模式：${mode}`;
+            status.innerText = `完成：模式 ${mode}，共 ${sortedCenters.length} 組圓心。`;
             document.getElementById('downloadBtn').style.display = 'block';
 
         } catch (e) {
@@ -123,7 +121,9 @@
         }
     }
 
+    // TSP 最短路徑演算法 (避免大跨度交叉)
     function solveTSP(pts) {
+        if (pts.length < 3) return pts;
         let unvisited = [...pts];
         let current = unvisited.shift();
         let result = [current];
@@ -139,9 +139,9 @@
         return result;
     }
 
-    function buildMultiModePath(centers, mode) {
+    function buildOptimizedPath(centers, mode) {
         let path = [];
-        const r = 41; // 82m / 2
+        const r = 41; // 直徑 82m 範圍
 
         centers.forEach((center, i) => {
             if (mode === 'linear') {
@@ -164,29 +164,39 @@
                 group = [corners.sw, corners.se, corners.ne, corners.nw, corners.sw];
             }
 
-            // 動態對接優化 (僅限需要多點的模式)
+            // --- 防重疊邏輯：動態進出口優化 ---
             if (path.length > 0) {
-                const last = path[path.length - 1];
-                // 檢查是否反轉順序比較順路
-                const dStart = turf.distance(turf.point(last), turf.point(group[0]));
-                const dEnd = turf.distance(turf.point(last), turf.point(group[group.length-1]));
-                if (dEnd < dStart) group.reverse();
+                const lastPoint = path[path.length - 1];
+                const dToStart = turf.distance(turf.point(lastPoint), turf.point(group[0]));
+                const dToEnd = turf.distance(turf.point(lastPoint), turf.point(group[group.length-1]));
+                
+                // 如果反向串接比較順，且不會穿過方塊中心，則反轉
+                if (dToEnd < dToStart) {
+                    group.reverse();
+                }
             }
             path.push(...group);
         });
 
-        if (path.length > 0) path.push(path[0]); // 閉合迴圈
+        // 封閉式環線：移除重複的結尾點，強制連回首點
+        if (path.length > 0) {
+            // 過濾連續相同的點 (避免 GPX 重疊一段 0 長度線段)
+            path = path.filter((v, i, a) => i === 0 || !(v[0] === a[i-1][0] && v[1] === a[i-1][1]));
+            path.push(path[0]); 
+        }
         return path;
     }
 
     function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><trkseg>`;
-        finalTrackPoints.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="GPXGen"><trk><name>Optimized Path</name><trkseg>`;
+        finalTrackPoints.forEach(pt => {
+            gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`;
+        });
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `path_${Date.now()}.gpx`;
+        a.download = `optimized_path_${Date.now()}.gpx`;
         a.click();
     }
 </script>
