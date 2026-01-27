@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GPX 多功能軌跡優化器</title>
+    <title>皮克敏飛人種花&收果路徑生成器</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -27,14 +27,14 @@
 <body>
 
 <div id="controls">
-    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">軌跡規律生成器</h2>
+    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">請依照你的需求選擇生成模式</h2>
     
     <div class="card">
         <strong>1. 選擇生成模式:</strong>
         <select id="pathMode">
-            <option value="z-shape">Z 字型路線 (5點)</option>
-            <option value="square">正方形路線 (5點閉合)</option>
-            <option value="linear">僅圓心串接</option>
+            <option value="z-shape">Z 字型路線（跑兩圈，第一圈跑完剩130-139左右）</option>
+            <option value="square">正方形路線 (跑兩圈，第一圈跑完剩109-110左右)</option>
+            <option value="linear">僅圓心串接（適合收果或多帳一起種）</option>
         </select>
     </div>
 
@@ -44,13 +44,13 @@
     </div>
 
     <div class="card" style="border-left-color: #ffc107;">
-        <strong>3. 上傳 GPX 檔案:</strong>
-        <p style="font-size: 11px; color: #888; margin: 2px 0;">上傳將依據檔案「原始順序」轉換模式</p>
+        <strong>上傳 GPX 檔案（如果上面已有輸入座標就不用上傳檔案）</strong>
+        <p style="font-size: 11px; color: #888; margin: 2px 0;">上傳將依據檔案那座標順序直接轉換模式</p>
         <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; font-size: 12px;">
     </div>
 
-    <button class="btn-gen" onclick="handleGenerate()">執行優化並預覽</button>
-    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載最優化 GPX</button>
+    <button class="btn-gen" onclick="handleGenerate()">產生檔案並預覽</button>
+    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載GPX檔</button>
     <div id="status">準備就緒</div>
 </div>
 
