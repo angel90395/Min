@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GPX 穩定優化器 - 救援版</title>
+    <title>皮克敏種花收果路徑產生器</title></title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -54,9 +54,9 @@
     <div class="card">
         <label><b>1. 路線模式</b></label>
         <select id="pathMode">
-            <option value="linear">座標串接 (白色環線模式)</option>
-            <option value="z-shape">動態 Z 字型 (任意方向)</option>
-            <option value="square">正方形路線 (不重疊)</option>
+            <option value="linear">座標串接（適合收果或多帳種花）</option>
+            <option value="z-shape">Z字路線 (2圈、適合種藍)</option>
+            <option value="square">正方形路線 (2圈、適合種白)</option>
         </select>
     </div>
 
@@ -76,7 +76,7 @@
         <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
     </div>
 
-    <button class="btn-gen" onclick="handleGenerate()">產生預覽並清空</button>
+    <button class="btn-gen" onclick="handleGenerate()">產生路徑並預覽</button>
     <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載 GPX</button>
     <div id="status">地圖已就緒</div>
 </div>
