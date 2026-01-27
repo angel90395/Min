@@ -3,51 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>皮克敏種花收果生成路徑</title>
+    <title>皮克敏種花收果路徑生成</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; background: #f0f2f5; }
-        #controls { width: 100%; padding: 15px; background: white; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-bottom: 1px solid #ddd; overflow-y: auto; max-height: 45vh; }
-        #map { flex: 1; min-height: 350px; width: 100%; z-index: 1; }
-        .card { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; border-left: 6px solid #007bff; }
-        textarea { width: 100%; height: 60px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; padding: 8px; margin-top: 5px; }
-        select, button { width: 100%; padding: 14px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .btn-gen { background: #007bff; color: white; }
-        .btn-download { background: #28a745; color: white; display: none; }
-        #status { font-size: 13px; color: #007bff; font-weight: bold; margin-top: 5px; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; }
+        #controls { width: 100%; padding: 15px; background: white; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-bottom: 1px solid #ddd; overflow-y: auto; max-height: 40vh; }
+        #map { flex: 1; width: 100%; z-index: 1; }
+        .card { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #27ae60; border: 1px solid #ddd; }
+        textarea { width: 100%; height: 60px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; padding: 8px; box-sizing: border-box; }
+        select, button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-gen { background: #27ae60; color: white; }
+        .btn-download { background: #007bff; color: white; display: none; }
+        #status { font-size: 13px; color: #27ae60; font-weight: bold; margin-top: 5px; }
         @media (min-width: 768px) {
             body { flex-direction: row; }
-            #controls { width: 380px; height: 100vh; max-height: 100vh; border-right: 1px solid #ddd; border-bottom: none; }
+            #controls { width: 400px; height: 100vh; max-height: 100vh; border-right: 1px solid #ddd; }
         }
     </style>
 </head>
 <body>
 
 <div id="controls">
-    <h2 style="margin: 0 0 10px 0; font-size: 1.1rem;">請選擇一個要生成的模式</h2>
+    <h2 style="margin: 0 0 10px 0; font-size: 1.2rem;">請選擇一個模式</h2>
     
     <div class="card">
         <strong>1. 模式選擇:</strong>
         <select id="pathMode">
-            <option value="z-shape">Z 字型路線</option>
-            <option value="square">正方形路線</option>
             <option value="linear">座標串接</option>
+            <option value="z-shape">Z 字型規律</option>
+            <option value="square">正方形規律</option>
         </select>
     </div>
 
     <div class="card">
         <strong>2. 輸入座標 (緯, 經):</strong>
-        <textarea id="coordInput" placeholder="範例：&#10;-35.3241, 149.0924"></textarea>
+        <textarea id="coordInput" placeholder="在此輸入座標..."></textarea>
     </div>
 
     <div class="card" style="border-left-color: #ffc107;">
         <strong>3. 上傳檔案 (保留順序):</strong>
-        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; font-size: 12px; margin-top: 5px;">
+        <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; font-size: 13px; margin-top: 5px;">
     </div>
 
-    <button class="btn-gen" onclick="handleProcess()">執行優化並閉合</button>
-    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載 GPX 檔案</button>
+    <button class="btn-gen" onclick="runOptimization()">執行全域優化並閉合</button>
+    <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載優化後的 GPX</button>
     <div id="status"></div>
 </div>
 
@@ -57,88 +56,91 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    var map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7);
+    const map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    var pathLayer, markerLayer, resultPath = [];
+    let pathLayer, markerLayer, finalPoints = [];
 
-    async function handleProcess() {
-        const status = document.getElementById('status');
+    async function runOptimization() {
+        let centers = [];
+        let needsUnknotting = true;
+
+        // 1. 解析資料
+        const text = document.getElementById('coordInput').value.trim();
+        if (text) {
+            text.split('\n').forEach(l => {
+                const p = l.split(/[ ,]+/).filter(x => x);
+                if (p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
+            });
+        }
+        const fileInput = document.getElementById('gpxFile');
+        if (fileInput.files.length > 0) {
+            needsUnknotting = false; 
+            const content = await fileInput.files[0].text();
+            const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
+            let m;
+            while ((m = regex.exec(content)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
+        }
+
+        if (centers.length === 0) return alert("請輸入座標或提供檔案。");
+
+        // 2. 去除重複
+        centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
+
+        // 3. 全域優化排序 (2-Opt 解結演算法)
+        let sortedCenters = needsUnknotting ? solveUnknottedCycle(centers) : centers;
+
+        // 4. 生成規律路徑
         const mode = document.getElementById('pathMode').value;
-        status.innerText = "運算中...";
+        finalPoints = buildFinalPath(sortedCenters, mode);
+
+        // 5. 渲染
+        if (pathLayer) map.removeLayer(pathLayer);
+        if (markerLayer) map.removeLayer(markerLayer);
+
+        pathLayer = L.polyline(finalPoints.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3}).addTo(map);
+        markerLayer = L.featureGroup(sortedCenters.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: '#e74c3c', fillOpacity: 1}))).addTo(map);
         
-        try {
-            let centers = [];
-            let useTSP = true;
-
-            // 解析手動輸入
-            const txt = document.getElementById('coordInput').value.trim();
-            if (txt) {
-                txt.split('\n').forEach(l => {
-                    const p = l.split(/[ ,]+/).filter(x => x);
-                    if (p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
-                });
-            }
-
-            // 解析檔案 (若有檔案則不使用 TSP 排序)
-            const fileInput = document.getElementById('gpxFile');
-            if (fileInput.files.length > 0) {
-                useTSP = false;
-                centers = [];
-                const xml = await fileInput.files[0].text();
-                const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
-                let m;
-                while ((m = regex.exec(xml)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
-            }
-
-            if (centers.length === 0) throw new Error("無效座標資料");
-
-            // 1. 去除重複點
-            centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
-
-            // 2. 排序圓心 (手動輸入則 TSP)
-            let sortedCenters = useTSP ? solveTSP(centers) : centers;
-
-            // 3. 生成絕對閉合不交叉路徑
-            resultPath = buildFinalLoop(sortedCenters, mode);
-
-            // 4. 地圖渲染
-            map.invalidateSize();
-            if (pathLayer) map.removeLayer(pathLayer);
-            if (markerLayer) map.removeLayer(markerLayer);
-
-            pathLayer = L.polyline(resultPath.map(p => [p[1], p[0]]), {color: '#007bff', weight: 3}).addTo(map);
-            markerLayer = L.featureGroup(sortedCenters.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: 'red'}))).addTo(map);
-            
-            map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            status.innerText = `優化完成！全域最短且已閉合。`;
-            document.getElementById('downloadBtn').style.display = 'block';
-
-        } catch (e) {
-            status.innerText = "錯誤: " + e.message;
-        }
+        map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
+        document.getElementById('status').innerText = `已生成封閉環線路徑。`;
+        document.getElementById('downloadBtn').style.display = 'block';
     }
 
-    // TSP 最短封閉圓環路徑
-    function solveTSP(pts) {
-        if (pts.length < 3) return pts;
-        let unvisited = [...pts];
-        let current = unvisited.shift();
-        let result = [current];
-        while (unvisited.length > 0) {
-            let bIdx = 0, minDist = Infinity;
-            for (let i = 0; i < unvisited.length; i++) {
-                let d = turf.distance(turf.point(current), turf.point(unvisited[i]));
-                if (d < minDist) { minDist = d; bIdx = i; }
+    // 核心演算法：2-Opt 交換法，直到路徑不再交叉 (解決白色線條需求)
+    function solveUnknottedCycle(pts) {
+        let route = [...pts];
+        let improved = true;
+        
+        // 初始快速排序 (極座標排序作為良好基礎)
+        const center = turf.center(turf.featureCollection(route.map(p => turf.point(p)))).geometry.coordinates;
+        route.sort((a, b) => Math.atan2(a[1]-center[1], a[0]-center[0]) - Math.atan2(b[1]-center[1], b[0]-center[0]));
+
+        // 2-Opt 迭代：尋找交叉線段並翻轉
+        while (improved) {
+            improved = false;
+            for (let i = 0; i < route.length - 1; i++) {
+                for (let j = i + 2; j < route.length; j++) {
+                    const dCurrent = dist(route[i], route[i+1]) + dist(route[j], route[(j+1)%route.length]);
+                    const dNew = dist(route[i], route[j]) + dist(route[i+1], route[(j+1)%route.length]);
+                    
+                    if (dNew < dCurrent) {
+                        // 執行交換 (翻轉中間段落)
+                        let sub = route.slice(i + 1, j + 1);
+                        route.splice(i + 1, j - i, ...sub.reverse());
+                        improved = true;
+                    }
+                }
             }
-            current = unvisited.splice(bIdx, 1)[0];
-            result.push(current);
         }
-        return result;
+        return route;
     }
 
-    function buildFinalLoop(centers, mode) {
+    function dist(p1, p2) {
+        return turf.distance(turf.point(p1), turf.point(p2));
+    }
+
+    function buildFinalPath(centers, mode) {
         let path = [];
         const r = 41;
 
@@ -149,7 +151,7 @@
             }
 
             const cp = turf.point(center);
-            const corners = {
+            const v = {
                 nw: turf.destination(cp, r, 315, {units:'meters'}).geometry.coordinates,
                 ne: turf.destination(cp, r, 45, {units:'meters'}).geometry.coordinates,
                 sw: turf.destination(cp, r, 225, {units:'meters'}).geometry.coordinates,
@@ -157,34 +159,29 @@
             };
 
             let group = (mode === 'z-shape') ? 
-                [corners.sw, corners.se, center, corners.nw, corners.ne] : 
-                [corners.sw, corners.se, corners.ne, corners.nw, corners.sw];
+                [v.sw, v.se, center, v.nw, v.ne] : 
+                [v.sw, v.se, v.ne, v.nw, v.sw];
 
-            // 動態對接優化：選擇離「前組出口」最近的點進入，離「後組圓心」最近的點離開
+            // 動態對接優化：確保連接下一組時走外側，不穿透中心
             if (path.length > 0) {
-                const prevPoint = path[path.length - 1];
-                const dNormal = turf.distance(turf.point(prevPoint), turf.point(group[0]));
-                const dReverse = turf.distance(turf.point(prevPoint), turf.point(group[group.length-1]));
-                if (dReverse < dNormal) group.reverse();
+                const prev = path[path.length - 1];
+                if (dist(prev, group[group.length-1]) < dist(prev, group[0])) group.reverse();
             }
             path.push(...group);
         });
 
-        // 強制封閉：將最後一點連回第一點
-        if (path.length > 0) {
-            path.push(path[0]);
-        }
+        if (path.length > 0) path.push(path[0]); // 封閉連回起點
         return path;
     }
 
     function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><trkseg>`;
-        resultPath.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Unknotted-Path-Optimizer"><trk><trkseg>`;
+        finalPoints.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `closed_loop_track.gpx`;
+        a.download = `unknotted_track_${Date.now()}.gpx`;
         a.click();
     }
 </script>
