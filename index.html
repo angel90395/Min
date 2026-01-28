@@ -10,15 +10,11 @@
         html, body { height: 100%; margin: 0; padding: 0; background: #f0f4f8; overflow-x: hidden; }
         body { display: flex; flex-direction: column; font-family: -apple-system, "微軟正黑體", sans-serif; }
 
-        /* 控制面板容器 */
-        #controls { 
-            width: 100%; min-height: 100vh; padding: 15px; background: white; 
-            z-index: 100; overflow-y: auto; transition: 0.3s;
-        }
-
+        /* 面板容器 */
+        #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; }
         .is-hidden { display: none !important; }
 
-        /* 公告欄樣式 */
+        /* 公告欄 */
         #bulletin-section { 
             background: #fff9db; border: 1px solid #fab005; border-radius: 12px; 
             padding: 20px; margin-bottom: 15px; font-size: 0.95rem; color: #444; line-height: 1.7;
@@ -37,30 +33,24 @@
             z-index: 99999; display: none;
             box-shadow: 0 4px 25px rgba(0,0,0,0.4);
             border-radius: 15px; border: 3px solid #fff; overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            transition: all 0.4s ease;
         }
 
-        /* 地圖全頻狀態：確保 z-index 最高 */
-        #map-container.is-fullscreen {
-            width: 100vw; height: 100vh;
-            bottom: 0; right: 0; border-radius: 0; border: none;
-        }
-
+        #map-container.is-fullscreen { width: 100vw; height: 100vh; bottom: 0; right: 0; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* 地圖上的控制按鈕群：全頻後依然固定在右上角 */
+        /* --- 按鈕位置修正：下移以避開手機狀態列 --- */
         .map-btn-group {
-            position: absolute; top: 15px; right: 15px; z-index: 100000;
-            display: flex; gap: 10px;
+            position: absolute; top: 80px; right: 15px; z-index: 100000;
+            display: flex; flex-direction: column; gap: 12px;
         }
         .map-ctrl-btn {
             background: rgba(33, 37, 41, 0.9); color: white; border: none;
-            padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;
-            font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            padding: 12px 18px; border-radius: 10px; font-weight: bold; cursor: pointer;
+            font-size: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         .btn-close-map { background: #e03131 !important; } 
 
-        /* 卡片樣式 */
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         .card-y { border-left-color: #fcc419; }
         label { font-weight: bold; font-size: 0.9rem; color: #343a40; display: block; margin-bottom: 5px; }
@@ -76,6 +66,7 @@
         @media (min-width: 768px) {
             #controls { width: 450px; }
             #map-container { width: 420px; height: 420px; }
+            .map-btn-group { top: 20px; flex-direction: row; } /* 電腦版維持橫向 */
         }
     </style>
 </head>
@@ -87,19 +78,17 @@
     <div id="bulletin-section">
         <h4>📢 生成器的用途與目的</h4>
         <p>大家都在上班之餘種花自給自足或投餵新手、陸軍，沒有時間使用飛機內既有的模式畫路徑，所以這是一個方便皮克敏飛人收果、種花的GPX生成器，但請不要用來產生別人的花田路徑種花，請自律當一個友善的皮克敏飛人。</p>
-        
         <h4>⚠️ 請遵守以下幾點：</h4>
         <ul>
             <li>1.有花痕的田 不開發 不產生路徑 不占為己用</li>
             <li>2.有開花的田或有固定種花主的田 僅生成收果路線 在開大花期間才跑路徑收花</li>
             <li>3.產生的檔案都請自用，不要分享，尤其是別人田的路徑檔</li>
         </ul>
-
         <h4>📢 使用說明與提醒</h4>
         <ul>
             <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個，執行後即可生成gpx檔下載。</li>
             <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原本檔案的路線順序。</li>
-            <li>3. <b>全頻模式：</b>浮貼地圖右上角設有全頻與關閉按鈕。</li>
+            <li>3. <b>全頻模式：</b>浮貼地圖右上角設有按鈕，已下移避開狀態列。</li>
             <li>4. <b>座標查看：</b>點擊地圖<b>紅點</b>可顯示座標彈窗方便調整。</li>
             <li>5. <b>手動修正：</b>生成的路線若不符合需求請自己用其他軟體手動畫。</li>
         </ul>
@@ -108,7 +97,6 @@
 
     <div id="generator-section">
         <button class="btn-view-notice" onclick="showNotice()">查看公告說明</button>
-
         <div class="card">
             <label>1. 選擇生成模式</label>
             <select id="pathMode" style="width:100%; padding:10px; border-radius:5px;">
@@ -117,7 +105,6 @@
                 <option value="square">正方形路線（2圈&適合種白）</option>
             </select>
         </div>
-
         <div class="card card-y">
             <label>提供座標</label>
             <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px; border-radius:5px;">
@@ -125,17 +112,14 @@
                 <option value="file">上傳 GPX 檔案</option>
             </select>
         </div>
-
         <div id="manualSection" class="card">
             <label>座標貼入處 (緯度, 經度):</label>
             <textarea id="coordInput" placeholder="緯度, 經度 (每行一組)"></textarea>
         </div>
-
         <div id="fileSection" class="card card-y is-hidden">
             <label>選取 GPX 檔案:</label>
             <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
         </div>
-
         <button class="btn-gen" onclick="handleProcess()">執行生成路徑並彈出地圖</button>
         <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載生成的 GPX</button>
         <div id="status"></div>
@@ -144,7 +128,7 @@
 
 <div id="map-container">
     <div class="map-btn-group">
-        <button class="map-ctrl-btn" id="fullScreenBtn" onclick="toggleMapFullScreen()">全頻/縮小</button>
+        <button class="map-ctrl-btn" onclick="toggleMapFullScreen()">全頻/縮小</button>
         <button class="map-ctrl-btn btn-close-map" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
@@ -173,7 +157,6 @@
         document.getElementById('fileSection').classList.toggle('is-hidden', type === 'manual');
     }
 
-    // --- 浮貼地圖管理 ---
     function openMap() {
         const container = document.getElementById('map-container');
         container.style.display = 'block';
@@ -197,7 +180,6 @@
         setTimeout(() => map.invalidateSize(), 400);
     }
 
-    // --- 核心處理邏輯 ---
     async function handleProcess() {
         const status = document.getElementById('status');
         const sourceType = document.getElementById('sourceType').value;
@@ -227,11 +209,11 @@
 
             finalPoints = buildAdaptivePath(centers, mode);
 
-            // 成功生成：清空輸入欄位
+            // 生成成功後立即清空座標欄位
             document.getElementById('coordInput').value = "";
             document.getElementById('gpxFile').value = "";
 
-            openMap(); // 彈出浮貼地圖
+            openMap();
 
             if (pathLayer) map.removeLayer(pathLayer);
             if (markerLayer) map.removeLayer(markerLayer);
@@ -295,13 +277,13 @@
         }
         if (path.length > 0) {
             path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.0001);
-            path.push(path[0]); 
+            path.push(path[0]); // 閉合環線
         }
         return path;
     }
 
     function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="PikminPathGen"><trk><name>Pikmin_Optimized_Track</name><trkseg>`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="PikminPathGen"><trk><trkseg>`;
         finalPoints.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
