@@ -17,20 +17,18 @@
             overflow-y: auto; flex-shrink: 0; transition: 0.4s ease-in-out;
         }
         
-        /* 地圖區塊：初始高度 0 且隱藏 */
+        /* 地圖區塊：初始隱藏 */
         #map { 
             flex: 1; height: 0; width: 100%; z-index: 1; background: #e5e5e5; 
             display: none; transition: 0.4s ease-in-out;
         }
 
-        /* 生成後的樣式 (透過 JS 切換) */
         body.map-visible #map { display: block; height: auto; min-height: 45vh; }
+        body.map-hidden #map { display: none !important; }
 
-        /* 全螢幕模式 (隱藏控制台) */
         body.is-fullscreen #controls { max-height: 0; padding: 0; border: none; visibility: hidden; }
-        body.is-fullscreen #map { height: 100vh; min-height: 100vh; }
+        body.is-fullscreen #map { height: 100vh !important; min-height: 100vh !important; display: block !important; }
 
-        /* 公佈欄樣式 */
         .bulletin { 
             background: #fff9db; border: 1px solid #fab005; border-radius: 8px; 
             padding: 15px; margin-bottom: 15px; font-size: 0.88rem; color: #444; line-height: 1.6;
@@ -47,12 +45,12 @@
         select, button { width: 100%; padding: 12px; margin: 4px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
         
         .btn-gen { background: #2f9e44; color: white; }
-        .btn-screen { background: #495057; color: white; display: none; } /* 初始隱藏，生成後顯示 */
+        .btn-screen { background: #495057; color: white; display: none; } 
+        .btn-toggle-map { background: #adb5bd; color: #212529; display: none; margin-bottom: 8px; }
         .btn-download { background: #1971c2; color: white; display: none; }
         
         #floatingBtn { position: fixed; top: 10px; right: 10px; z-index: 3000; background: rgba(0,0,0,0.7); color: white; border: none; padding: 12px; border-radius: 8px; display: none; font-weight: bold; }
         body.is-fullscreen #floatingBtn { display: block; }
-        .hidden { display: none; }
         #status { font-size: 12px; color: #fa5252; text-align: center; margin-top: 5px; font-weight: bold; }
 
         @media (min-width: 768px) {
@@ -85,13 +83,15 @@
             <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原本檔案的路線順序，根據模式產生圖形。</li>
             <li>3. <b>全頻模式：</b>點擊下方「地圖全頻」可獲得更大預覽視野。</li>
             <li>4. <b>座標查看：</b>點擊地圖<b>紅點</b>可顯示座標彈窗方便調整。</li>
+            <li>5. <b>手動修正：</b>生成的路線若不符合需求請自己用其他軟體手動畫，這只是方便生成，不可能符合所有人的需求。</li>
         </ul>
     </div>
 
+    <button id="toggleMapBtn" class="btn-toggle-map" onclick="manualToggleMap()">隱藏地圖預覽</button>
     <button id="screenBtn" class="btn-screen" onclick="toggleMapMode()">地圖全頻切換 / 隱藏面板</button>
 
     <div class="card">
-        <label>1. 選擇模式</label>
+        <label>1. 選擇生成模式</label>
         <select id="pathMode">
             <option value="linear">座標串接（適合收果或多帳種花）</option>
             <option value="z-shape">Z字圖形（2圈&適合種藍）</option>
@@ -100,7 +100,7 @@
     </div>
 
     <div class="card card-y">
-        <label>2. 輸入來源 (互斥模式)</label>
+        <label>提供座標</label>
         <select id="sourceType" onchange="toggleSource()">
             <option value="manual">手動貼上座標</option>
             <option value="file">上傳 GPX 檔案</option>
@@ -113,13 +113,13 @@
     </div>
 
     <div id="fileSection" class="card card-y hidden">
-        <label>選取 GPX 檔案 (完成後自動重置):</label>
+        <label>選取 GPX 檔案:</label>
         <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
     </div>
 
     <button class="btn-gen" onclick="handleProcess()">執行生成路徑並預覽</button>
     <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載生成的 GPX</button>
-    <div id="status">地圖初始隱藏，生成後顯示</div>
+    <div id="status">初始地圖已隱藏，生成後顯示</div>
 </div>
 
 <div id="map"></div>
@@ -131,19 +131,34 @@
     var map;
     var pathLayer, markerLayer, finalPoints = [];
 
-    // 初始化地圖 (改為按需執行)
     function showMapContainer() {
         const body = document.getElementById('mainBody');
+        body.classList.remove('map-hidden');
         if (!body.classList.contains('map-visible')) {
             body.classList.add('map-visible');
-            document.getElementById('screenBtn').style.display = 'block'; // 顯示全頻按鈕
+            document.getElementById('screenBtn').style.display = 'block';
+            document.getElementById('toggleMapBtn').style.display = 'block';
         }
         if (!map) {
             map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.control.zoom({ position: 'bottomright' }).addTo(map);
         }
-        setTimeout(() => map.invalidateSize(), 450); // 確保顯示後佈局正確
+        document.getElementById('toggleMapBtn').innerText = "隱藏地圖預覽";
+        setTimeout(() => map.invalidateSize(), 450);
+    }
+
+    function manualToggleMap() {
+        const body = document.getElementById('mainBody');
+        const btn = document.getElementById('toggleMapBtn');
+        if (body.classList.contains('map-hidden')) {
+            body.classList.remove('map-hidden');
+            btn.innerText = "隱藏地圖預覽";
+            setTimeout(() => map.invalidateSize(), 100);
+        } else {
+            body.classList.add('map-hidden');
+            btn.innerText = "顯示地圖預覽";
+        }
     }
 
     function toggleMapMode() {
@@ -161,7 +176,7 @@
         const status = document.getElementById('status');
         const sourceType = document.getElementById('sourceType').value;
         const mode = document.getElementById('pathMode').value;
-        status.innerText = "優化運算中...";
+        status.innerText = "運算優化中...";
 
         try {
             let centers = [];
@@ -172,22 +187,25 @@
                     const p = l.match(/-?\d+\.\d+/g);
                     if (p && p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
                 });
-                centers = solveSmoothLoop(centers); // 2-Opt解結
+                centers = solveSmoothLoop(centers);
             } else {
                 const fileInput = document.getElementById('gpxFile');
                 if (fileInput.files.length === 0) throw new Error("請選擇檔案");
                 const xml = await fileInput.files[0].text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while ((m = regex.exec(xml)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
-                fileInput.value = ""; 
             }
 
-            if (centers.length === 0) throw new Error("座標解析失敗");
+            if (centers.length === 0) throw new Error("座標解析失敗，請確認格式。");
             centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
 
             finalPoints = buildAdaptivePath(centers, mode);
 
-            // --- 關鍵：執行到這裡才顯示地圖 ---
+            // --- 執行成功：清空手動輸入框與檔案欄位 ---
+            document.getElementById('coordInput').value = ""; 
+            const fileInput = document.getElementById('gpxFile');
+            fileInput.value = ""; 
+
             showMapContainer();
 
             if (pathLayer) map.removeLayer(pathLayer);
@@ -196,11 +214,11 @@
             pathLayer = L.polyline(finalPoints.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8}).addTo(map);
             markerLayer = L.featureGroup(centers.map(c => 
                 L.circleMarker([c[1], c[0]], {radius: 5, color: '#fa5252', fillOpacity: 1})
-                 .bindPopup(`緯度: ${c[1]}<br>經度: ${c[0]}`)
+                 .bindPopup(`座標位置：<br>${c[1]}, ${c[0]}`)
             )).addTo(map);
             
             map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            status.innerText = "生成成功！請看下方預覽。點擊紅點可見座標。";
+            status.innerText = "生成成功！紅點點擊可見座標。座標欄位已清空。";
             document.getElementById('downloadBtn').style.display = 'block';
         } catch (e) { status.innerText = "錯誤: " + e.message; }
     }
@@ -252,7 +270,7 @@
         }
         if (path.length > 0) {
             path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.0001);
-            path.push(path[0]); // 閉合環線
+            path.push(path[0]);
         }
         return path;
     }
