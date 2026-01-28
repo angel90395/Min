@@ -10,21 +10,17 @@
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { display: flex; flex-direction: column; font-family: -apple-system, "微軟正黑體", sans-serif; background: #f0f4f8; }
 
-        /* 控制面板區塊 */
         #controls { 
             width: 100%; max-height: 60vh; padding: 15px; background: white; 
             z-index: 2000; box-shadow: 0 2px 15px rgba(0,0,0,0.1); 
             overflow-y: auto; flex-shrink: 0; transition: 0.3s;
         }
         
-        /* 地圖區塊 */
         #map { flex: 1; min-height: 40vh; width: 100%; z-index: 1; background: #e5e5e5; }
 
-        /* 全螢幕模式 */
         body.is-fullscreen #controls { max-height: 0; padding: 0; border: none; }
         body.is-fullscreen #map { height: 100vh; min-height: 100vh; }
 
-        /* 公佈欄樣式 */
         .bulletin { 
             background: #fff9db; border: 1px solid #fab005; border-radius: 8px; 
             padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #444;
@@ -81,6 +77,7 @@
             <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個，執行後即可生成gpx檔下載</li>
             <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原本檔案的路線順序，根據模式產生圖形。</li>
             <li>3. <b>全頻模式：</b>點擊下方「地圖全頻」可獲得更大預覽視野。</li>
+            <li>4. <b>座標查看：</b>點擊地圖上的<b>紅點</b>即可顯示該點座標，方便調整。</li>
         </ul>
     </div>
 
@@ -96,7 +93,7 @@
     </div>
 
     <div class="card card-y">
-        <label>2. 輸入來源 (互斥模式)</label>
+        <label>2. 輸入來源</label>
         <select id="sourceType" onchange="toggleSource()">
             <option value="manual">手動貼上座標</option>
             <option value="file">上傳 GPX 檔案</option>
@@ -109,7 +106,7 @@
     </div>
 
     <div id="fileSection" class="card card-y hidden">
-        <label>選取 GPX 檔案 (完成後自動清除):</label>
+        <label>選取 GPX 檔案:</label>
         <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
     </div>
 
@@ -162,17 +159,18 @@
                     const p = l.match(/-?\d+\.\d+/g);
                     if (p && p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
                 });
-                centers = solveSmoothLoop(centers); // 2-Opt 白色環線優化
+                centers = solveSmoothLoop(centers);
             } else {
                 const fileInput = document.getElementById('gpxFile');
                 if (fileInput.files.length === 0) throw new Error("請選擇要轉換的檔案");
                 const xml = await fileInput.files[0].text();
+                [span_0](start_span)// 支援讀取 rtept[span_0](end_span)
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while ((m = regex.exec(xml)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
-                fileInput.value = ""; // 清除檔案欄位
+                fileInput.value = ""; 
             }
 
-            if (centers.length === 0) throw new Error("解析失敗，請確認格式");
+            if (centers.length === 0) throw new Error("座標解析失敗");
             centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
 
             finalPoints = buildAdaptivePath(centers, mode);
@@ -181,10 +179,15 @@
             if (markerLayer) map.removeLayer(markerLayer);
 
             pathLayer = L.polyline(finalPoints.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8}).addTo(map);
-            markerLayer = L.featureGroup(centers.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: '#fa5252', fillOpacity: 1}))).addTo(map);
+            
+            // 新增：紅點標記與彈出座標功能
+            markerLayer = L.featureGroup(centers.map(c => 
+                L.circleMarker([c[1], c[0]], {radius: 5, color: '#fa5252', fillOpacity: 1})
+                 .bindPopup(`<b>緯度:</b> ${c[1]}<br><b>經度:</b> ${c[0]}`)
+            )).addTo(map);
             
             map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            status.innerText = "生成成功！路徑已閉合且不重疊。";
+            status.innerText = "生成成功！點擊紅點可查看座標。";
             status.style.color = "#2f9e44";
             document.getElementById('downloadBtn').style.display = 'block';
         } catch (e) { status.innerText = "提示: " + e.message; status.style.color = "#fa5252"; }
@@ -214,25 +217,21 @@
     }
 
     function buildAdaptivePath(centers, mode) {
-        let path = []; const r = 41; 
+        let path = []; const r = 0.00037; // 約 41m
         for (let i = 0; i < centers.length; i++) {
             const curr = centers[i];
             if (mode === 'linear') { path.push(curr); continue; }
-
             const prev = centers[i === 0 ? centers.length - 1 : i - 1];
             const next = centers[(i + 1) % centers.length];
             const bearing = turf.bearing(turf.point(prev), turf.point(next));
             const cp = turf.point(curr);
-            
             const v = {
-                a: turf.destination(cp, r, bearing - 135, {units:'meters'}).geometry.coordinates,
-                b: turf.destination(cp, r, bearing - 45, {units:'meters'}).geometry.coordinates,
-                c: turf.destination(cp, r, bearing + 45, {units:'meters'}).geometry.coordinates,
-                d: turf.destination(cp, r, bearing + 135, {units:'meters'}).geometry.coordinates
+                a: turf.destination(cp, 0.041, bearing - 135, {units:'kilometers'}).geometry.coordinates,
+                b: turf.destination(cp, 0.041, bearing - 45, {units:'kilometers'}).geometry.coordinates,
+                c: turf.destination(cp, 0.041, bearing + 45, {units:'kilometers'}).geometry.coordinates,
+                d: turf.destination(cp, 0.041, bearing + 135, {units:'kilometers'}).geometry.coordinates
             };
-
             let group = (mode === 'z-shape') ? [v.a, v.b, curr, v.d, v.c] : [v.a, v.b, v.c, v.d, v.a];
-
             if (path.length > 0) {
                 const last = path[path.length - 1];
                 if (turf.distance(turf.point(last), turf.point(group[group.length-1])) < turf.distance(turf.point(last), turf.point(group[0]))) group.reverse();
