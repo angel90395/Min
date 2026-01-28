@@ -7,40 +7,47 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
         body { display: flex; flex-direction: column; font-family: -apple-system, "微軟正黑體", sans-serif; background: #f0f4f8; }
 
+        /* 控制面板區塊 */
         #controls { 
-            width: 100%; max-height: 60vh; padding: 15px; background: white; 
+            width: 100%; max-height: 100vh; padding: 15px; background: white; 
             z-index: 2000; box-shadow: 0 2px 15px rgba(0,0,0,0.1); 
-            overflow-y: auto; flex-shrink: 0; transition: 0.3s;
+            overflow-y: auto; flex-shrink: 0; transition: 0.4s ease-in-out;
         }
         
-        #map { flex: 1; min-height: 40vh; width: 100%; z-index: 1; background: #e5e5e5; }
+        /* 地圖區塊：初始高度 0 且隱藏 */
+        #map { 
+            flex: 1; height: 0; width: 100%; z-index: 1; background: #e5e5e5; 
+            display: none; transition: 0.4s ease-in-out;
+        }
 
-        body.is-fullscreen #controls { max-height: 0; padding: 0; border: none; }
+        /* 生成後的樣式 (透過 JS 切換) */
+        body.map-visible #map { display: block; height: auto; min-height: 45vh; }
+
+        /* 全螢幕模式 (隱藏控制台) */
+        body.is-fullscreen #controls { max-height: 0; padding: 0; border: none; visibility: hidden; }
         body.is-fullscreen #map { height: 100vh; min-height: 100vh; }
 
+        /* 公佈欄樣式 */
         .bulletin { 
             background: #fff9db; border: 1px solid #fab005; border-radius: 8px; 
-            padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #444;
-            line-height: 1.6;
+            padding: 15px; margin-bottom: 15px; font-size: 0.88rem; color: #444; line-height: 1.6;
         }
-        .bulletin h4 { margin: 10px 0 5px 0; color: #d9480f; font-size: 1.05rem; }
+        .bulletin h4 { margin: 10px 0 5px 0; color: #d9480f; font-size: 1rem; border-bottom: 1px solid #ffe066; padding-bottom: 3px; }
         .bulletin h4:first-child { margin-top: 0; }
-        .bulletin p { margin: 5px 0; }
-        .bulletin ul { margin: 5px 0; padding-left: 20px; }
+        .bulletin ul { margin: 5px 0; padding-left: 18px; }
 
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         .card-y { border-left-color: #fcc419; }
         
         label { font-weight: bold; font-size: 0.9rem; color: #343a40; display: block; margin-bottom: 5px; }
-        textarea { width: 100%; height: 65px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
-        select, button { width: 100%; padding: 12px; margin: 4px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        textarea { width: 100%; height: 70px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
+        select, button { width: 100%; padding: 12px; margin: 4px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
         
         .btn-gen { background: #2f9e44; color: white; }
-        .btn-gen:active { background: #2b8a3e; transform: scale(0.98); }
-        .btn-screen { background: #495057; color: white; }
+        .btn-screen { background: #495057; color: white; display: none; } /* 初始隱藏，生成後顯示 */
         .btn-download { background: #1971c2; color: white; display: none; }
         
         #floatingBtn { position: fixed; top: 10px; right: 10px; z-index: 3000; background: rgba(0,0,0,0.7); color: white; border: none; padding: 12px; border-radius: 8px; display: none; font-weight: bold; }
@@ -74,17 +81,17 @@
 
         <h4>📢 使用說明與提醒</h4>
         <ul>
-            <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個，執行後即可生成gpx檔下載</li>
+            <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個，執行後即可生成gpx檔下載。</li>
             <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原本檔案的路線順序，根據模式產生圖形。</li>
             <li>3. <b>全頻模式：</b>點擊下方「地圖全頻」可獲得更大預覽視野。</li>
-            <li>4. <b>座標查看：</b>點擊地圖上的<b>紅點</b>即可顯示該點座標，方便調整。</li>
+            <li>4. <b>座標查看：</b>點擊地圖<b>紅點</b>可顯示座標彈窗方便調整。</li>
         </ul>
     </div>
 
-    <button class="btn-screen" onclick="toggleMapMode()">地圖全頻切換</button>
+    <button id="screenBtn" class="btn-screen" onclick="toggleMapMode()">地圖全頻切換 / 隱藏面板</button>
 
     <div class="card">
-        <label>1. 選擇生成模式</label>
+        <label>1. 選擇模式</label>
         <select id="pathMode">
             <option value="linear">座標串接（適合收果或多帳種花）</option>
             <option value="z-shape">Z字圖形（2圈&適合種藍）</option>
@@ -93,7 +100,7 @@
     </div>
 
     <div class="card card-y">
-        <label>2. 輸入來源</label>
+        <label>2. 輸入來源 (互斥模式)</label>
         <select id="sourceType" onchange="toggleSource()">
             <option value="manual">手動貼上座標</option>
             <option value="file">上傳 GPX 檔案</option>
@@ -102,17 +109,17 @@
 
     <div id="manualSection" class="card">
         <label>座標貼入處 (緯度, 經度):</label>
-        <textarea id="coordInput" placeholder="範例：&#10;43.6940, 10.4444&#10;43.6945, 10.4451"></textarea>
+        <textarea id="coordInput" placeholder="緯度, 經度 (每行一組)"></textarea>
     </div>
 
     <div id="fileSection" class="card card-y hidden">
-        <label>選取 GPX 檔案:</label>
+        <label>選取 GPX 檔案 (完成後自動重置):</label>
         <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
     </div>
 
     <button class="btn-gen" onclick="handleProcess()">執行生成路徑並預覽</button>
     <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載生成的 GPX</button>
-    <div id="status">準備就緒</div>
+    <div id="status">地圖初始隱藏，生成後顯示</div>
 </div>
 
 <div id="map"></div>
@@ -122,15 +129,22 @@
 
 <script>
     var map;
-    function initMap() {
-        if (map) return;
-        map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-    }
-    window.onload = initMap;
-
     var pathLayer, markerLayer, finalPoints = [];
+
+    // 初始化地圖 (改為按需執行)
+    function showMapContainer() {
+        const body = document.getElementById('mainBody');
+        if (!body.classList.contains('map-visible')) {
+            body.classList.add('map-visible');
+            document.getElementById('screenBtn').style.display = 'block'; // 顯示全頻按鈕
+        }
+        if (!map) {
+            map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+        }
+        setTimeout(() => map.invalidateSize(), 450); // 確保顯示後佈局正確
+    }
 
     function toggleMapMode() {
         document.getElementById('mainBody').classList.toggle('is-fullscreen');
@@ -147,24 +161,22 @@
         const status = document.getElementById('status');
         const sourceType = document.getElementById('sourceType').value;
         const mode = document.getElementById('pathMode').value;
-        status.innerText = "運算優化中...";
-        status.style.color = "#1971c2";
+        status.innerText = "優化運算中...";
 
         try {
             let centers = [];
             if (sourceType === 'manual') {
                 const txt = document.getElementById('coordInput').value.trim();
-                if (!txt) throw new Error("請先貼入座標資料");
+                if (!txt) throw new Error("請先提供座標資料");
                 txt.split('\n').forEach(l => {
                     const p = l.match(/-?\d+\.\d+/g);
                     if (p && p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
                 });
-                centers = solveSmoothLoop(centers);
+                centers = solveSmoothLoop(centers); // 2-Opt解結
             } else {
                 const fileInput = document.getElementById('gpxFile');
-                if (fileInput.files.length === 0) throw new Error("請選擇要轉換的檔案");
+                if (fileInput.files.length === 0) throw new Error("請選擇檔案");
                 const xml = await fileInput.files[0].text();
-                [span_0](start_span)// 支援讀取 rtept[span_0](end_span)
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while ((m = regex.exec(xml)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
                 fileInput.value = ""; 
@@ -175,22 +187,22 @@
 
             finalPoints = buildAdaptivePath(centers, mode);
 
+            // --- 關鍵：執行到這裡才顯示地圖 ---
+            showMapContainer();
+
             if (pathLayer) map.removeLayer(pathLayer);
             if (markerLayer) map.removeLayer(markerLayer);
 
             pathLayer = L.polyline(finalPoints.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8}).addTo(map);
-            
-            // 新增：紅點標記與彈出座標功能
             markerLayer = L.featureGroup(centers.map(c => 
                 L.circleMarker([c[1], c[0]], {radius: 5, color: '#fa5252', fillOpacity: 1})
-                 .bindPopup(`<b>緯度:</b> ${c[1]}<br><b>經度:</b> ${c[0]}`)
+                 .bindPopup(`緯度: ${c[1]}<br>經度: ${c[0]}`)
             )).addTo(map);
             
             map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            status.innerText = "生成成功！點擊紅點可查看座標。";
-            status.style.color = "#2f9e44";
+            status.innerText = "生成成功！請看下方預覽。點擊紅點可見座標。";
             document.getElementById('downloadBtn').style.display = 'block';
-        } catch (e) { status.innerText = "提示: " + e.message; status.style.color = "#fa5252"; }
+        } catch (e) { status.innerText = "錯誤: " + e.message; }
     }
 
     function solveSmoothLoop(pts) {
@@ -217,7 +229,7 @@
     }
 
     function buildAdaptivePath(centers, mode) {
-        let path = []; const r = 0.00037; // 約 41m
+        let path = []; const r = 41; 
         for (let i = 0; i < centers.length; i++) {
             const curr = centers[i];
             if (mode === 'linear') { path.push(curr); continue; }
@@ -226,10 +238,10 @@
             const bearing = turf.bearing(turf.point(prev), turf.point(next));
             const cp = turf.point(curr);
             const v = {
-                a: turf.destination(cp, 0.041, bearing - 135, {units:'kilometers'}).geometry.coordinates,
-                b: turf.destination(cp, 0.041, bearing - 45, {units:'kilometers'}).geometry.coordinates,
-                c: turf.destination(cp, 0.041, bearing + 45, {units:'kilometers'}).geometry.coordinates,
-                d: turf.destination(cp, 0.041, bearing + 135, {units:'kilometers'}).geometry.coordinates
+                a: turf.destination(cp, r, bearing - 135, {units:'meters'}).geometry.coordinates,
+                b: turf.destination(cp, r, bearing - 45, {units:'meters'}).geometry.coordinates,
+                c: turf.destination(cp, r, bearing + 45, {units:'meters'}).geometry.coordinates,
+                d: turf.destination(cp, r, bearing + 135, {units:'meters'}).geometry.coordinates
             };
             let group = (mode === 'z-shape') ? [v.a, v.b, curr, v.d, v.c] : [v.a, v.b, v.c, v.d, v.a];
             if (path.length > 0) {
@@ -240,7 +252,7 @@
         }
         if (path.length > 0) {
             path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.0001);
-            path.push(path[0]);
+            path.push(path[0]); // 閉合環線
         }
         return path;
     }
@@ -251,7 +263,7 @@
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `pikmin_optimized_${Date.now()}.gpx`; a.click();
+        a.download = `pikmin_path_${Date.now()}.gpx`; a.click();
     }
 </script>
 </body>
