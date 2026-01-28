@@ -12,13 +12,13 @@
 
         /* 控制面板區塊 */
         #controls { 
-            width: 100%; max-height: 55vh; padding: 15px; background: white; 
+            width: 100%; max-height: 60vh; padding: 15px; background: white; 
             z-index: 2000; box-shadow: 0 2px 15px rgba(0,0,0,0.1); 
             overflow-y: auto; flex-shrink: 0; transition: 0.3s;
         }
         
         /* 地圖區塊 */
-        #map { flex: 1; min-height: 45vh; width: 100%; z-index: 1; background: #e5e5e5; }
+        #map { flex: 1; min-height: 40vh; width: 100%; z-index: 1; background: #e5e5e5; }
 
         /* 全螢幕模式 */
         body.is-fullscreen #controls { max-height: 0; padding: 0; border: none; }
@@ -27,16 +27,19 @@
         /* 公佈欄樣式 */
         .bulletin { 
             background: #fff9db; border: 1px solid #fab005; border-radius: 8px; 
-            padding: 12px; margin-bottom: 15px; font-size: 0.85rem; color: #856404;
-            line-height: 1.5;
+            padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #444;
+            line-height: 1.6;
         }
-        .bulletin h4 { margin: 0 0 5px 0; color: #f08c00; display: flex; align-items: center; }
+        .bulletin h4 { margin: 10px 0 5px 0; color: #d9480f; font-size: 1.05rem; }
+        .bulletin h4:first-child { margin-top: 0; }
+        .bulletin p { margin: 5px 0; }
+        .bulletin ul { margin: 5px 0; padding-left: 20px; }
 
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         .card-y { border-left-color: #fcc419; }
         
         label { font-weight: bold; font-size: 0.9rem; color: #343a40; display: block; margin-bottom: 5px; }
-        textarea { width: 100%; height: 60px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
+        textarea { width: 100%; height: 65px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
         select, button { width: 100%; padding: 12px; margin: 4px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
         
         .btn-gen { background: #2f9e44; color: white; }
@@ -51,7 +54,7 @@
 
         @media (min-width: 768px) {
             body { flex-direction: row; }
-            #controls { width: 400px; height: 100vh; max-height: 100vh; border-right: 1px solid #dee2e6; }
+            #controls { width: 420px; height: 100vh; max-height: 100vh; border-right: 1px solid #dee2e6; }
             body.is-fullscreen #controls { width: 0; }
         }
     </style>
@@ -61,14 +64,24 @@
 <button id="floatingBtn" onclick="toggleMapMode()">恢復面板</button>
 
 <div id="controls">
-    <h2 style="margin: 0 0 10px; text-align: center; color: #2f9e44;">皮克敏收果種花路徑生成器</h2>
+    <h2 style="margin: 0 0 15px; text-align: center; color: #2f9e44;">皮克敏收果種花路徑生成器</h2>
     
     <div class="bulletin">
+        <h4>📢 生成器的用途與目的</h4>
+        <p>大家都在上班之餘種花自給自足或投餵新手、陸軍，沒有時間使用飛機內既有的模式畫路徑，所以這是一個方便皮克敏飛人收果、種花的GPX生成器，但請不要用來產生別人的花田路徑種花，請自律當一個友善的皮克敏飛人。</p>
+        <p>請遵守以下幾點：</p>
+        <ul>
+            <li>1.有花痕的田 不開發 不產生路徑 不占為己用</li>
+            <li>2.有開花的田或有固定種花主的田 僅生成收果路線 在開大花期間才跑路徑收花</li>
+            <li>3.產生的檔案都請自用，不要分享，尤其是別人田的路徑檔</li>
+        </ul>
+
         <h4>📢 使用說明與提醒</h4>
-        1. <b>手動輸入：</b>貼上座標後將自動執行「白色線條式」解結優化，產生不交叉的大環路徑。<br>
-        2. <b>上傳檔案：</b>將保留原檔案順序，僅根據模式產生圖形。執行後會自動清空檔案欄位。<br>
-        3. <b>重疊優化：</b>系統會自動過濾重複座標，且連接線將避開圓心以防重疊。<br>
-        4. <b>全頻模式：</b>點擊下方「地圖全頻」可獲得更大預覽視野。
+        <ul>
+            <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個，執行後即可生成gpx檔下載</li>
+            <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原本檔案的路線順序，根據模式產生圖形。</li>
+            <li>3. <b>全頻模式：</b>點擊下方「地圖全頻」可獲得更大預覽視野。</li>
+        </ul>
     </div>
 
     <button class="btn-screen" onclick="toggleMapMode()">地圖全頻切換</button>
@@ -91,16 +104,18 @@
     </div>
 
     <div id="manualSection" class="card">
-        <textarea id="coordInput" placeholder="緯度, 經度 (每行一組)"></textarea>
+        <label>座標貼入處 (緯度, 經度):</label>
+        <textarea id="coordInput" placeholder="範例：&#10;43.6940, 10.4444&#10;43.6945, 10.4451"></textarea>
     </div>
 
     <div id="fileSection" class="card card-y hidden">
+        <label>選取 GPX 檔案 (完成後自動清除):</label>
         <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
     </div>
 
-    <button class="btn-gen" onclick="handleProcess()">執行生成路徑並重置</button>
+    <button class="btn-gen" onclick="handleProcess()">執行生成路徑並預覽</button>
     <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載生成的 GPX</button>
-    <div id="status">地圖就緒</div>
+    <div id="status">準備就緒</div>
 </div>
 
 <div id="map"></div>
@@ -135,32 +150,29 @@
         const status = document.getElementById('status');
         const sourceType = document.getElementById('sourceType').value;
         const mode = document.getElementById('pathMode').value;
-        status.innerText = "運算中...";
+        status.innerText = "運算優化中...";
         status.style.color = "#1971c2";
 
         try {
             let centers = [];
             if (sourceType === 'manual') {
                 const txt = document.getElementById('coordInput').value.trim();
-                if (!txt) throw new Error("請提供座標資料");
-                // 強化數字提取，過濾隱形字元
+                if (!txt) throw new Error("請先貼入座標資料");
                 txt.split('\n').forEach(l => {
                     const p = l.match(/-?\d+\.\d+/g);
                     if (p && p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
                 });
-                centers = solveSmoothLoop(centers); // 執行白色線條解結優化
+                centers = solveSmoothLoop(centers); // 2-Opt 白色環線優化
             } else {
                 const fileInput = document.getElementById('gpxFile');
-                if (fileInput.files.length === 0) throw new Error("請選擇檔案");
+                if (fileInput.files.length === 0) throw new Error("請選擇要轉換的檔案");
                 const xml = await fileInput.files[0].text();
-                [span_0](start_span)// 掃描包含 rtept/trkpt 的所有緯經度[span_0](end_span)
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while ((m = regex.exec(xml)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
-                fileInput.value = ""; // 執行後清除檔案欄位
+                fileInput.value = ""; // 清除檔案欄位
             }
 
-            if (centers.length === 0) throw new Error("座標解析失敗 (請檢查數字格式)");
-            // 去除重複點位
+            if (centers.length === 0) throw new Error("解析失敗，請確認格式");
             centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
 
             finalPoints = buildAdaptivePath(centers, mode);
@@ -172,13 +184,12 @@
             markerLayer = L.featureGroup(centers.map(c => L.circleMarker([c[1], c[0]], {radius: 4, color: '#fa5252', fillOpacity: 1}))).addTo(map);
             
             map.fitBounds(pathLayer.getBounds(), {padding: [50, 50]});
-            status.innerText = "完成！路徑已閉合且不重疊。";
+            status.innerText = "生成成功！路徑已閉合且不重疊。";
             status.style.color = "#2f9e44";
             document.getElementById('downloadBtn').style.display = 'block';
-        } catch (e) { status.innerText = "錯誤: " + e.message; status.style.color = "#fa5252"; }
+        } catch (e) { status.innerText = "提示: " + e.message; status.style.color = "#fa5252"; }
     }
 
-    // 2-Opt 演算法：消除自我交叉，形成平滑白色大環線
     function solveSmoothLoop(pts) {
         if (pts.length < 3) return pts;
         let route = [...pts];
@@ -202,7 +213,6 @@
         return route;
     }
 
-    // 生成圖形與動態銜接優化 (解決重疊問題)
     function buildAdaptivePath(centers, mode) {
         let path = []; const r = 41; 
         for (let i = 0; i < centers.length; i++) {
@@ -230,20 +240,19 @@
             path.push(...group);
         }
         if (path.length > 0) {
-            // 過濾微小位移重複點
             path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.0001);
-            path.push(path[0]); // 強制連回起點閉合
+            path.push(path[0]);
         }
         return path;
     }
 
     function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>Pikmin_Optimized</name><trkseg>`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="PikminPathGen"><trk><name>Pikmin_Optimized_Track</name><trkseg>`;
         finalPoints.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `pikmin_path_${Date.now()}.gpx`; a.click();
+        a.download = `pikmin_optimized_${Date.now()}.gpx`; a.click();
     }
 </script>
 </body>
