@@ -10,8 +10,7 @@
         html, body { height: 100%; margin: 0; padding: 0; background: #f0f4f8; overflow-x: hidden; }
         body { display: flex; flex-direction: column; font-family: -apple-system, "微軟正黑體", sans-serif; }
 
-        /* 面板容器 */
-        #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; }
+        #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; transition: 0.3s; }
         .is-hidden { display: none !important; }
 
         /* 公告欄 */
@@ -20,11 +19,25 @@
             padding: 20px; margin-bottom: 15px; font-size: 0.95rem; color: #444; line-height: 1.7;
         }
         #bulletin-section h4 { margin: 15px 0 8px 0; color: #d9480f; font-size: 1.1rem; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
-        #bulletin-section h4:first-child { margin-top: 0; }
         #bulletin-section ul { margin: 10px 0; padding-left: 20px; }
 
-        /* 生成器區塊 */
+        /* 使用說明卡 */
+        .instruction-card { 
+            background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; 
+            padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab;
+        }
+        .instruction-card h4 { margin: 0 0 8px 0; color: #1971c2; }
+        .instruction-card ul { margin: 5px 0; padding-left: 18px; }
+
         #generator-section { display: none; }
+
+        /* 核取方塊樣式 */
+        .mode-option {
+            display: flex; align-items: center; background: #f8f9fa;
+            padding: 12px; border-radius: 8px; margin-bottom: 8px;
+            border: 1px solid #dee2e6; cursor: pointer; font-size: 0.95rem;
+        }
+        .mode-option input { margin-right: 12px; width: 22px; height: 22px; }
 
         /* --- 浮貼式地圖容器 --- */
         #map-container {
@@ -35,38 +48,54 @@
             border-radius: 15px; border: 3px solid #fff; overflow: hidden;
             transition: all 0.4s ease;
         }
-
         #map-container.is-fullscreen { width: 100vw; height: 100vh; bottom: 0; right: 0; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* --- 按鈕位置修正：下移以避開手機狀態列 --- */
+        /* 地圖控制按鈕 (下移避開系統列) */
         .map-btn-group {
             position: absolute; top: 80px; right: 15px; z-index: 100000;
-            display: flex; flex-direction: column; gap: 12px;
+            display: flex; flex-direction: column; gap: 10px;
         }
         .map-ctrl-btn {
             background: rgba(33, 37, 41, 0.9); color: white; border: none;
-            padding: 12px 18px; border-radius: 10px; font-weight: bold; cursor: pointer;
-            font-size: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;
         }
-        .btn-close-map { background: #e03131 !important; } 
+        .btn-close-map { background: #e03131 !important; }
+
+        /* --- 地圖側邊預覽選單 --- */
+        #map-sidebar {
+            position: absolute; top: 80px; left: 10px; z-index: 100000;
+            background: rgba(255,255,255,0.9); border-radius: 8px;
+            padding: 8px; display: flex; flex-direction: column; gap: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 140px;
+        }
+        .sidebar-title { font-size: 11px; font-weight: bold; color: #666; margin-bottom: 2px; }
+        .sidebar-btn {
+            background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px;
+            font-size: 12px; cursor: pointer; text-align: left; transition: 0.2s;
+        }
+        .sidebar-btn.active { background: #2f9e44; color: white; border-color: #2f9e44; }
 
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         .card-y { border-left-color: #fcc419; }
         label { font-weight: bold; font-size: 0.9rem; color: #343a40; display: block; margin-bottom: 5px; }
         textarea { width: 100%; height: 80px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
         
-        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
         .btn-agree { background: #2f9e44; color: white; }
         .btn-view-notice { background: #f8f9fa; color: #495057; border: 1px solid #ced4da; margin-bottom: 10px; }
         .btn-gen { background: #2f9e44; color: white; }
-        .btn-download { background: #1971c2; color: white; display: none; }
+        .btn-clear { background: #f08c00; color: white; margin-top: 5px; } 
+        #download-area { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .btn-dl { background: #1971c2; color: white; font-size: 14px; padding: 12px; }
+        
         #status { font-size: 13px; color: #fa5252; text-align: center; margin-top: 8px; font-weight: bold; }
 
         @media (min-width: 768px) {
             #controls { width: 450px; }
-            #map-container { width: 420px; height: 420px; }
-            .map-btn-group { top: 20px; flex-direction: row; } /* 電腦版維持橫向 */
+            #map-container { width: 450px; height: 450px; }
+            .map-btn-group { top: 20px; flex-direction: row; }
+            #map-sidebar { top: 20px; }
         }
     </style>
 </head>
@@ -84,27 +113,31 @@
             <li>2.有開花的田或有固定種花主的田 僅生成收果路線 在開大花期間才跑路徑收花</li>
             <li>3.產生的檔案都請自用，不要分享，尤其是別人田的路徑檔</li>
         </ul>
-        <h4>📢 使用說明與提醒</h4>
-        <ul>
-            <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個，執行後即可生成gpx檔下載。</li>
-            <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原本檔案的路線順序。</li>
-            <li>3. <b>全頻模式：</b>浮貼地圖右上角設有按鈕，已下移避開狀態列。</li>
-            <li>4. <b>座標查看：</b>點擊地圖<b>紅點</b>可顯示座標彈窗方便調整。</li>
-            <li>5. <b>手動修正：</b>生成的路線若不符合需求請自己用其他軟體手動畫。</li>
-        </ul>
         <button class="btn-agree" onclick="acceptNotice()">好的，我願意遵守並理解</button>
     </div>
 
     <div id="generator-section">
         <button class="btn-view-notice" onclick="showNotice()">查看公告說明</button>
-        <div class="card">
-            <label>1. 選擇生成模式</label>
-            <select id="pathMode" style="width:100%; padding:10px; border-radius:5px;">
-                <option value="linear">座標串接（適合收果或多帳種花）</option>
-                <option value="z-shape">Z字圖形（2圈&適合種藍）</option>
-                <option value="square">正方形路線（2圈&適合種白）</option>
-            </select>
+
+        <div class="instruction-card">
+            <h4>📢 使用說明與提醒</h4>
+            <ul>
+                <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個。</li>
+                <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原順序。</li>
+                <li>3. <b>複選模式：</b>可同時勾選多種模式，地圖會提供側邊切換。</li>
+                <li>4. <b>手動修正：</b>若不符合需求請自己手動畫。</li>
+            </ul>
         </div>
+        
+        <div class="card">
+            <label>1. 選擇生成模式 (可複選)</label>
+            <div id="mode-selection">
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 座標串接 (收果/多帳種花)</label>
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形 (2圈&適合種藍)</label>
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="square"> 正方形路線 (2圈&適合種白)</label>
+            </div>
+        </div>
+
         <div class="card card-y">
             <label>提供座標</label>
             <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px; border-radius:5px;">
@@ -112,21 +145,31 @@
                 <option value="file">上傳 GPX 檔案</option>
             </select>
         </div>
+
         <div id="manualSection" class="card">
             <label>座標貼入處 (緯度, 經度):</label>
             <textarea id="coordInput" placeholder="緯度, 經度 (每行一組)"></textarea>
+            <button class="btn-clear" onclick="clearData()">清除所有輸入資料</button>
         </div>
+
         <div id="fileSection" class="card card-y is-hidden">
             <label>選取 GPX 檔案:</label>
             <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
+            <button class="btn-clear" onclick="clearData()">清除所有輸入資料</button>
         </div>
-        <button class="btn-gen" onclick="handleProcess()">執行生成路徑並彈出地圖</button>
-        <button id="downloadBtn" class="btn-download" onclick="exportGPX()">下載生成的 GPX</button>
+
+        <button class="btn-gen" onclick="handleProcess()">生成路徑 並 預覽地圖</button>
+        
+        <div id="download-area"></div>
         <div id="status"></div>
     </div>
 </div>
 
 <div id="map-container">
+    <div id="map-sidebar" class="is-hidden">
+        <div class="sidebar-title">切換預覽模式</div>
+        <div id="sidebar-btns"></div>
+    </div>
     <div class="map-btn-group">
         <button class="map-ctrl-btn" onclick="toggleMapFullScreen()">全頻/縮小</button>
         <button class="map-ctrl-btn btn-close-map" onclick="closeMap()">關閉預覽</button>
@@ -139,7 +182,9 @@
 
 <script>
     var map;
-    var pathLayer, markerLayer, finalPoints = [];
+    var markerLayer;
+    var allLayers = {}; // 儲存各模式的軌跡層
+    var allPoints = {};  // 儲存各模式的點位
 
     function acceptNotice() {
         document.getElementById('bulletin-section').classList.add('is-hidden');
@@ -157,6 +202,13 @@
         document.getElementById('fileSection').classList.toggle('is-hidden', type === 'manual');
     }
 
+    function clearData() {
+        document.getElementById('coordInput').value = "";
+        document.getElementById('gpxFile').value = "";
+        document.getElementById('status').innerText = "資料已清除";
+        document.getElementById('download-area').innerHTML = "";
+    }
+
     function openMap() {
         const container = document.getElementById('map-container');
         container.style.display = 'block';
@@ -169,9 +221,8 @@
     }
 
     function closeMap() {
-        const container = document.getElementById('map-container');
-        container.style.display = 'none';
-        container.classList.remove('is-fullscreen');
+        document.getElementById('map-container').style.display = 'none';
+        document.getElementById('map-container').classList.remove('is-fullscreen');
     }
 
     function toggleMapFullScreen() {
@@ -180,11 +231,21 @@
         setTimeout(() => map.invalidateSize(), 400);
     }
 
+    // --- 核心處理邏輯 ---
     async function handleProcess() {
         const status = document.getElementById('status');
         const sourceType = document.getElementById('sourceType').value;
-        const mode = document.getElementById('pathMode').value;
-        status.innerText = "正在處理中...";
+        const dlArea = document.getElementById('download-area');
+        const sidebarBtns = document.getElementById('sidebar-btns');
+        const checkedModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+
+        if (checkedModes.length === 0) { alert("請至少選擇一種生成模式"); return; }
+        
+        status.innerText = "運算生成中...";
+        dlArea.innerHTML = "";
+        sidebarBtns.innerHTML = "";
+        allLayers = {};
+        allPoints = {};
 
         try {
             let centers = [];
@@ -207,29 +268,63 @@
             if (centers.length === 0) throw new Error("座標解析失敗");
             centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
 
-            finalPoints = buildAdaptivePath(centers, mode);
-
-            // 生成成功後立即清空座標欄位
-            document.getElementById('coordInput').value = "";
-            document.getElementById('gpxFile').value = "";
-
             openMap();
-
-            if (pathLayer) map.removeLayer(pathLayer);
             if (markerLayer) map.removeLayer(markerLayer);
-
-            pathLayer = L.polyline(finalPoints.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8}).addTo(map);
             markerLayer = L.featureGroup(centers.map(c => 
-                L.circleMarker([c[1], c[0]], {radius: 5, color: '#fa5252', fillOpacity: 1})
-                 .bindPopup(`座標：<br>${c[1]}, ${c[0]}`)
+                L.circleMarker([c[1], c[0]], {radius: 5, color: '#fa5252', fillOpacity: 1}).bindPopup(`${c[1]}, ${c[0]}`)
             )).addTo(map);
-            
-            map.fitBounds(pathLayer.getBounds(), {padding: [40, 40]});
-            status.innerText = "生成成功！預覽圖已彈出。";
-            document.getElementById('downloadBtn').style.display = 'block';
-        } catch (e) { status.innerText = "提示: " + e.message; }
+
+            // 針對勾選的模式分別生成
+            checkedModes.forEach((mode, idx) => {
+                const points = buildAdaptivePath(centers, mode);
+                allPoints[mode] = points;
+                
+                const layer = L.polyline(points.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8});
+                allLayers[mode] = layer;
+
+                // 建立下載按鈕
+                const modeName = getModeLabel(mode);
+                const dlBtn = document.createElement('button');
+                dlBtn.className = "btn-dl";
+                dlBtn.innerText = `下載「${modeName}」GPX`;
+                dlBtn.onclick = () => exportGPX(points, modeName);
+                dlArea.appendChild(dlBtn);
+
+                // 建立地圖側邊切換按鈕
+                const sideBtn = document.createElement('button');
+                sideBtn.className = "sidebar-btn" + (idx === 0 ? " active" : "");
+                sideBtn.innerText = modeName;
+                sideBtn.onclick = () => switchPreviewLayer(mode);
+                sidebarBtns.appendChild(sideBtn);
+
+                // 預設顯示第一個勾選的層
+                if (idx === 0) layer.addTo(map);
+            });
+
+            document.getElementById('map-sidebar').classList.remove('is-hidden');
+            map.fitBounds(allLayers[checkedModes[0]].getBounds(), {padding: [40, 40]});
+            status.innerText = `成功生成 ${checkedModes.length} 種路徑！可切換預覽或下載。`;
+        } catch (e) { status.innerText = "錯誤: " + e.message; }
     }
 
+    function getModeLabel(val) {
+        if (val === 'linear') return "座標串接";
+        if (val === 'z-shape') return "Z字圖形";
+        return "正方形路線";
+    }
+
+    function switchPreviewLayer(targetMode) {
+        // 移除所有軌跡層
+        Object.values(allLayers).forEach(layer => map.removeLayer(layer));
+        // 加入目標層
+        allLayers[targetMode].addTo(map);
+        // 更新按鈕樣式
+        document.querySelectorAll('.sidebar-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText === getModeLabel(targetMode));
+        });
+    }
+
+    // --- 幾何運算核心 ---
     function solveSmoothLoop(pts) {
         if (pts.length < 3) return pts;
         let route = [...pts];
@@ -254,7 +349,7 @@
     }
 
     function buildAdaptivePath(centers, mode) {
-        let path = []; const r = 41; 
+        let path = []; const r = 41;
         for (let i = 0; i < centers.length; i++) {
             const curr = centers[i];
             if (mode === 'linear') { path.push(curr); continue; }
@@ -277,18 +372,18 @@
         }
         if (path.length > 0) {
             path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.0001);
-            path.push(path[0]); // 閉合環線
+            path.push(path[0]);
         }
         return path;
     }
 
-    function exportGPX() {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="PikminPathGen"><trk><trkseg>`;
-        finalPoints.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
+    function exportGPX(pts, name) {
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${name}</name><trkseg>`;
+        pts.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `pikmin_path_${Date.now()}.gpx`; a.click();
+        a.download = `pikmin_${name}_${Date.now()}.gpx`; a.click();
     }
 </script>
 </body>
