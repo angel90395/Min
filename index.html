@@ -13,27 +13,26 @@
         #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; }
         .is-hidden { display: none !important; }
 
-        /* 公告欄樣式 */
+        /* 公告與說明 */
         #bulletin-section { background: #fff9db; border: 1px solid #fab005; border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 0.95rem; color: #444; line-height: 1.7; }
         #bulletin-section h4 { margin: 15px 0 8px 0; color: #d9480f; font-size: 1.1rem; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
-
         #generator-section { display: none; }
         .instruction-card { background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab; }
 
         /* 模式複選樣式 */
-        .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; }
+        .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; font-size: 0.95rem; }
         .mode-option input { margin-right: 12px; width: 22px; height: 22px; }
 
-        /* 浮貼地圖樣式 */
+        /* 浮貼地圖 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 320px; height: 320px; z-index: 999; display: none; box-shadow: 0 4px 25px rgba(0,0,0,0.4); border-radius: 15px; border: 3px solid #fff; overflow: hidden; transition: 0.4s ease; }
         #map-container.is-fullscreen { width: 100vw; height: 100vh; bottom: 0; right: 0; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
         /* 地圖控制鈕下移 */
         .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
-        /* --- 底部直覺控制條 (取代面板) --- */
+        /* 底部控制條 (直覺式操作) */
         #bottom-editor {
             position: absolute; bottom: 0; left: 0; width: 100%;
             background: white; z-index: 10000; border-top: 4px solid #2f9e44;
@@ -43,15 +42,15 @@
         .action-row { display: flex; gap: 8px; justify-content: center; }
         .btn-act { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
 
-        /* 側邊切換選單 */
+        /* 模式切換選單 */
         #map-sidebar { position: absolute; top: 100px; left: 10px; z-index: 2000; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 5px; width: 130px; }
         .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 11px; text-align: left; }
         .sidebar-btn.active { background: #2f9e44; color: white; }
 
-        /* 卡片樣式 */
+        /* 卡片與按鈕 */
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         textarea { width: 100%; height: 80px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; }
-        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
         .btn-gen { background: #2f9e44; color: white; }
         .btn-clear { background: #f08c00; color: white; }
         #status { font-size: 13px; color: #fa5252; text-align: center; margin-top: 8px; font-weight: bold; }
@@ -70,8 +69,7 @@
         <h4>⚠️ 自律守則</h4>
         <ul>
             <li>1.有花痕的田 不開發 不占為己用</li>
-            <li>2.有開花大花期間才跑收果路徑</li>
-            <li>3.檔案請自用，不分享。</li>
+            <li>2.檔案請自用，不分享。</li>
         </ul>
         <button style="background:#2f9e44; color:white" onclick="acceptNotice()">好的，我願意遵守並理解</button>
     </div>
@@ -79,11 +77,11 @@
     <div id="generator-section">
         <div class="instruction-card">
             <h4>📢 使用說明</h4>
-            <ul style="padding-left: 20px;">
-                <li>1. <b>漏斗模式：</b>嚴格雙三角邏輯，點擊紅點可微調角度。</li>
-                <li>2. <b>編輯位置：</b>地圖中點擊紅點，底部滑出選單調整起點方向。</li>
-                <li>3. <b>複選生成：</b>勾選多種模式後，可於地圖左側隨時切換預覽。</li>
-                <li>4. <b>手動清空：</b>座標資料執行後保留，點橘色按鈕清空。</li>
+            <ul>
+                <li>1. <b>直覺編輯：</b>點擊地圖上的<b>任何線條</b>或<b>紅點</b>即可開啟編輯。</li>
+                <li>2. <b>切換起點：</b>針對 Z 字與方形，點擊「切換銜接」可改變進出口位置。</li>
+                <li>3. <b>漏斗模式：</b>遵循圓心→TL→TR→圓心→BL→BR→圓心邏輯。</li>
+                <li>4. <b>手動清空：</b>資料不會自動消失，請點橘色按鈕清空。</li>
             </ul>
         </div>
         
@@ -132,15 +130,15 @@
     <div id="map"></div>
 
     <div id="bottom-editor">
-        <div style="font-weight:bold; color:#2f9e44; text-align:center; margin-bottom:5px;" id="edit-label">編輯點位</div>
+        <div style="font-weight:bold; color:#2f9e44; text-align:center; margin-bottom:5px;" id="edit-label">正在編輯點位</div>
         <div class="action-row">
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(-15)">↺ 轉動</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(15)">↻ 轉動</button>
             <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleStart()">📍 切換銜接起點</button>
         </div>
         <div class="action-row">
-            <button class="btn-act" style="background:#e03131; color:white" onclick="deletePoint()">🗑️ 刪除此點</button>
-            <button class="btn-act" style="background:#adb5bd; color:white" onclick="closeEditor()">完成編輯</button>
+            <button class="btn-act" style="background:#e03131; color:white" onclick="deletePoint()">🗑️ 刪除此組</button>
+            <button class="btn-act" style="background:#adb5bd; color:white" onclick="closeEditor()">完成</button>
         </div>
     </div>
 </div>
@@ -158,6 +156,7 @@
     function openMap() { document.getElementById('map-container').style.display = 'block'; if(!map) { map = L.map('map',{zoomControl:false}).setView([23.5,121],7); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map); } setTimeout(()=>map.invalidateSize(),400); }
     function closeMap() { document.getElementById('map-container').style.display = 'none'; closeEditor(); }
     function toggleMapFullScreen() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(()=>map.invalidateSize(),400); }
+    function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; markers.forEach(m => m.setStyle({color:'#fa5252', radius:8})); }
 
     async function processAll(preview) {
         const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
@@ -167,7 +166,7 @@
             const type = document.getElementById('sourceType').value;
             if(type === 'manual') {
                 const txt = document.getElementById('coordInput').value;
-                const matches = txt.match(/-?\d+\.\d+/g);
+                const matches = txt.match(/-?\d+\.\d+/g); //
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0, offset:0});
             } else {
                 const xml = await document.getElementById('gpxFile').files[0].text();
@@ -175,90 +174,120 @@
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0, offset:0});
             }
             currentData = centers; activeModes = modes;
-            if(!preview) { modes.forEach(m => exportGPX(buildPath(centers, m), m)); }
+            if(!preview) { modes.forEach(m => exportGPX(getFinalPoly(m), m)); }
             else { openMap(); renderEditor(); }
-        } catch(e) { alert("座標格式錯誤"); }
+        } catch(e) { alert("座標解析錯誤"); }
     }
 
     function renderEditor() {
-        markers.forEach(m => map.removeLayer(m)); markers = [];
-        Object.values(activeLayers).forEach(l => map.removeLayer(l));
+        if(markers.length) markers.forEach(m => map.removeLayer(m)); markers = [];
+        Object.values(activeLayers).forEach(layerGroup => map.removeLayer(layerGroup)); activeLayers = {};
         const sidebar = document.getElementById('sidebar-btns'); sidebar.innerHTML = "";
         document.getElementById('map-sidebar').classList.remove('is-hidden');
 
-        currentData.forEach((item, idx) => {
-            const m = L.circleMarker([item.lat, item.lng], {radius: 8, color:'#fa5252', fillOpacity: 1}).addTo(map);
-            m.on('click', () => {
-                editingIdx = idx;
-                markers.forEach(mk => mk.setStyle({color:'#fa5252'}));
-                m.setStyle({color:'#2f9e44'});
-                document.getElementById('edit-label').innerText = `編輯點位 ${idx+1}`;
-                document.getElementById('bottom-editor').style.display = 'flex';
-            });
-            markers.push(m);
-        });
-
         activeModes.forEach((m, i) => {
-            const layer = L.polyline(buildPath(currentData, m).map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8});
-            activeLayers[m] = layer;
+            const layerGroup = L.featureGroup().addTo(map);
+            activeLayers[m] = layerGroup;
             const sBtn = document.createElement('button');
             sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
             sBtn.innerText = m === 'linear' ? "座標串接" : m === 'z-shape' ? "Z字圖形" : m === 'square' ? "正方形" : "漏斗型";
-            sBtn.onclick = () => { Object.values(activeLayers).forEach(l => map.removeLayer(l)); layer.addTo(map); document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active')); sBtn.classList.add('active'); };
+            sBtn.onclick = () => {
+                Object.values(activeLayers).forEach(lg => lg.remove());
+                layerGroup.addTo(map);
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+                sBtn.classList.add('active');
+                closeEditor();
+            };
             sidebar.appendChild(sBtn);
-            if(i === 0) layer.addTo(map);
+            if(i !== 0) map.removeLayer(layerGroup);
         });
-        if(markers.length) map.fitBounds(L.featureGroup(markers).getBounds(), {padding:[50,50]});
+
+        refreshPaths();
+        if(currentData.length) map.fitBounds(L.featureGroup(markers).getBounds(), {padding:[50,50]});
     }
 
-    // --- 漏斗型核心邏輯修正 ---
-    function buildPath(data, mode) {
-        let path = []; const r = 41;
-        for (let i = 0; i < data.length; i++) {
-            const curr = data[i];
-            if (mode === 'linear') { path.push([curr.lng, curr.lat]); continue; }
-            
-            let bearing = curr.angle;
-            if (curr.angle === 0) {
-                const prev = data[i === 0 ? data.length - 1 : i - 1];
-                const next = data[(i + 1) % data.length];
-                bearing = turf.bearing(turf.point([prev.lng, prev.lat]), turf.point([next.lng, next.lat]));
-            }
-            const cp = turf.point([curr.lng, curr.lat]);
-            const v = [
-                turf.destination(cp, r, bearing - 45, {units:'meters'}).geometry.coordinates, // 左上 0
-                turf.destination(cp, r, bearing + 45, {units:'meters'}).geometry.coordinates, // 右上 1
-                turf.destination(cp, r, bearing + 135, {units:'meters'}).geometry.coordinates, // 右下 2
-                turf.destination(cp, r, bearing - 135, {units:'meters'}).geometry.coordinates  // 左下 3
-            ];
+    function buildGroup(curr, mode, idx) {
+        const r = 41; const cp = turf.point([curr.lng, curr.lat]);
+        const v = [
+            turf.destination(cp, r, curr.angle - 45, {units:'meters'}).geometry.coordinates, // TL (0)
+            turf.destination(cp, r, curr.angle + 45, {units:'meters'}).geometry.coordinates, // TR (1)
+            turf.destination(cp, r, curr.angle + 135, {units:'meters'}).geometry.coordinates, // BR (2)
+            turf.destination(cp, r, curr.angle - 135, {units:'meters'}).geometry.coordinates  // BL (3)
+        ];
+        let shape;
+        const C = [curr.lng, curr.lat];
+        if (mode === 'funnel') shape = [C, v[0], v[1], C, v[3], v[2], C];
+        else if (mode === 'z-shape') shape = [v[3], v[0], C, v[2], v[1]];
+        else if (mode === 'square') shape = [v[3], v[0], v[1], v[2], v[3]];
+        else return [C];
 
-            let group;
-            const C = [curr.lng, curr.lat];
-            if (mode === 'funnel') {
-                // 圓心 -> 左上 -> 右上 -> 圓心 -> 左下 -> 右下 -> 圓心
-                group = [C, v[0], v[1], C, v[3], v[2], C];
-            } else if (mode === 'z-shape') {
-                group = [v[3], v[0], C, v[2], v[1]];
-            } else {
-                group = [v[3], v[0], v[1], v[2], v[3]];
+        // 旋轉起點邏輯 (Offset)
+        if (mode !== 'funnel' && mode !== 'linear') {
+            for (let k = 0; k < curr.offset; k++) {
+                let first = shape.shift();
+                shape.push(first);
             }
-
-            // A/B 銜接切換邏輯：根據手動位移量旋轉陣列順序
-            if (mode !== 'funnel' && mode !== 'linear') {
-                for (let k = 0; k < curr.offset; k++) group.push(group.shift());
-            }
-            path.push(...group);
         }
-        if (path.length) path.push(path[0]);
-        return path;
+        return shape;
+    }
+
+    function refreshPaths() {
+        activeModes.forEach(mode => {
+            const lg = activeLayers[mode];
+            lg.clearLayers();
+            const fullList = [];
+            for (let i = 0; i < currentData.length; i++) {
+                const group = buildGroup(currentData[i], mode, i);
+                fullList.push(...group);
+
+                // 為每個圖形區塊建立獨立 Polyline 以便點擊編輯
+                const poly = L.polyline(group.map(p => [p[1], p[0]]), {
+                    color: '#1971c2', weight: 8, opacity: 0.7, lineJoin: 'round'
+                }).addTo(lg);
+                
+                poly.on('click', (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    triggerEdit(i);
+                });
+
+                // 同步更新紅點標記 (僅首個模式負責標記)
+                if (mode === activeModes[0]) {
+                    const m = L.circleMarker([currentData[i].lat, currentData[i].lng], {radius: 8, color:'#fa5252', fillOpacity: 1}).addTo(lg);
+                    m.on('click', (e) => { L.DomEvent.stopPropagation(e); triggerEdit(i); });
+                    markers.push(m);
+                }
+            }
+            // 繪製組與組之間的連接線
+            if (fullList.length) {
+                fullList.push(fullList[0]);
+                L.polyline(fullList.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 2, dashArray: '5, 10', opacity: 0.5 }).addTo(lg);
+            }
+        });
+    }
+
+    function triggerEdit(idx) {
+        editingIdx = idx;
+        markers.forEach((m, i) => m.setStyle({color: i === idx ? '#2f9e44' : '#fa5252', radius: i === idx ? 12 : 8}));
+        document.getElementById('edit-label').innerText = `編輯點位 ${idx+1}`;
+        document.getElementById('bottom-editor').style.display = 'flex';
     }
 
     function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
     function cycleStart() { if(editingIdx < 0) return; currentData[editingIdx].offset = (currentData[editingIdx].offset + 1) % 4; refreshPaths(); }
     function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
-    function refreshPaths() { activeModes.forEach(m => { activeLayers[m].setLatLngs(buildPath(currentData, m).map(p => [p[1], p[0]])); }); }
-    function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; markers.forEach(m => m.setStyle({color:'#fa5252'})); }
-    function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='square'?"正方":"漏斗")); exportGPX(buildPath(currentData, mKey), mKey); }
+
+    function getFinalPoly(mode) {
+        let path = [];
+        currentData.forEach(curr => path.push(...buildGroup(curr, mode)));
+        if (path.length) path.push(path[0]);
+        return path;
+    }
+
+    function downloadActive() {
+        const btn = document.querySelector('.sidebar-btn.active');
+        const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='square'?"正方":"漏斗"));
+        exportGPX(getFinalPoly(mKey), mKey);
+    }
 
     function exportGPX(pts, name) {
         let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${name}</name><trkseg>`;
@@ -266,7 +295,7 @@
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `pikmin_${name}.gpx`; a.click();
+        a.download = `pikmin_${name}_${Date.now()}.gpx`; a.click();
     }
 </script>
 </body>
