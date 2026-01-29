@@ -3,100 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>皮克敏收果種花路徑生成器</title>
+    <title>皮克敏路徑生成器 - 進階編輯版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; background: #f0f4f8; overflow-x: hidden; }
         body { display: flex; flex-direction: column; font-family: -apple-system, "微軟正黑體", sans-serif; }
 
-        #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; transition: 0.3s; }
+        #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; }
         .is-hidden { display: none !important; }
 
-        /* 公告欄 */
-        #bulletin-section { 
-            background: #fff9db; border: 1px solid #fab005; border-radius: 12px; 
-            padding: 20px; margin-bottom: 15px; font-size: 0.95rem; color: #444; line-height: 1.7;
-        }
-        #bulletin-section h4 { margin: 15px 0 8px 0; color: #d9480f; font-size: 1.1rem; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
-        #bulletin-section ul { margin: 10px 0; padding-left: 20px; }
-
-        /* 使用說明卡 */
-        .instruction-card { 
-            background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; 
-            padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab;
-        }
-        .instruction-card h4 { margin: 0 0 8px 0; color: #1971c2; }
-        .instruction-card ul { margin: 5px 0; padding-left: 18px; }
-
+        /* 公告與說明 */
+        #bulletin-section { background: #fff9db; border: 1px solid #fab005; border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 0.95rem; color: #444; line-height: 1.7; }
+        #bulletin-section h4 { margin: 15px 0 8px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
+        .instruction-card { background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab; }
         #generator-section { display: none; }
 
-        /* 核取方塊樣式 */
-        .mode-option {
-            display: flex; align-items: center; background: #f8f9fa;
-            padding: 12px; border-radius: 8px; margin-bottom: 8px;
-            border: 1px solid #dee2e6; cursor: pointer; font-size: 0.95rem;
-        }
+        /* 模式複選 */
+        .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; }
         .mode-option input { margin-right: 12px; width: 22px; height: 22px; }
 
-        /* --- 浮貼式地圖容器 --- */
-        #map-container {
-            position: fixed; bottom: 20px; right: 20px;
-            width: 320px; height: 320px;
-            z-index: 99999; display: none;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.4);
-            border-radius: 15px; border: 3px solid #fff; overflow: hidden;
-            transition: all 0.4s ease;
-        }
+        /* 浮貼地圖 */
+        #map-container { position: fixed; bottom: 20px; right: 20px; width: 320px; height: 320px; z-index: 99999; display: none; box-shadow: 0 4px 25px rgba(0,0,0,0.4); border-radius: 15px; border: 3px solid #fff; overflow: hidden; transition: 0.4s ease; }
         #map-container.is-fullscreen { width: 100vw; height: 100vh; bottom: 0; right: 0; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* 地圖控制按鈕 (下移避開系統列) */
-        .map-btn-group {
-            position: absolute; top: 80px; right: 15px; z-index: 100000;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .map-ctrl-btn {
-            background: rgba(33, 37, 41, 0.9); color: white; border: none;
-            padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;
-        }
+        /* 地圖控制鈕 (下移避開系統列) */
+        .map-btn-group { position: absolute; top: 80px; right: 15px; z-index: 100000; display: flex; flex-direction: column; gap: 10px; }
+        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .btn-save-dl { background: #2f9e44 !important; }
         .btn-close-map { background: #e03131 !important; }
 
-        /* --- 地圖側邊預覽選單 --- */
-        #map-sidebar {
-            position: absolute; top: 80px; left: 10px; z-index: 100000;
-            background: rgba(255,255,255,0.9); border-radius: 8px;
-            padding: 8px; display: flex; flex-direction: column; gap: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 140px;
-        }
-        .sidebar-title { font-size: 11px; font-weight: bold; color: #666; margin-bottom: 2px; }
-        .sidebar-btn {
-            background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px;
-            font-size: 12px; cursor: pointer; text-align: left; transition: 0.2s;
-        }
+        /* 側邊預覽選單 */
+        #map-sidebar { position: absolute; top: 80px; left: 10px; z-index: 100000; background: rgba(255,255,255,0.9); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 130px; }
+        .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: left; }
         .sidebar-btn.active { background: #2f9e44; color: white; border-color: #2f9e44; }
+
+        /* 彈窗內拉桿 */
+        .popup-ctrl { margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .popup-ctrl label { font-size: 12px; font-weight: bold; }
+        .btn-pop-del { background: #e03131; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; margin-top: 8px; cursor: pointer; width: 100%; }
+        .btn-pop-flip { background: #1971c2; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; margin-top: 5px; cursor: pointer; width: 100%; }
 
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         .card-y { border-left-color: #fcc419; }
-        label { font-weight: bold; font-size: 0.9rem; color: #343a40; display: block; margin-bottom: 5px; }
         textarea { width: 100%; height: 80px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
         
-        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
         .btn-agree { background: #2f9e44; color: white; }
-        .btn-view-notice { background: #f8f9fa; color: #495057; border: 1px solid #ced4da; margin-bottom: 10px; }
         .btn-gen { background: #2f9e44; color: white; }
-        .btn-clear { background: #f08c00; color: white; margin-top: 5px; } 
-        #download-area { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
-        .btn-dl { background: #1971c2; color: white; font-size: 14px; padding: 12px; }
+        .btn-direct-dl { background: #1971c2; color: white; }
+        .btn-clear { background: #f08c00; color: white; } 
         
         #status { font-size: 13px; color: #fa5252; text-align: center; margin-top: 8px; font-weight: bold; }
 
-        @media (min-width: 768px) {
-            #controls { width: 450px; }
-            #map-container { width: 450px; height: 450px; }
-            .map-btn-group { top: 20px; flex-direction: row; }
-            #map-sidebar { top: 20px; }
-        }
+        @media (min-width: 768px) { #controls { width: 450px; } #map-container { width: 480px; height: 480px; } .map-btn-group { top: 20px; flex-direction: row; } #map-sidebar { top: 20px; } }
     </style>
 </head>
 <body id="mainBody">
@@ -106,26 +67,26 @@
     
     <div id="bulletin-section">
         <h4>📢 生成器的用途與目的</h4>
-        <p>大家都在上班之餘種花自給自足或投餵新手、陸軍，沒有時間使用飛機內既有的模式畫路徑，所以這是一個方便皮克敏飛人收果、種花的GPX生成器，但請不要用來產生別人的花田路徑種花，請自律當一個友善的皮克敏飛人。</p>
+        <p>這是一個方便皮克敏飛人收果、種花的GPX生成器，但請不要用來產生別人的花田路徑，請自律當一個友善的皮克敏飛人。</p>
         <h4>⚠️ 請遵守以下幾點：</h4>
         <ul>
-            <li>1.有花痕的田 不開發 不產生路徑 不占為己用</li>
-            <li>2.有開花的田或有固定種花主的田 僅生成收果路線 在開大花期間才跑路徑收花</li>
-            <li>3.產生的檔案都請自用，不要分享，尤其是別人田的路徑檔</li>
+            <li>1.有花痕的田 不開發 不占為己用</li>
+            <li>2.有開花或固定種花主的田 僅生成收果路線</li>
+            <li>3.產生的檔案請自用，不要分享。</li>
         </ul>
         <button class="btn-agree" onclick="acceptNotice()">好的，我願意遵守並理解</button>
     </div>
 
     <div id="generator-section">
-        <button class="btn-view-notice" onclick="showNotice()">查看公告說明</button>
+        <button class="btn-agree" style="background:#f8f9fa; color:#495057; border:1px solid #ddd; margin-bottom:10px;" onclick="showNotice()">查看公告說明</button>
 
         <div class="instruction-card">
-            <h4>📢 使用說明與提醒</h4>
+            <h4>📢 進階編輯說明</h4>
             <ul>
-                <li>1. <b>手動輸入：</b>將座標依序貼入，一行一個。</li>
-                <li>2. <b>上傳檔案：</b>可上傳既有的收果路線gpx，會保留原順序。</li>
-                <li>3. <b>複選模式：</b>可同時勾選多種模式，地圖會提供側邊切換。</li>
-                <li>4. <b>手動修正：</b>若不符合需求請自己手動畫。</li>
+                <li>1. <b>移除點位：</b>點擊紅點，可選擇「刪除」整組圖形。</li>
+                <li>2. <b>調整旋轉：</b>點擊紅點，透過拉桿調整該方形/Z字的角度。</li>
+                <li>3. <b>銜接方向：</b>點擊紅點選「反轉」，改變與前後點的連線路徑。</li>
+                <li>4. <b>預覽切換：</b>左側選單可切換不同模式的預覽軌跡。</li>
             </ul>
         </div>
         
@@ -158,20 +119,20 @@
             <button class="btn-clear" onclick="clearData()">清除所有輸入資料</button>
         </div>
 
-        <button class="btn-gen" onclick="handleProcess()">生成路徑 並 預覽地圖</button>
+        <button class="btn-gen" onclick="processAll(true)">生成路徑 並 預覽地圖</button>
+        <button class="btn-direct-dl" onclick="processAll(false)">直接生成 下載GPX</button>
         
-        <div id="download-area"></div>
         <div id="status"></div>
     </div>
 </div>
 
 <div id="map-container">
     <div id="map-sidebar" class="is-hidden">
-        <div class="sidebar-title">切換預覽模式</div>
         <div id="sidebar-btns"></div>
     </div>
     <div class="map-btn-group">
         <button class="map-ctrl-btn" onclick="toggleMapFullScreen()">全頻/縮小</button>
+        <button class="map-ctrl-btn btn-save-dl" onclick="downloadAllActive()">儲存編輯並下載</button>
         <button class="map-ctrl-btn btn-close-map" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
@@ -182,36 +143,18 @@
 
 <script>
     var map;
-    var markerLayer;
-    var allLayers = {}; // 儲存各模式的軌跡層
-    var allPoints = {};  // 儲存各模式的點位
+    var currentData = []; // 儲存中心點與其角度設定
+    var activeModeLayers = {};
+    var modePathData = {};
+    var markers = [];
 
-    function acceptNotice() {
-        document.getElementById('bulletin-section').classList.add('is-hidden');
-        document.getElementById('generator-section').style.display = 'block';
-    }
-
-    function showNotice() {
-        document.getElementById('bulletin-section').classList.remove('is-hidden');
-        document.getElementById('generator-section').style.display = 'none';
-    }
-
-    function toggleSource() {
-        const type = document.getElementById('sourceType').value;
-        document.getElementById('manualSection').classList.toggle('is-hidden', type !== 'manual');
-        document.getElementById('fileSection').classList.toggle('is-hidden', type === 'manual');
-    }
-
-    function clearData() {
-        document.getElementById('coordInput').value = "";
-        document.getElementById('gpxFile').value = "";
-        document.getElementById('status').innerText = "資料已清除";
-        document.getElementById('download-area').innerHTML = "";
-    }
+    function acceptNotice() { document.getElementById('bulletin-section').classList.add('is-hidden'); document.getElementById('generator-section').style.display = 'block'; }
+    function showNotice() { document.getElementById('bulletin-section').classList.remove('is-hidden'); document.getElementById('generator-section').style.display = 'none'; }
+    function toggleSource() { const type = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', type !== 'manual'); document.getElementById('fileSection').classList.toggle('is-hidden', type === 'manual'); }
+    function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; document.getElementById('status').innerText = "資料已清除"; }
 
     function openMap() {
-        const container = document.getElementById('map-container');
-        container.style.display = 'block';
+        document.getElementById('map-container').style.display = 'block';
         if (!map) {
             map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -219,33 +162,17 @@
         }
         setTimeout(() => map.invalidateSize(), 400);
     }
+    function closeMap() { document.getElementById('map-container').style.display = 'none'; document.getElementById('map-container').classList.remove('is-fullscreen'); }
+    function toggleMapFullScreen() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => map.invalidateSize(), 400); }
 
-    function closeMap() {
-        document.getElementById('map-container').style.display = 'none';
-        document.getElementById('map-container').classList.remove('is-fullscreen');
-    }
-
-    function toggleMapFullScreen() {
-        const container = document.getElementById('map-container');
-        container.classList.toggle('is-fullscreen');
-        setTimeout(() => map.invalidateSize(), 400);
-    }
-
-    // --- 核心處理邏輯 ---
-    async function handleProcess() {
+    // --- 核心入口 ---
+    async function processAll(withPreview) {
         const status = document.getElementById('status');
         const sourceType = document.getElementById('sourceType').value;
-        const dlArea = document.getElementById('download-area');
-        const sidebarBtns = document.getElementById('sidebar-btns');
         const checkedModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
 
-        if (checkedModes.length === 0) { alert("請至少選擇一種生成模式"); return; }
-        
+        if (checkedModes.length === 0) return alert("請勾選至少一種模式");
         status.innerText = "運算生成中...";
-        dlArea.innerHTML = "";
-        sidebarBtns.innerHTML = "";
-        allLayers = {};
-        allPoints = {};
 
         try {
             let centers = [];
@@ -254,7 +181,7 @@
                 if (!txt) throw new Error("請先貼入座標資料");
                 txt.split('\n').forEach(l => {
                     const p = l.match(/-?\d+\.\d+/g);
-                    if (p && p.length >= 2) centers.push([parseFloat(p[1]), parseFloat(p[0])]);
+                    if (p && p.length >= 2) centers.push({ lng: parseFloat(p[1]), lat: parseFloat(p[0]), angle: null, flipped: false });
                 });
                 centers = solveSmoothLoop(centers);
             } else {
@@ -262,123 +189,153 @@
                 if (fileInput.files.length === 0) throw new Error("請選取檔案");
                 const xml = await fileInput.files[0].text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
-                let m; while ((m = regex.exec(xml)) !== null) centers.push([parseFloat(m[2]), parseFloat(m[1])]);
+                let m; while ((m = regex.exec(xml)) !== null) centers.push({ lng: parseFloat(m[2]), lat: parseFloat(m[1]), angle: null, flipped: false });
             }
 
-            if (centers.length === 0) throw new Error("座標解析失敗");
-            centers = centers.filter((v, i, a) => a.findIndex(t => t[0] === v[0] && t[1] === v[1]) === i);
+            if (centers.length === 0) throw new Error("解析失敗");
+            currentData = centers.filter((v, i, a) => a.findIndex(t => t.lng === v.lng && t.lat === v.lat) === i);
 
-            openMap();
-            if (markerLayer) map.removeLayer(markerLayer);
-            markerLayer = L.featureGroup(centers.map(c => 
-                L.circleMarker([c[1], c[0]], {radius: 5, color: '#fa5252', fillOpacity: 1}).bindPopup(`${c[1]}, ${c[0]}`)
-            )).addTo(map);
-
-            // 針對勾選的模式分別生成
-            checkedModes.forEach((mode, idx) => {
-                const points = buildAdaptivePath(centers, mode);
-                allPoints[mode] = points;
-                
-                const layer = L.polyline(points.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8});
-                allLayers[mode] = layer;
-
-                // 建立下載按鈕
-                const modeName = getModeLabel(mode);
-                const dlBtn = document.createElement('button');
-                dlBtn.className = "btn-dl";
-                dlBtn.innerText = `下載「${modeName}」GPX`;
-                dlBtn.onclick = () => exportGPX(points, modeName);
-                dlArea.appendChild(dlBtn);
-
-                // 建立地圖側邊切換按鈕
-                const sideBtn = document.createElement('button');
-                sideBtn.className = "sidebar-btn" + (idx === 0 ? " active" : "");
-                sideBtn.innerText = modeName;
-                sideBtn.onclick = () => switchPreviewLayer(mode);
-                sidebarBtns.appendChild(sideBtn);
-
-                // 預設顯示第一個勾選的層
-                if (idx === 0) layer.addTo(map);
-            });
-
-            document.getElementById('map-sidebar').classList.remove('is-hidden');
-            map.fitBounds(allLayers[checkedModes[0]].getBounds(), {padding: [40, 40]});
-            status.innerText = `成功生成 ${checkedModes.length} 種路徑！可切換預覽或下載。`;
+            if (!withPreview) {
+                checkedModes.forEach(mode => { const path = buildFinalPath(currentData, mode); exportGPX(path, getModeLabel(mode)); });
+                status.innerText = "直接下載完成。";
+            } else {
+                openMap();
+                renderEditor(checkedModes);
+                status.innerText = "編輯模式已開啟，點擊紅點進行調整。";
+            }
         } catch (e) { status.innerText = "錯誤: " + e.message; }
     }
 
-    function getModeLabel(val) {
-        if (val === 'linear') return "座標串接";
-        if (val === 'z-shape') return "Z字圖形";
-        return "正方形路線";
+    // --- 編輯器渲染 ---
+    function renderEditor(checkedModes) {
+        markers.forEach(m => map.removeLayer(m)); markers = [];
+        Object.values(activeModeLayers).forEach(l => map.removeLayer(l));
+        activeModeLayers = {}; modePathData = {};
+
+        const sidebar = document.getElementById('sidebar-btns');
+        sidebar.innerHTML = ""; document.getElementById('map-sidebar').classList.remove('is-hidden');
+
+        currentData.forEach((item, idx) => {
+            const m = L.circleMarker([item.lat, item.lng], {radius: 7, color: '#fa5252', fillOpacity: 1});
+            
+            m.on('click', () => {
+                const popupContent = document.createElement('div');
+                popupContent.innerHTML = `<b>點位 ${idx+1}</b><br><small>${item.lat.toFixed(6)}, ${item.lng.toFixed(6)}</small>`;
+                
+                const ctrl = document.createElement('div');
+                ctrl.className = "popup-ctrl";
+                ctrl.innerHTML = `<label>旋轉方向: <span id="val-${idx}">${item.angle || 0}</span>°</label><br>
+                                  <input type="range" min="0" max="360" value="${item.angle || 0}" style="width:100%" id="range-${idx}">`;
+                
+                const flipBtn = document.createElement('button');
+                flipBtn.className = "btn-pop-flip";
+                flipBtn.innerText = item.flipped ? "銜接：反轉中" : "銜接：順向中";
+                flipBtn.onclick = () => { item.flipped = !item.flipped; flipBtn.innerText = item.flipped ? "銜接：反轉中" : "銜接：順向中"; refreshAllPaths(checkedModes); };
+
+                const delBtn = document.createElement('button');
+                delBtn.className = "btn-pop-del";
+                delBtn.innerText = "🗑️ 刪除此組座標";
+                delBtn.onclick = () => { currentData.splice(idx, 1); map.closePopup(); renderEditor(checkedModes); };
+
+                popupContent.appendChild(ctrl);
+                popupContent.appendChild(flipBtn);
+                popupContent.appendChild(delBtn);
+                m.bindPopup(popupContent).openPopup();
+
+                document.getElementById(`range-${idx}`).oninput = (e) => {
+                    item.angle = parseInt(e.target.value);
+                    document.getElementById(`val-${idx}`).innerText = item.angle;
+                    refreshAllPaths(checkedModes);
+                };
+            });
+            m.addTo(map);
+            markers.push(m);
+        });
+
+        checkedModes.forEach((mode, i) => {
+            const path = buildFinalPath(currentData, mode);
+            modePathData[mode] = path;
+            const layer = L.polyline(path.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8});
+            activeModeLayers[mode] = layer;
+
+            const sBtn = document.createElement('button');
+            sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
+            sBtn.innerText = getModeLabel(mode);
+            sBtn.onclick = () => {
+                Object.values(activeModeLayers).forEach(l => map.removeLayer(l));
+                layer.addTo(map);
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+                sBtn.classList.add('active');
+            };
+            sidebar.appendChild(sBtn);
+            if (i === 0) layer.addTo(map);
+        });
+
+        const group = new L.featureGroup([...Object.values(activeModeLayers), ...markers]);
+        map.fitBounds(group.getBounds(), {padding: [40, 40]});
     }
 
-    function switchPreviewLayer(targetMode) {
-        // 移除所有軌跡層
-        Object.values(allLayers).forEach(layer => map.removeLayer(layer));
-        // 加入目標層
-        allLayers[targetMode].addTo(map);
-        // 更新按鈕樣式
-        document.querySelectorAll('.sidebar-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText === getModeLabel(targetMode));
+    function refreshAllPaths(checkedModes) {
+        checkedModes.forEach(mode => {
+            const path = buildFinalPath(currentData, mode);
+            modePathData[mode] = path;
+            activeModeLayers[mode].setLatLngs(path.map(p => [p[1], p[0]]));
         });
     }
 
-    // --- 幾何運算核心 ---
+    function downloadAllActive() {
+        Object.keys(modePathData).forEach(mode => exportGPX(modePathData[mode], getModeLabel(mode)));
+        alert("已儲存編輯並下載檔案！");
+    }
+
+    function getModeLabel(v) { if (v === 'linear') return "座標串接"; if (v === 'z-shape') return "Z字圖形"; return "正方形路線"; }
+
     function solveSmoothLoop(pts) {
         if (pts.length < 3) return pts;
         let route = [...pts];
-        const center = turf.center(turf.featureCollection(route.map(p => turf.point(p)))).geometry.coordinates;
-        route.sort((a, b) => Math.atan2(a[1]-center[1], a[0]-center[0]) - Math.atan2(b[1]-center[1], b[0]-center[0]));
-        let improved = true;
-        while (improved) {
-            improved = false;
-            for (let i = 0; i < route.length - 1; i++) {
-                for (let j = i + 2; j < route.length; j++) {
-                    const d1 = turf.distance(turf.point(route[i]), turf.point(route[i+1])) + turf.distance(turf.point(route[j]), turf.point(route[(j+1)%route.length]));
-                    const d2 = turf.distance(turf.point(route[i]), turf.point(route[j])) + turf.distance(turf.point(route[i+1]), turf.point(route[(j+1)%route.length]));
-                    if (d2 < d1) {
-                        let sub = route.slice(i + 1, j + 1);
-                        route.splice(i + 1, j - i, ...sub.reverse());
-                        improved = true;
-                    }
-                }
-            }
-        }
+        const center = turf.center(turf.featureCollection(route.map(p => turf.point([p.lng, p.lat])))).geometry.coordinates;
+        route.sort((a, b) => Math.atan2(a.lat-center[1], a.lng-center[0]) - Math.atan2(b.lat-center[1], b.lng-center[0]));
         return route;
     }
 
-    function buildAdaptivePath(centers, mode) {
+    function buildFinalPath(data, mode) {
         let path = []; const r = 41;
-        for (let i = 0; i < centers.length; i++) {
-            const curr = centers[i];
-            if (mode === 'linear') { path.push(curr); continue; }
-            const prev = centers[i === 0 ? centers.length - 1 : i - 1];
-            const next = centers[(i + 1) % centers.length];
-            const bearing = turf.bearing(turf.point(prev), turf.point(next));
-            const cp = turf.point(curr);
+        for (let i = 0; i < data.length; i++) {
+            const curr = data[i];
+            if (mode === 'linear') { path.push([curr.lng, curr.lat]); continue; }
+            
+            let bearing;
+            if (curr.angle !== null) {
+                bearing = curr.angle;
+            } else {
+                const prev = data[i === 0 ? data.length - 1 : i - 1];
+                const next = data[(i + 1) % data.length];
+                bearing = turf.bearing(turf.point([prev.lng, prev.lat]), turf.point([next.lng, next.lat]));
+            }
+
+            const cp = turf.point([curr.lng, curr.lat]);
             const v = {
                 a: turf.destination(cp, r, bearing - 135, {units:'meters'}).geometry.coordinates,
                 b: turf.destination(cp, r, bearing - 45, {units:'meters'}).geometry.coordinates,
                 c: turf.destination(cp, r, bearing + 45, {units:'meters'}).geometry.coordinates,
                 d: turf.destination(cp, r, bearing + 135, {units:'meters'}).geometry.coordinates
             };
-            let group = (mode === 'z-shape') ? [v.a, v.b, curr, v.d, v.c] : [v.a, v.b, v.c, v.d, v.a];
-            if (path.length > 0) {
-                const last = path[path.length - 1];
-                if (turf.distance(turf.point(last), turf.point(group[group.length-1])) < turf.distance(turf.point(last), turf.point(group[0]))) group.reverse();
-            }
+            
+            let group = (mode === 'z-shape') ? [v.a, v.b, [curr.lng, curr.lat], v.d, v.c] : [v.a, v.b, v.c, v.d, v.a];
+            
+            if (curr.flipped) group.reverse(); // 手動反轉銜接方向
+
             path.push(...group);
         }
         if (path.length > 0) {
-            path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.0001);
+            path = path.filter((v, i, a) => i === 0 || turf.distance(turf.point(v), turf.point(a[i-1])) > 0.00001);
             path.push(path[0]);
         }
         return path;
     }
 
     function exportGPX(pts, name) {
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${name}</name><trkseg>`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="PikminEdit"><trk><name>${name}</name><trkseg>`;
         pts.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
