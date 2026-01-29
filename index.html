@@ -13,38 +13,45 @@
         #controls { width: 100%; min-height: 100vh; padding: 15px; background: white; z-index: 100; overflow-y: auto; }
         .is-hidden { display: none !important; }
 
-        /* 公告欄樣式 */
+        /* 公告欄 */
         #bulletin-section { background: #fff9db; border: 1px solid #fab005; border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 0.95rem; color: #444; line-height: 1.7; }
-        #bulletin-section h4 { margin: 15px 0 8px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
+        #bulletin-section h4 { margin: 15px 0 8px 0; color: #d9480f; font-size: 1.1rem; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
 
+        /* 生成器與操作說明 */
         #generator-section { display: none; }
+        .instruction-card { background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab; }
 
-        /* 模式複選 */
-        .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; }
+        /* 模式選擇 */
+        .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; font-size: 0.95rem; }
         .mode-option input { margin-right: 12px; width: 22px; height: 22px; }
 
-        /* 浮貼式地圖容器 */
-        #map-container { position: fixed; bottom: 20px; right: 20px; width: 320px; height: 320px; z-index: 999; display: none; box-shadow: 0 4px 25px rgba(0,0,0,0.4); border-radius: 15px; border: 3px solid #fff; overflow: hidden; }
+        /* 浮貼地圖 */
+        #map-container { position: fixed; bottom: 20px; right: 20px; width: 320px; height: 320px; z-index: 999; display: none; box-shadow: 0 4px 25px rgba(0,0,0,0.4); border-radius: 15px; border: 3px solid #fff; overflow: hidden; transition: 0.4s ease; }
         #map-container.is-fullscreen { width: 100vw; height: 100vh; bottom: 0; right: 0; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* 地圖按鈕 (避開系統列) */
-        .map-btn-group { position: absolute; top: 80px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        /* 地圖按鈕 (下移避開手機狀態列) */
+        .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
-        /* 可拖動的控制面板 */
-        #editor-panel { position: fixed; top: 150px; left: 20px; width: 240px; background: white; border-radius: 12px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 2px solid #2f9e44; display: none; }
-        #panel-header { background: #2f9e44; color: white; padding: 10px; border-radius: 10px 10px 0 0; cursor: move; font-size: 13px; font-weight: bold; text-align: center; }
-        #panel-content { padding: 15px; font-size: 13px; }
-        .panel-row { margin-bottom: 12px; }
-        .panel-select { width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ddd; }
+        /* --- 底部控制條 (取代不方便的面板) --- */
+        #bottom-action-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: white; z-index: 10000; border-top: 3px solid #2f9e44;
+            padding: 15px; display: none; flex-direction: column; gap: 10px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+        }
+        .action-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .btn-act { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
 
-        .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 11px; cursor: pointer; text-align: left; margin-bottom: 4px; width: 100%; }
+        /* 模式切換選單 (地圖左側) */
+        #map-sidebar { position: absolute; top: 100px; left: 10px; z-index: 2000; background: rgba(255,255,255,0.9); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 5px; width: 130px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 11px; cursor: pointer; text-align: left; }
         .sidebar-btn.active { background: #2f9e44; color: white; }
 
-        /* 卡片與按鈕 */
+        /* 輸入區域 */
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
-        textarea { width: 100%; height: 80px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; }
+        textarea { width: 100%; height: 80px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; font-family: monospace; }
         button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
         .btn-gen { background: #2f9e44; color: white; }
         .btn-clear { background: #f08c00; color: white; }
@@ -60,30 +67,32 @@
     
     <div id="bulletin-section">
         <h4>📢 生成器的用途與目的</h4>
-        <p>大家都在上班之餘種花自給自足或投餵新手、陸軍，沒有時間使用飛機畫路徑，這是一個方便皮克敏飛人收果、種花的GPX生成器，但請不要用來產生別人的花田路徑，請自律當一個友善的皮克敏飛人。</p>
-        <h4>⚠️ 請遵守自律守則：</h4>
+        <p>這是一個方便皮克敏收果、種花的GPX生成器，請自律當一個友善的皮克敏飛人。</p>
+        <h4>⚠️ 自律守則</h4>
         <ul>
             <li>1.有花痕的田 不開發 不占為己用</li>
             <li>2.有開花或固定種花主的田 僅生成收果路線</li>
             <li>3.產生的檔案請自用，不要分享。</li>
         </ul>
-        <button class="btn-agree" style="background:#2f9e44; color:white" onclick="acceptNotice()">好的，我願意遵守並理解</button>
+        <button style="background:#2f9e44; color:white" onclick="acceptNotice()">好的，我願意遵守並理解</button>
     </div>
 
     <div id="generator-section">
-        <div class="card" style="background:#e7f5ff; border-left-color:#1971c2;">
-            <h4 style="margin:0 0 5px; color:#1971c2">📢 使用說明與提醒</h4>
-            <ul style="font-size:0.85rem; padding-left:18px; color:#1864ab; margin:0">
-                <li>1. <b>手動輸入：</b>座標依序貼入，一行一個，執行後預覽。</li>
-                <li>2. <b>自由銜接：</b>點擊紅點，可自選 A 入口與 B 出口位置。</li>
-                <li>3. <b>漏斗模式：</b>新路徑為左上→右上→圓心→左下→右下→圓心。</li>
-                <li>4. <b>預覽切換：</b>控制面板可隨時拖動位置，並切換複選模式。</li>
+        <button style="background:#f8f9fa; color:#495057; border:1px solid #ddd;" onclick="showNotice()">查看公告說明</button>
+
+        <div class="instruction-card">
+            <h4>📢 使用說明</h4>
+            <ul>
+                <li>1. <b>勾選模式：</b>支援多選，生成後可分開下載。</li>
+                <li>2. <b>地圖修改：</b>點擊紅點，底部會彈出控制條，可旋轉或刪除。</li>
+                <li>3. <b>漏斗模式：</b>提供高密集種花軌跡。</li>
+                <li>4. <b>手動清空：</b>資料不會自動消失，請點擊橘色按鈕清空。</li>
             </ul>
         </div>
         
         <div class="card">
-            <label>1. 選擇生成模式 (可複選)</label>
-            <div id="mode-selection">
+            <label>1. 選擇模式 (可複選)</label>
+            <div>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="linear"> 座標串接 (收果/多帳種花)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape" checked> Z字圖形 (2圈&適合種藍)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="square"> 正方形路線 (2圈&適合種白)</label>
@@ -93,200 +102,173 @@
 
         <div class="card" style="border-left-color: #fcc419;">
             <label>提供座標</label>
-            <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px; border-radius:5px;">
+            <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px;">
                 <option value="manual">手動貼上座標</option>
                 <option value="file">上傳 GPX 檔案</option>
             </select>
         </div>
 
         <div id="manualSection" class="card">
-            <label>座標貼入處 (緯度, 經度):</label>
             <textarea id="coordInput" placeholder="緯度, 經度 (每行一組)"></textarea>
             <button class="btn-clear" onclick="clearData()">清除所有輸入資料</button>
         </div>
 
         <div id="fileSection" class="card is-hidden" style="border-left-color: #fcc419;">
-            <label>選取 GPX 檔案:</label>
             <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%;">
             <button class="btn-clear" onclick="clearData()">清除所有輸入資料</button>
         </div>
 
-        <button class="btn-gen" onclick="processAll()">生成路徑 並 預覽地圖</button>
-        <button id="btn-view-notice" style="background:#f8f9fa; color:#495057; border:1px solid #ddd;" onclick="showNotice()">查看公告說明</button>
+        <button class="btn-gen" onclick="processAll(true)">生成路徑 並 預覽地圖</button>
+        <button style="background:#1971c2; color:white;" onclick="processAll(false)">直接生成 下載GPX</button>
+        
+        <div id="download-area"></div>
         <div id="status"></div>
     </div>
 </div>
 
-<div id="editor-panel">
-    <div id="panel-header">按住此處拖動面板</div>
-    <div id="panel-content">
-        <div class="panel-row">
-            <label>旋轉角度: <span id="val-angle">0</span>°</label>
-            <input type="range" id="input-angle" min="0" max="360" value="0" style="width:100%">
-        </div>
-        <div class="panel-row">
-            <label>A 端入口 (由前一組連入):</label>
-            <select id="select-entry" class="panel-select"></select>
-        </div>
-        <div class="panel-row">
-            <label>B 端出口 (連向下一組):</label>
-            <select id="select-exit" class="panel-select"></select>
-        </div>
-        <button id="btn-del-point" style="background:#e03131; color:white; padding:8px; font-size:12px;">🗑️ 刪除此組座標</button>
-        <hr>
-        <div id="preview-switcher"></div>
-    </div>
-</div>
-
 <div id="map-container">
+    <div id="map-sidebar" class="is-hidden"><div id="sidebar-btns"></div></div>
     <div class="map-btn-group">
         <button class="map-ctrl-btn" onclick="toggleMapFullScreen()">全頻/縮小</button>
-        <button class="map-ctrl-btn" style="background:#2f9e44" onclick="downloadCurrent()">儲存修改並下載</button>
+        <button class="map-ctrl-btn" style="background:#2f9e44" onclick="downloadActive()">儲存並下載</button>
         <button class="map-ctrl-btn" style="background:#e03131" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
+
+    <div id="bottom-action-bar">
+        <div style="font-weight:bold; color:#2f9e44; text-align:center;" id="point-label">編輯點位</div>
+        <div class="action-row">
+            <button class="btn-act" style="background:#f1f3f5" onclick="changeRotation(-45)">↺ 旋轉</button>
+            <button class="btn-act" style="background:#f1f3f5" onclick="changeRotation(45)">↻ 旋轉</button>
+            <button class="btn-act" style="background:#1971c2; color:white" onclick="toggleFlip()">⇄ 反轉路徑</button>
+        </div>
+        <button class="btn-act" style="background:#e03131; color:white" onclick="deleteCurrentPoint()">🗑️ 刪除整組圖形</button>
+        <button class="btn-act" style="background:#adb5bd; color:white" onclick="hideActionBar()">完成編輯</button>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    var map, currentData = [], activeLayers = {}, markers = [], editingIdx = -1;
+    var map, currentData = [], activeLayers = {}, markers = [], activeModes = [], editingIdx = -1;
 
     function acceptNotice() { document.getElementById('bulletin-section').classList.add('is-hidden'); document.getElementById('generator-section').style.display = 'block'; }
     function showNotice() { document.getElementById('bulletin-section').classList.remove('is-hidden'); document.getElementById('generator-section').style.display = 'none'; }
     function toggleSource() { const type = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', type !== 'manual'); document.getElementById('fileSection').classList.toggle('is-hidden', type === 'manual'); }
-    function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; document.getElementById('status').innerText = "資料已清除"; }
-    function openMap() { document.getElementById('map-container').style.display = 'block'; if (!map) { map = L.map('map', { zoomControl: false }).setView([23.5, 121], 7); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({ position: 'bottomright' }).addTo(map); } }
-    function closeMap() { document.getElementById('map-container').style.display = 'none'; document.getElementById('editor-panel').style.display = 'none'; }
-    function toggleMapFullScreen() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => map.invalidateSize(), 400); }
+    function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; document.getElementById('download-area').innerHTML = ""; document.getElementById('status').innerText = "已清空資料"; }
+    function openMap() { document.getElementById('map-container').style.display = 'block'; if(!map) { map = L.map('map',{zoomControl:false}).setView([23.5,121],7); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map); } setTimeout(()=>map.invalidateSize(),400); }
+    function closeMap() { document.getElementById('map-container').style.display = 'none'; hideActionBar(); }
+    function toggleMapFullScreen() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(()=>map.invalidateSize(),400); }
+    function hideActionBar() { document.getElementById('bottom-action-bar').style.display = 'none'; editingIdx = -1; markers.forEach(m => m.setStyle({color:'#fa5252'})); }
 
-    // 面板拖動
-    const panel = document.getElementById('editor-panel');
-    const header = document.getElementById('panel-header');
-    header.onmousedown = (e) => {
-        let offsetX = e.clientX - panel.offsetLeft;
-        let offsetY = e.clientY - panel.offsetTop;
-        document.onmousemove = (ev) => { panel.style.left = (ev.clientX - offsetX) + 'px'; panel.style.top = (ev.clientY - offsetY) + 'px'; };
-        document.onmouseup = () => { document.onmousemove = null; };
-    };
-
-    async function processAll() {
+    async function processAll(preview) {
         const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if (modes.length === 0) return alert("請勾選模式");
+        if(!modes.length) return alert("請選擇模式");
         try {
             let centers = [];
             const type = document.getElementById('sourceType').value;
-            if (type === 'manual') {
-                const txt = document.getElementById('coordInput').value.trim();
-                const matches = txt.match(/-?\d+\.\d+/g); //
-                for(let i=0; i<matches.length; i+=2) centers.push({ lng: parseFloat(matches[i+1]), lat: parseFloat(matches[i]), angle: 0, entryIdx: 0, exitIdx: 0 });
+            if(type === 'manual') {
+                const txt = document.getElementById('coordInput').value;
+                const matches = txt.match(/-?\d+\.\d+/g);
+                for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0, flipped:false});
             } else {
                 const xml = await document.getElementById('gpxFile').files[0].text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
-                let m; while ((m = regex.exec(xml)) !== null) centers.push({ lng: parseFloat(m[2]), lat: parseFloat(m[1]), angle: 0, entryIdx: 0, exitIdx: 0 });
+                let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0, flipped:false});
             }
-            currentData = centers;
-            openMap();
-            initEditor(modes);
-        } catch (e) { alert("解析失敗，請確認格式。"); }
+            currentData = centers; activeModes = modes;
+            if(!preview) { modes.forEach(m => exportGPX(buildFinalPath(centers, m), m)); }
+            else { openMap(); renderEditor(); }
+        } catch(e) { alert("座標解析錯誤"); }
     }
 
-    function initEditor(modes) {
-        renderMarkers();
-        const switcher = document.getElementById('preview-switcher');
-        switcher.innerHTML = "";
-        modes.forEach((m, idx) => {
-            const btn = document.createElement('button');
-            btn.className = "sidebar-btn" + (idx === 0 ? " active" : "");
-            btn.innerText = "切換預覽：" + m;
-            btn.onclick = () => { document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updatePath(m); };
-            switcher.appendChild(btn);
+    function renderEditor() {
+        markers.forEach(m => map.removeLayer(m)); markers = [];
+        Object.values(activeLayers).forEach(l => map.removeLayer(l));
+        const sidebar = document.getElementById('sidebar-btns'); sidebar.innerHTML = "";
+        document.getElementById('map-sidebar').classList.remove('is-hidden');
+
+        currentData.forEach((item, idx) => {
+            const m = L.circleMarker([item.lat, item.lng], {radius: 8, color:'#fa5252', fillOpacity: 1}).addTo(map);
+            m.on('click', () => {
+                editingIdx = idx;
+                markers.forEach(mk => mk.setStyle({color:'#fa5252'}));
+                m.setStyle({color:'#2f9e44'});
+                document.getElementById('point-label').innerText = `正在編輯點位 ${idx+1}`;
+                document.getElementById('bottom-action-bar').style.display = 'flex';
+            });
+            markers.push(m);
         });
-        updatePath(modes[0]);
-    }
 
-    function renderMarkers() {
-        markers.forEach(m => map.removeLayer(m));
-        markers = currentData.map((item, idx) => {
-            const m = L.circleMarker([item.lat, item.lng], {radius: 7, color: '#fa5252', fillOpacity: 1}).addTo(map);
-            m.on('click', () => openPanel(idx));
-            return m;
+        activeModes.forEach((m, i) => {
+            const path = buildFinalPath(currentData, m);
+            const layer = L.polyline(path.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4, opacity: 0.8});
+            activeLayers[m] = layer;
+            const sBtn = document.createElement('button');
+            sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
+            sBtn.innerText = m === 'linear' ? "座標串接" : m === 'z-shape' ? "Z字圖形" : m === 'square' ? "正方形" : "漏斗型";
+            sBtn.onclick = () => {
+                Object.values(activeLayers).forEach(l => map.removeLayer(l));
+                layer.addTo(map);
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+                sBtn.classList.add('active');
+            };
+            sidebar.appendChild(sBtn);
+            if(i === 0) layer.addTo(map);
         });
+        if(markers.length) map.fitBounds(L.featureGroup(markers).getBounds(), {padding:[50,50]});
     }
 
-    function openPanel(idx) {
-        editingIdx = idx;
-        const item = currentData[idx];
-        panel.style.display = 'block';
-        document.getElementById('val-angle').innerText = item.angle;
-        document.getElementById('input-angle').value = item.angle;
-        
-        const mode = document.querySelector('.sidebar-btn.active').innerText.split('：')[1];
-        const pointsCount = getPointsCount(mode);
-        
-        const entrySel = document.getElementById('select-entry');
-        const exitSel = document.getElementById('select-exit');
-        entrySel.innerHTML = ""; exitSel.innerHTML = "";
-        for(let i=0; i<pointsCount; i++) {
-            entrySel.add(new Option("頂點 " + i, i));
-            exitSel.add(new Option("頂點 " + i, i));
+    function changeRotation(val) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + val) % 360; refreshPaths(); }
+    function toggleFlip() { if(editingIdx < 0) return; currentData[editingIdx].flipped = !currentData[editingIdx].flipped; refreshPaths(); }
+    function deleteCurrentPoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); hideActionBar(); renderEditor(); }
+    function refreshPaths() { activeModes.forEach(m => { const path = buildFinalPath(currentData, m); activeLayers[m].setLatLngs(path.map(p => [p[1], p[0]])); }); }
+
+    function buildFinalPath(data, mode) {
+        let path = []; const r = 41;
+        for (let i = 0; i < data.length; i++) {
+            const curr = data[i];
+            if (mode === 'linear') { path.push([curr.lng, curr.lat]); continue; }
+            let bearing = curr.angle;
+            if (curr.angle === 0) {
+                const prev = data[i === 0 ? data.length - 1 : i - 1];
+                const next = data[(i + 1) % data.length];
+                bearing = turf.bearing(turf.point([prev.lng, prev.lat]), turf.point([next.lng, next.lat]));
+            }
+            const cp = turf.point([curr.lng, curr.lat]);
+            const v = {
+                tl: turf.destination(cp, r, bearing - 45, {units:'meters'}).geometry.coordinates,
+                tr: turf.destination(cp, r, bearing + 45, {units:'meters'}).geometry.coordinates,
+                br: turf.destination(cp, r, bearing + 135, {units:'meters'}).geometry.coordinates,
+                bl: turf.destination(cp, r, bearing - 135, {units:'meters'}).geometry.coordinates
+            };
+            let group;
+            if (mode === 'z-shape') group = [v.bl, v.tl, [curr.lng, curr.lat], v.br, v.tr];
+            else if (mode === 'square') group = [v.bl, v.tl, v.tr, v.br, v.bl];
+            else if (mode === 'funnel') group = [v.tl, v.tr, [curr.lng, curr.lat], v.bl, v.br, [curr.lng, curr.lat]]; // 漏斗修正
+            
+            if (curr.flipped) group.reverse();
+            path.push(...group);
         }
-        entrySel.value = item.entryIdx;
-        exitSel.value = item.exitIdx;
-
-        document.getElementById('input-angle').oninput = (e) => { item.angle = parseInt(e.target.value); document.getElementById('val-angle').innerText = item.angle; updatePath(mode); };
-        entrySel.onchange = (e) => { item.entryIdx = parseInt(e.target.value); updatePath(mode); };
-        exitSel.onchange = (e) => { item.exitIdx = parseInt(e.target.value); updatePath(mode); };
-        document.getElementById('btn-del-point').onclick = () => { currentData.splice(idx, 1); panel.style.display = 'none'; renderMarkers(); updatePath(mode); };
+        if (path.length) path.push(path[0]);
+        return path;
     }
 
-    function updatePath(mode) {
-        if (activeLayers[mode]) map.removeLayer(activeLayers[mode]);
-        const fullPath = [];
-        for (let i = 0; i < currentData.length; i++) {
-            const item = currentData[i];
-            let shape = getShapePoints(item, mode);
-            if (mode !== 'linear') shape = reorderShape(shape, item.entryIdx, item.exitIdx);
-            fullPath.push(...shape);
-        }
-        fullPath.push(fullPath[0]);
-        activeLayers[mode] = L.polyline(fullPath.map(p => [p[1], p[0]]), {color: '#1971c2', weight: 4}).addTo(map);
-        map.fitBounds(activeLayers[mode].getBounds(), {padding: [40, 40]});
+    function downloadActive() {
+        const activeBtn = document.querySelector('.sidebar-btn.active');
+        if(!activeBtn) return;
+        const modeKey = activeModes.find(m => activeBtn.innerText.includes(m === 'linear' ? "串接" : m === 'z-shape' ? "Z字" : m === 'square' ? "正方" : "漏斗"));
+        exportGPX(buildFinalPath(currentData, modeKey), modeKey);
     }
 
-    function reorderShape(pts, start, end) {
-        let result = [];
-        for(let i=0; i<pts.length; i++) result.push(pts[(start + i) % pts.length]);
-        // 確保循環回到入口端以便銜接
-        return result;
-    }
-
-    function getShapePoints(item, mode) {
-        const r = 41; const cp = turf.point([item.lng, item.lat]);
-        const v = [
-            turf.destination(cp, r, item.angle - 135, {units:'meters'}).geometry.coordinates,
-            turf.destination(cp, r, item.angle - 45, {units:'meters'}).geometry.coordinates,
-            turf.destination(cp, r, item.angle + 45, {units:'meters'}).geometry.coordinates,
-            turf.destination(cp, r, item.angle + 135, {units:'meters'}).geometry.coordinates
-        ];
-        if (mode === 'z-shape') return [v[0], v[1], [item.lng, item.lat], v[3], v[2]];
-        if (mode === 'square') return [v[0], v[1], v[2], v[3]];
-        if (mode === 'funnel') return [v[1], v[2], [item.lng, item.lat], v[0], v[3], [item.lng, item.lat]];
-        return [[item.lng, item.lat]];
-    }
-
-    function getPointsCount(mode) { if (mode === 'z-shape') return 5; if (mode === 'funnel') return 6; return 4; }
-
-    function downloadCurrent() {
-        const mode = document.querySelector('.sidebar-btn.active').innerText.split('：')[1];
-        const pts = activeLayers[mode].getLatLngs();
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${mode}</name><trkseg>`;
-        pts.forEach(p => gpx += `\n<trkpt lat="${p.lat.toFixed(8)}" lon="${p.lng.toFixed(8)}"></trkpt>`);
+    function exportGPX(pts, name) {
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${name}</name><trkseg>`;
+        pts.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `pikmin_${mode}.gpx`; a.click();
+        a.download = `pikmin_${name}_${Date.now()}.gpx`; a.click();
     }
 </script>
 </body>
