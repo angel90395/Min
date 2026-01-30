@@ -33,7 +33,7 @@
         .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
         /* 底部編輯條 */
-        #bottom-editor { position: absolute; bottom: 0; left: 0; width: 100%; background: white; z-index: 10000; border-top: 4px solid #2f9e44; padding: 15px; display: none; flex-direction: column; gap: 10px; }
+        #bottom-editor { position: absolute; bottom: 0; left: 0; width: 100%; background: white; z-index: 10000; border-top: 4px solid #2f9e44; padding: 15px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
         .action-row { display: flex; gap: 8px; justify-content: center; }
         .btn-act { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
 
@@ -72,7 +72,7 @@
         <div class="instruction-card">
             <h4 style="margin:0 0 8px; color:#1971c2">📢 使用說明與提醒</h4>
             <ol style="margin:0; padding-left:22px; font-size:0.85rem; color:#1864ab; line-height:1.6;">
-                <li>手動輸入：將座標依序貼入，一行一一個</li>
+                <li>手動輸入：將座標依序貼入，一行一個</li>
                 <li>上傳檔案：可上傳既有只有花苗座標路徑的gpx，會保留原本檔案的路線順序。</li>
                 <li>座標查看：點擊地圖的紅點可顯示座標進行路線方向微調修改</li>
                 <li>生成器僅供方便使用，無法滿足大家所有的路線需求，生成的路徑如有不滿意，請到其他軟體重新繪製。</li>
@@ -84,8 +84,7 @@
             <div>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="linear"> 座標串接 (收果/多帳種花)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape" checked> Z字圖形 (標準Z字)</label>
-                <label class="mode-option"><input type="checkbox" name="pathMode" value="hook-z"> 勾Z圖形 (頭下尾上)</label>
-                <label class="mode-option"><input type="checkbox" name="pathMode" value="square"> 正方形路線 (2圈&適合種白)</label>
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形 (TR-TL-C-BR-BL)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="bowtie"> 蝴蝶結型 (密集種花模式)</label>
             </div>
         </div>
@@ -129,7 +128,7 @@
         <div class="action-row">
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(-15)">↺ 轉動</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(15)">↻ 轉動</button>
-            <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleOffset()">📍 修改銜接位置</button>
+            <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleOffset()">📍 修改銜接入口</button>
         </div>
         <div class="action-row">
             <button class="btn-act" style="background:#fd7e14; color:white" onclick="restoreOriginal()">⏮ 恢復原始</button>
@@ -156,11 +155,11 @@
     function openMap() {
         document.getElementById('map-container').style.display = 'block';
         if (!map) {
-            map = L.map('map',{zoomControl:false});
+            map = L.map('map', {zoomControl:false});
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.control.zoom({position:'bottomright'}).addTo(map);
         }
-        // 修正地圖鎖定：自動定位至座標點範圍
+        // 修正：自動定位至座標所在地
         setTimeout(() => {
             map.invalidateSize();
             if(markers.length > 0) {
@@ -188,7 +187,6 @@
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0, offset:0});
             }
             
-            // 初始智慧旋轉
             centers.forEach((c, i) => {
                 if (i < centers.length - 1) c.angle = turf.bearing(turf.point([c.lng, c.lat]), turf.point([centers[i+1].lng, centers[i+1].lat]));
                 else if (i > 0) c.angle = centers[i-1].angle;
@@ -214,7 +212,7 @@
             activeLayers[m] = layerGroup;
             const sBtn = document.createElement('button');
             sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
-            sBtn.innerText = m==='linear'?"座標串接":m==='z-shape'?"Z字圖形":m==='hook-z'?"勾Z圖形":m==='square'?"正方形":"蝴蝶結型";
+            sBtn.innerText = m==='linear'?"座標串接":m==='z-shape'?"Z字圖形":m==='s-shape'?"S型圖形":"蝴蝶結型";
             sBtn.onclick = () => {
                 Object.values(activeLayers).forEach(lg => lg.remove());
                 layerGroup.addTo(map);
@@ -230,25 +228,26 @@
 
     function buildGroup(curr, mode) {
         const r = 41; const cp = turf.point([curr.lng, curr.lat]);
-        const v = [
-            turf.destination(cp, r, curr.angle - 45, {units:'meters'}).geometry.coordinates, // TL (0)
-            turf.destination(cp, r, curr.angle + 45, {units:'meters'}).geometry.coordinates, // TR (1)
-            turf.destination(cp, r, curr.angle + 135, {units:'meters'}).geometry.coordinates, // BR (2)
-            turf.destination(cp, r, curr.angle - 135, {units:'meters'}).geometry.coordinates  // BL (3)
-        ];
+        const v = {
+            tl: turf.destination(cp, r, curr.angle - 45, {units:'meters'}).geometry.coordinates,
+            tr: turf.destination(cp, r, curr.angle + 45, {units:'meters'}).geometry.coordinates,
+            ml: turf.destination(cp, r, curr.angle - 90, {units:'meters'}).geometry.coordinates,
+            mr: turf.destination(cp, r, curr.angle + 90, {units:'meters'}).geometry.coordinates,
+            br: turf.destination(cp, r, curr.angle + 135, {units:'meters'}).geometry.coordinates,
+            bl: turf.destination(cp, r, curr.angle - 135, {units:'meters'}).geometry.coordinates
+        };
         const Din = turf.destination(cp, r, curr.angle - 180, {units:'meters'}).geometry.coordinates;
         const Dout = turf.destination(cp, r, curr.angle, {units:'meters'}).geometry.coordinates;
         let shape; const C = [curr.lng, curr.lat];
 
-        // 蝴蝶結型：直徑進 -> 圓心 -> TL -> TR -> 圓心 -> BL -> BR -> 圓心 -> 直徑出
-        if (mode === 'bowtie') shape = [Din, C, v[0], v[1], C, v[3], v[2], C, Dout];
-        // 勾Z型：直徑進 -> TL -> TR -> 圓心 -> BL -> BR -> 直徑出
-        else if (mode === 'hook-z') shape = [Din, v[0], v[1], C, v[3], v[2], Dout];
-        else if (mode === 'z-shape') shape = [v[3], v[0], C, v[2], v[1]];
-        else if (mode === 'square') shape = [v[3], v[0], v[1], v[2], v[3]];
+        // 蝴蝶結型修復
+        if (mode === 'bowtie') shape = [Din, C, v.tl, v.tr, C, v.bl, v.br, C, Dout];
+        // S型圖形邏輯：右上 -> 左上 -> 中左 -> 圓心 -> 中右 -> 右下 -> 左下
+        else if (mode === 's-shape') shape = [v.tr, v.tl, v.ml, C, v.mr, v.br, v.bl];
+        else if (mode === 'z-shape') shape = [v.bl, v.tl, C, v.br, v.tr];
         else return [C];
 
-        if (mode !== 'bowtie' && mode !== 'hook-z' && mode !== 'linear') {
+        if (mode !== 'bowtie' && mode !== 'linear') {
             for (let k = 0; k < curr.offset; k++) shape.push(shape.shift());
         }
         return shape;
@@ -256,7 +255,7 @@
 
     function refreshPaths() {
         const activeBtn = document.querySelector('.sidebar-btn.active');
-        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='hook-z'?"勾Z":m==='square'?"正方":"蝴蝶結"));
+        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='s-shape'?"S型":"蝴蝶結"));
         const lg = activeLayers[mode]; if(!lg) return;
         lg.clearLayers();
         helperDots.forEach(h => map?.removeLayer(h)); helperDots = [];
@@ -273,7 +272,7 @@
             m.on('click', (e) => { L.DomEvent.stopPropagation(e); triggerEdit(i); });
             markers[i] = m;
 
-            if (isSel && mode !== 'linear' && mode !== 'bowtie' && mode !== 'hook-z') {
+            if (isSel && mode !== 'linear' && mode !== 'bowtie') {
                 group.forEach((pt, idx) => {
                     const h = L.circleMarker([pt[1], pt[0]], {radius: 6, color: '#fcc419', fillOpacity: 1}).addTo(lg);
                     h.on('click', (e) => { L.DomEvent.stopPropagation(e); currentData[i].offset = (currentData[i].offset + idx) % group.length; refreshPaths(); });
@@ -281,7 +280,6 @@
                 });
             }
         }
-        // 銜接線實線化
         if (fullList.length) {
             fullList.push(fullList[0]);
             L.polyline(fullList.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 3, opacity: 0.6 }).addTo(lg);
@@ -300,7 +298,7 @@
     }
     function downloadActive() {
         const btn = document.querySelector('.sidebar-btn.active');
-        const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='hook-z'?"勾Z":m==='square'?"正方":"蝴蝶結"));
+        const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='s-shape'?"S型":"蝴蝶結"));
         exportGPX(getFinalPoly(mKey), mKey);
     }
     function exportGPX(pts, name) {
@@ -309,7 +307,7 @@
         gpx += `\n</trkseg></trk></gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `pikmin_${name}.gpx`; a.click();
+        a.download = `pikmin_${name}_${Date.now()}.gpx`; a.click();
     }
 </script>
 </body>
