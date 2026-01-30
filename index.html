@@ -88,6 +88,7 @@
             <div>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="linear"> 座標串接 (收果/多帳種花)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape" checked> Z字圖形 (2圈&適合種藍)</label>
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="hook-z"> 勾Z圖形 (頭朝下, 尾朝上)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="square"> 正方形路線 (2圈&適合種白)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="funnel"> 漏斗型路線 (密集種花模式)</label>
             </div>
@@ -122,21 +123,21 @@
     <div id="map-sidebar" class="is-hidden"><div id="sidebar-btns"></div></div>
     <div class="map-btn-group">
         <button class="map-ctrl-btn" onclick="toggleMapFullScreen()">全頻/縮小</button>
-        <button class="map-ctrl-btn" style="background:#2f9e44" onclick="downloadActive()">儲存並下載</button>
+        <button class="map-ctrl-btn" style="background:#2f9e44" onclick="downloadActive()">儲存編輯並下載</button>
         <button class="map-ctrl-btn" style="background:#e03131" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
 
     <div id="bottom-editor">
-        <div style="font-weight:bold; color:#2f9e44; text-align:center; margin-bottom:5px;" id="edit-label">編輯點位中</div>
+        <div style="font-weight:bold; color:#2f9e44; text-align:center; margin-bottom:5px;" id="edit-label">正在編輯點位</div>
         <div class="action-row">
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(-15)">↺ 轉動</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(15)">↻ 轉動</button>
-            <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleOffset()">📍 修改銜接入口</button>
+            <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleOffset()">📍 修改銜接位置</button>
         </div>
         <div class="action-row">
             <button class="btn-act" style="background:#fd7e14; color:white" onclick="restoreOriginal()">⏮ 恢復原始</button>
-            <button class="btn-act" style="background:#e03131; color:white" onclick="deletePoint()">🗑️ 刪除圖形</button>
+            <button class="btn-act" style="background:#e03131; color:white" onclick="deletePoint()">🗑️ 刪除組</button>
             <button class="btn-act" style="background:#adb5bd; color:white" onclick="closeEditor()">完成</button>
         </div>
     </div>
@@ -159,12 +160,11 @@
     function openMap() {
         document.getElementById('map-container').style.display = 'block';
         if (!map) {
-            // 移除硬編碼座標，由 fitBounds 接管
             map = L.map('map',{zoomControl:false});
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.control.zoom({position:'bottomright'}).addTo(map);
         }
-        // 確保地圖顯示後立即修正視野
+        // 視野鎖定：自動定位至座標點範圍
         setTimeout(() => {
             map.invalidateSize();
             if(markers.length > 0) {
@@ -185,14 +185,12 @@
                 const matches = txt.match(/-?\d+\.\d+/g);
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0, offset:0});
             } else {
-                const fileInput = document.getElementById('gpxFile');
-                if(!fileInput.files.length) return alert("請選擇檔案");
-                const xml = await fileInput.files[0].text();
+                const xml = await document.getElementById('gpxFile').files[0].text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0, offset:0});
             }
             
-            // 自動計算初始角度
+            // 智慧自動旋轉
             centers.forEach((c, i) => {
                 if (i < centers.length - 1) c.angle = turf.bearing(turf.point([c.lng, c.lat]), turf.point([centers[i+1].lng, centers[i+1].lat]));
                 else if (i > 0) c.angle = centers[i-1].angle;
@@ -203,7 +201,7 @@
             activeModes = modes;
             if(!preview) { modes.forEach(m => exportGPX(getFinalPoly(m), m)); }
             else { renderEditor(); openMap(); }
-        } catch(e) { alert("解析錯誤"); }
+        } catch(e) { alert("座標解析錯誤"); }
     }
 
     function renderEditor() {
@@ -218,7 +216,7 @@
             activeLayers[m] = layerGroup;
             const sBtn = document.createElement('button');
             sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
-            sBtn.innerText = m==='linear'?"座標串接":m==='z-shape'?"Z字圖形":m==='square'?"正方形":"漏斗型";
+            sBtn.innerText = m==='linear'?"座標串接":m==='z-shape'?"Z字圖形":m==='hook-z'?"勾Z圖形":m==='square'?"正方形":"漏斗型";
             sBtn.onclick = () => {
                 Object.values(activeLayers).forEach(lg => lg.remove());
                 layerGroup.addTo(map);
@@ -235,15 +233,16 @@
     function buildGroup(curr, mode) {
         const r = 41; const cp = turf.point([curr.lng, curr.lat]);
         const v = [
-            turf.destination(cp, r, curr.angle - 45, {units:'meters'}).geometry.coordinates,
-            turf.destination(cp, r, curr.angle + 45, {units:'meters'}).geometry.coordinates,
-            turf.destination(cp, r, curr.angle + 135, {units:'meters'}).geometry.coordinates,
-            turf.destination(cp, r, curr.angle - 135, {units:'meters'}).geometry.coordinates
+            turf.destination(cp, r, curr.angle - 45, {units:'meters'}).geometry.coordinates, // TL (0)
+            turf.destination(cp, r, curr.angle + 45, {units:'meters'}).geometry.coordinates, // TR (1)
+            turf.destination(cp, r, curr.angle + 135, {units:'meters'}).geometry.coordinates, // BR (2)
+            turf.destination(cp, r, curr.angle - 135, {units:'meters'}).geometry.coordinates  // BL (3)
         ];
         let shape; const C = [curr.lng, curr.lat];
-        if (mode === 'funnel') shape = [C, v[0], v[1], C, v[3], v[2], C]; // 圓心進、圓心出
-        else if (mode === 'z-shape') shape = [v[3], v[0], C, v[2], v[1]];
-        else if (mode === 'square') shape = [v[3], v[0], v[1], v[2], v[3]];
+        if (mode === 'funnel') shape = [C, v[0], v[1], C, v[3], v[2], C]; // 漏斗型：圓心銜接
+        else if (mode === 'hook-z') shape = [v[0], v[3], C, v[1], v[2]]; // 勾Z：頭下尾上
+        else if (mode === 'z-shape') shape = [v[3], v[0], C, v[2], v[1]]; // 標準Z
+        else if (mode === 'square') shape = [v[3], v[0], v[1], v[2], v[3]]; // 方形
         else return [C];
 
         if (mode !== 'funnel' && mode !== 'linear') {
@@ -254,7 +253,7 @@
 
     function refreshPaths() {
         const activeBtn = document.querySelector('.sidebar-btn.active');
-        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='square'?"正方":"漏斗"));
+        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='hook-z'?"勾Z":m==='square'?"正方":"漏斗"));
         const lg = activeLayers[mode]; if(!lg) return;
         lg.clearLayers();
         helperDots.forEach(h => map?.removeLayer(h)); helperDots = [];
@@ -272,16 +271,17 @@
             markers[i] = m;
 
             if (isSel && mode !== 'linear' && mode !== 'funnel') {
-                group.forEach((pt, ptIdx) => {
+                group.forEach((pt, idx) => {
                     const h = L.circleMarker([pt[1], pt[0]], {radius: 6, color: '#fcc419', fillOpacity: 1}).addTo(lg);
-                    h.on('click', (e) => { L.DomEvent.stopPropagation(e); currentData[i].offset = (currentData[i].offset + ptIdx) % group.length; refreshPaths(); });
+                    h.on('click', (e) => { L.DomEvent.stopPropagation(e); currentData[i].offset = (currentData[i].offset + idx) % group.length; refreshPaths(); });
                     helperDots.push(h);
                 });
             }
         }
+        // 銜接線實線化
         if (fullList.length) {
             fullList.push(fullList[0]);
-            L.polyline(fullList.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 3, opacity: 0.6 }).addTo(lg); // 實線銜接
+            L.polyline(fullList.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 3, opacity: 0.6 }).addTo(lg);
         }
     }
 
@@ -297,7 +297,7 @@
     }
     function downloadActive() {
         const btn = document.querySelector('.sidebar-btn.active');
-        const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='square'?"正方":"漏斗"));
+        const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='hook-z'?"勾Z":m==='square'?"正方":"漏斗"));
         exportGPX(getFinalPoly(mKey), mKey);
     }
     function exportGPX(pts, name) {
