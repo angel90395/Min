@@ -20,6 +20,7 @@
         #generator-section { display: none; }
         .instruction-card { background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab; }
 
+        /* 模式複選樣式 */
         .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; }
         .mode-option input { margin-right: 12px; width: 22px; height: 22px; }
 
@@ -31,33 +32,33 @@
         .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
         .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
-        /* 序號標籤強化版：大圓點且文字置中 */
+        /* 序號標籤強化：大圓點且文字完美置中 */
         .number-icon {
-            background: #fa5252; border: 2px solid white; border-radius: 50%;
-            color: white; font-weight: bold; text-align: center;
+            background: #fa5252; border: 2.5px solid white; border-radius: 50%;
+            color: white; font-weight: 800; text-align: center;
             font-size: 14px; width: 32px !important; height: 32px !important;
-            line-height: 28px !important; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
-        .number-icon.selected { background: #2f9e44; transform: scale(1.2); z-index: 1000 !important; }
+        .number-icon.selected { background: #2f9e44; transform: scale(1.15); z-index: 1000 !important; }
 
-        /* 距離與時間統計面板 */
+        /* 距離統計面板：位置移至側邊下方避開擋板 */
         #stat-panel {
-            position: absolute; top: 20px; left: 10px; z-index: 2000;
+            position: absolute; top: 280px; left: 10px; z-index: 2000;
             background: rgba(255,255,255,0.95); padding: 10px 15px; border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); border-left: 5px solid #1971c2;
-            min-width: 160px; pointer-events: none;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2); border-left: 6px solid #1971c2;
+            min-width: 170px; pointer-events: none;
         }
-        .stat-line { font-size: 13px; color: #333; margin: 2px 0; font-weight: bold; }
-
-        /* 底部編輯條 */
-        #bottom-editor { position: absolute; bottom: 0; left: 0; width: 100%; background: white; z-index: 10000; border-top: 4px solid #2f9e44; padding: 15px; display: none; flex-direction: column; gap: 8px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
-        .action-row { display: flex; gap: 6px; justify-content: center; }
-        .btn-act { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .stat-line { font-size: 13px; color: #333; margin: 3px 0; font-weight: bold; }
 
         #map-sidebar { position: absolute; top: 120px; left: 10px; z-index: 2000; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 5px; width: 140px; }
         .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 11px; text-align: left; }
         .sidebar-btn.active { background: #2f9e44; color: white; }
+
+        /* 底部編輯條 */
+        #bottom-editor { position: absolute; bottom: 0; left: 0; width: 100%; background: white; z-index: 10000; border-top: 4px solid #2f9e44; padding: 15px; display: none; flex-direction: column; gap: 8px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
+        .action-row { display: flex; gap: 6px; justify-content: center; }
+        .btn-act { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
 
         .card { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6; border-left: 6px solid #2f9e44; }
         textarea { width: 100%; height: 80px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; padding: 8px; }
@@ -92,7 +93,7 @@
             <ol style="margin:0; padding-left:22px; font-size:0.85rem; color:#1864ab; line-height:1.6;">
                 <li>手動輸入：將座標依序貼入，一行一個</li>
                 <li>上傳檔案：可上傳既有只有花苗座標路徑的gpx，會保留原本檔案的路線順序。</li>
-                <li>座標查看：點擊地圖的紅點可顯示座標進行路線方向微調修改</li>
+                <li>座標查看：點擊地圖的紅點可顯示座標並進行路線方向微調修改</li>
                 <li>生成器僅供方便使用，無法滿足大家所有的路線需求，生成的路徑如有不滿意，請到其他軟體重新繪製。</li>
             </ol>
         </div>
@@ -134,7 +135,7 @@
 
 <div id="map-container">
     <div id="stat-panel">
-        <div class="stat-line" id="dist-val">總距離：0 km</div>
+        <div class="stat-line" id="dist-val">總距離：0.00 km</div>
         <div class="stat-line" id="time-val">預計時間：0 min (20km/h)</div>
     </div>
 
@@ -171,7 +172,7 @@
     function acceptNotice() { document.getElementById('bulletin-section').classList.add('is-hidden'); document.getElementById('generator-section').style.display = 'block'; window.scrollTo(0,0); }
     function showNotice() { document.getElementById('bulletin-section').classList.remove('is-hidden'); document.getElementById('generator-section').style.display = 'none'; window.scrollTo(0,0); }
     function toggleSource() { const type = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', type !== 'manual'); document.getElementById('fileSection').classList.toggle('is-hidden', type === 'manual'); }
-    function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; document.getElementById('status').innerText = "已清空"; }
+    function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; document.getElementById('status').innerText = "已清空資料"; }
     function closeMap() { document.getElementById('map-container').style.display = 'none'; closeEditor(); }
     function toggleMapFullScreen() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(()=>map.invalidateSize(),400); }
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; refreshPaths(); }
@@ -182,6 +183,7 @@
         setTimeout(() => { map.invalidateSize(); if(currentData.length) map.fitBounds(L.featureGroup(markers).getBounds(), {padding:[50,50]}); }, 500);
     }
 
+    // --- 軌跡優化 (不交叉封閉迴圈) ---
     function solveSmoothLoop(pts) {
         if (pts.length < 3) return pts;
         let route = [...pts];
@@ -224,13 +226,7 @@
             const layerGroup = L.featureGroup(); activeLayers[m] = layerGroup;
             const sBtn = document.createElement('button'); sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
             sBtn.innerText = m==='linear'?"座標串接(繞圈)":m==='z-shape'?"Z字圖形":m==='s-shape'?"S型圖形":"蝴蝶結圖形";
-            sBtn.onclick = () => {
-                Object.values(activeLayers).forEach(lg => lg.remove());
-                layerGroup.addTo(map);
-                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-                sBtn.classList.add('active');
-                closeEditor();
-            };
+            sBtn.onclick = () => { Object.values(activeLayers).forEach(lg => lg.remove()); layerGroup.addTo(map); document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active')); sBtn.classList.add('active'); closeEditor(); };
             sidebar.appendChild(sBtn);
             if(i === 0 && map) layerGroup.addTo(map);
         });
@@ -254,7 +250,6 @@
         else if (mode === 's-shape') shape = [v.tr, v.tl, v.ml, C, v.mr, v.br, v.bl];
         else if (mode === 'z-shape') shape = [v.bl, v.tl, C, v.br, v.tr];
         else return [C];
-
         if (mode !== 'bowtie' && mode !== 'linear') { for (let k = 0; k < curr.offset; k++) shape.push(shape.shift()); }
         return shape;
     }
@@ -273,7 +268,7 @@
             const poly = L.polyline(group.map(p => [p[1], p[0]]), { color: isSel ? '#2f9e44' : '#1971c2', weight: isSel ? 10 : 7, opacity: 0.8 }).addTo(lg);
             poly.on('click', (e) => { L.DomEvent.stopPropagation(e); triggerEdit(i); });
 
-            // 圓點與數字置中強化
+            // 加大序號圖標且置中文字
             const icon = L.divIcon({ className: 'number-icon' + (isSel ? ' selected' : ''), html: i + 1, iconSize: [32, 32], iconAnchor: [16, 16] });
             const m = L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg);
             m.bindPopup(`<b>第 ${i+1} 組點位</b><br>緯度: ${currentData[i].lat}<br>經度: ${currentData[i].lng}`);
@@ -282,7 +277,7 @@
 
             if (isSel && mode !== 'linear' && mode !== 'bowtie') {
                 group.forEach((pt, idx) => {
-                    const h = L.circleMarker([pt[1], pt[0]], {radius: 7, color: '#fcc419', fillOpacity: 1, weight: 2}).addTo(lg);
+                    const h = L.circleMarker([pt[1], pt[0]], {radius: 6, color: '#fcc419', fillOpacity: 1}).addTo(lg);
                     h.on('click', (e) => { L.DomEvent.stopPropagation(e); currentData[i].offset = (currentData[i].offset + idx) % group.length; refreshPaths(); });
                     helperDots.push(h);
                 });
@@ -294,11 +289,11 @@
             fullList.push(fullList[0]);
             L.polyline(fullList.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 3, opacity: 0.6 }).addTo(lg);
             
-            // --- 距離與時間統計 ---
+            // 計算數據
             const line = turf.lineString(fullList);
-            const distanceKM = turf.length(line, {units: 'kilometers'});
-            const timeMin = (distanceKM / 20) * 60; // 20 km/h
-            document.getElementById('dist-val').innerText = `總距離：${distanceKM.toFixed(2)} km`;
+            const distKM = turf.length(line, {units: 'kilometers'});
+            const timeMin = (distKM / 20) * 60;
+            document.getElementById('dist-val').innerText = `總距離：${distKM.toFixed(2)} km`;
             document.getElementById('time-val').innerText = `預計時間：${Math.ceil(timeMin)} min (20km/h)`;
         }
     }
@@ -311,17 +306,33 @@
     function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); rawBackup.splice(editingIdx, 1); closeEditor(); renderEditor(); }
 
     function getFinalPoly(m) { let path = []; currentData.forEach(curr => path.push(...buildGroup(curr, m))); if (path.length) path.push(path[0]); return path; }
-    async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='s-shape'?"S型":"蝴蝶結")); await exportGPX(getFinalPoly(mKey), mKey); }
+    
+    async function downloadActive() {
+        const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return;
+        const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='s-shape'?"S型":"蝴蝶結"));
+        await exportGPX(getFinalPoly(mKey), mKey);
+    }
 
     async function exportGPX(pts, modeName) {
-        const now = new Date(); const timeStr = now.getFullYear().toString() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0') + now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
-        const rand = Math.random().toString(36).substring(2, 7); let location = "Region";
-        if (currentData.length > 0) { try { const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=10&accept-language=en`); const data = await res.json(); location = data.address.city || data.address.town || data.address.state || "Area"; location = location.replace(/\s+/g, ''); } catch(e) { location = "Area"; } }
+        const now = new Date();
+        const timeStr = now.getFullYear().toString() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0') + now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
+        const rand = Math.random().toString(36).substring(2, 7);
+        let location = "Region";
+        if (currentData.length > 0) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=10&accept-language=en`);
+                const data = await res.json();
+                location = data.address.city || data.address.town || data.address.state || "Area";
+                location = location.replace(/\s+/g, '');
+            } catch(e) { location = "Area"; }
+        }
         const fileName = `pikmin_gpx_${location}_${timeStr}_${rand}.gpx`;
         let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${modeName}</name><trkseg>`;
         pts.forEach(pt => gpx += `\n<trkpt lat="${pt[1].toFixed(8)}" lon="${pt[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
-        const blob = new Blob([gpx], { type: 'application/gpx+xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; a.click();
+        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = fileName; a.click();
     }
 </script>
 </body>
