@@ -20,6 +20,7 @@
         #generator-section { display: none; }
         .instruction-card { background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9rem; color: #1864ab; }
 
+        /* 模式選擇 */
         .mode-option { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #dee2e6; cursor: pointer; }
         .mode-option input { margin-right: 12px; width: 22px; height: 22px; }
 
@@ -28,10 +29,11 @@
         #map-container.is-fullscreen { width: 100vw; height: 100vh; bottom: 0; right: 0; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        /* 地圖控制按鈕 */
+        .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .map-ctrl-btn { background: rgba(33, 37, 41, 0.9); color: white; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
-        /* 置中標籤圓點 */
+        /* 序號標籤：加大且文字置中 */
         .number-icon {
             background: #fa5252; border: 2.5px solid white; border-radius: 50%;
             color: white; font-weight: 800; text-align: center;
@@ -40,20 +42,20 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
         .number-icon.selected { background: #2f9e44; transform: scale(1.15); z-index: 1000 !important; }
+        .number-icon.picking { background: #adb5bd; border-color: #666; }
 
-        /* 側邊面板容器 */
-        #map-sidebar-wrapper { position: absolute; top: 120px; left: 10px; z-index: 2000; display: flex; flex-direction: column; width: 150px; }
-        #map-sidebar { background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 11px; text-align: left; cursor: pointer; }
-        .sidebar-btn.active { background: #2f9e44; color: white; border-color: #2f9e44; }
-
-        /* 距離統計面板：位於按鈕下方不被擋住 */
+        /* 距離統計面板：位於側邊選項上方 */
         #stat-panel {
-            background: rgba(33, 37, 41, 0.85); padding: 10px 15px; border-radius: 8px;
-            color: white; min-width: 140px; margin-top: 8px; pointer-events: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            background: rgba(33, 37, 41, 0.9); padding: 8px 12px; border-radius: 8px;
+            color: white; margin-bottom: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
-        .stat-line { font-size: 12px; margin: 2px 0; font-weight: bold; white-space: nowrap; }
+        .stat-line { font-size: 11px; margin: 2px 0; font-weight: bold; white-space: nowrap; }
+
+        /* 側邊切換選單包裹層 */
+        #map-sidebar-wrapper { position: absolute; top: 120px; left: 10px; z-index: 2000; display: flex; flex-direction: column; width: 160px; }
+        #map-sidebar { background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .sidebar-btn { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 10px; text-align: left; cursor: pointer; }
+        .sidebar-btn.active { background: #2f9e44; color: white; border-color: #2f9e44; }
 
         /* 底部編輯條 */
         #bottom-editor { position: absolute; bottom: 0; left: 0; width: 100%; background: white; z-index: 10000; border-top: 4px solid #2f9e44; padding: 15px; display: none; flex-direction: column; gap: 8px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
@@ -66,7 +68,7 @@
         button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
         #status { font-size: 13px; color: #fa5252; text-align: center; margin-top: 8px; font-weight: bold; }
 
-        @media (min-width: 768px) { #controls { width: 450px; } #map-container { width: 550px; height: 550px; } #map-sidebar-wrapper { top: 120px; } }
+        @media (min-width: 768px) { #controls { width: 450px; } #map-container { width: 550px; height: 550px; } #map-sidebar-wrapper { top: 100px; } }
     </style>
 </head>
 <body id="mainBody">
@@ -100,10 +102,9 @@
         <div class="card">
             <label style="font-weight:bold; margin-bottom:8px; display:block;">1. 選擇生成模式 (可複選)</label>
             <div>
-                <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 座標串接(繞圈)</label>
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 花苗座標串連(適合收果)</label>
                 <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
-                <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形</label>
-                <label class="mode-option"><input type="checkbox" name="pathMode" value="bowtie"> 蝴蝶結圖形</label>
+                <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形(種完一圈約剩113-129花瓣)</label>
             </div>
         </div>
 
@@ -134,16 +135,17 @@
 
 <div id="map-container">
     <div id="map-sidebar-wrapper" class="is-hidden">
-        <div id="map-sidebar">
-            <div id="sidebar-btns"></div>
-        </div>
         <div id="stat-panel">
             <div class="stat-line" id="dist-val">總距離：0.00 km</div>
-            <div class="stat-line" id="time-val">時間：0 min</div>
+            <div class="stat-line" id="time-val">時間：0 min (20km/h)</div>
+        </div>
+        <div id="map-sidebar">
+            <div id="sidebar-btns"></div>
         </div>
     </div>
 
     <div class="map-btn-group">
+        <button class="map-ctrl-btn" id="btn-pick-order" style="background:#fcc419; color:#333" onclick="togglePickingMode()">👆 自選順序</button>
         <button class="map-ctrl-btn" onclick="toggleMapFullScreen()">全頻/縮小</button>
         <button class="map-ctrl-btn" style="background:#2f9e44" onclick="downloadActive()">儲存編輯並下載</button>
         <button class="map-ctrl-btn" style="background:#e03131" onclick="closeMap()">關閉預覽</button>
@@ -158,8 +160,8 @@
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(45)">↻ 旋轉圖形</button>
         </div>
         <div class="action-row">
-            <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleOffset()">📍 修改銜接位置</button>
-            <button class="btn-act" style="background:#fd7e14; color:white" onclick="restoreGlobalOriginal()">⏮ 恢復全路徑原始狀態</button>
+            <button class="btn-act" style="background:#e7f5ff; color:#1971c2" onclick="cycleOffset()">📍 修改銜接入口</button>
+            <button class="btn-act" style="background:#fd7e14; color:white" onclick="restoreGlobalOriginal()">⏮ 恢復原始</button>
             <button class="btn-act" style="background:#e03131; color:white" onclick="deletePoint()">🗑️ 刪除組</button>
             <button class="btn-act" style="background:#adb5bd; color:white" onclick="closeEditor()">完成</button>
         </div>
@@ -171,6 +173,7 @@
 
 <script>
     var map, currentData = [], rawBackup = [], activeLayers = {}, markers = [], helperDots = [], rangeCircles = [], activeModes = [], editingIdx = -1;
+    var isPickingOrder = false, pickedSequence = [];
 
     function acceptNotice() { document.getElementById('bulletin-section').classList.add('is-hidden'); document.getElementById('generator-section').style.display = 'block'; window.scrollTo(0,0); }
     function showNotice() { document.getElementById('bulletin-section').classList.remove('is-hidden'); document.getElementById('generator-section').style.display = 'none'; window.scrollTo(0,0); }
@@ -195,7 +198,6 @@
                 const txt = document.getElementById('coordInput').value;
                 const matches = txt.match(/-?\d+\.\d+/g);
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0, offset:0});
-                centers = solveSmoothLoop(centers);
             } else {
                 const xml = await document.getElementById('gpxFile').files[0].text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
@@ -208,19 +210,18 @@
         } catch(e) { alert("座標格式錯誤"); }
     }
 
-    function solveSmoothLoop(pts) { if (pts.length < 3) return pts; let route = [...pts]; const center = turf.center(turf.featureCollection(route.map(p => turf.point([p.lng, p.lat])))).geometry.coordinates; route.sort((a, b) => Math.atan2(a.lat-center[1], a.lng-center[0]) - Math.atan2(b.lat-center[1], b.lng-center[0])); return route; }
-
     function renderEditor() {
         if(markers.length) markers.forEach(m => map?.removeLayer(m)); markers = [];
         helperDots.forEach(h => map?.removeLayer(h)); helperDots = [];
         rangeCircles.forEach(c => map?.removeLayer(c)); rangeCircles = [];
         Object.values(activeLayers).forEach(lg => lg.remove()); activeLayers = {};
+        document.getElementById('sidebar-btns').innerHTML = ""; // 解決重複選項問題
         document.getElementById('map-sidebar-wrapper').classList.remove('is-hidden');
 
         activeModes.forEach((m, i) => {
             const layerGroup = L.featureGroup(); activeLayers[m] = layerGroup;
             const sBtn = document.createElement('button'); sBtn.className = "sidebar-btn" + (i === 0 ? " active" : "");
-            sBtn.innerText = m==='linear'?"座標串接(繞圈)":m==='z-shape'?"Z字圖形":m==='s-shape'?"S型圖形":"蝴蝶結圖形";
+            sBtn.innerText = m==='linear'?"花苗座標串連(適合收果)":m==='z-shape'?"Z字圖形":"S型圖形(種完一圈約剩113-129花瓣)";
             sBtn.onclick = () => { Object.values(activeLayers).forEach(lg => lg.remove()); layerGroup.addTo(map); document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active')); sBtn.classList.add('active'); closeEditor(); };
             document.getElementById('sidebar-btns').appendChild(sBtn);
             if(i === 0 && map) layerGroup.addTo(map);
@@ -228,11 +229,11 @@
         refreshPaths();
     }
 
-    // --- 內接正方形邏輯修正 (60m直徑) ---
+    // --- 60公尺內接正方形邏輯修正 (Z字核心) ---
     function buildGroup(curr, mode) {
-        const radius = 30; // 半徑30公尺
+        const radius = 30; // 60m直徑
         const cp = turf.point([curr.lng, curr.lat]);
-        // 內接正方形頂點座標 (45度方向, 距離為半徑)
+        // 內接正方形頂點 (對角線距離中心 30m)
         const v = {
             tl: turf.destination(cp, radius, curr.angle - 45, {units:'meters'}).geometry.coordinates,
             tr: turf.destination(cp, radius, curr.angle + 45, {units:'meters'}).geometry.coordinates,
@@ -241,47 +242,50 @@
             ml: turf.destination(cp, radius * 0.707, curr.angle - 90, {units:'meters'}).geometry.coordinates,
             mr: turf.destination(cp, radius * 0.707, curr.angle + 90, {units:'meters'}).geometry.coordinates
         };
-        const Din = turf.destination(cp, radius * 0.707, curr.angle - 180, {units:'meters'}).geometry.coordinates;
-        const Dout = turf.destination(cp, radius * 0.707, curr.angle, {units:'meters'}).geometry.coordinates;
         
         let shape; const C = [curr.lng, curr.lat];
+        // Z字：TL -> TR -> C -> BL -> BR
         if (mode === 'z-shape') shape = [v.tl, v.tr, C, v.bl, v.br];
-        else if (mode === 'bowtie') shape = [Din, C, v.tl, v.tr, C, v.bl, v.br, C, Dout];
         else if (mode === 's-shape') shape = [v.tr, v.tl, v.ml, C, v.mr, v.br, v.bl];
         else return [C];
-        if (mode !== 'bowtie' && mode !== 'linear') { for (let k = 0; k < curr.offset; k++) shape.push(shape.shift()); }
+
+        if (mode !== 'linear') { for (let k = 0; k < curr.offset; k++) shape.push(shape.shift()); }
         return shape;
     }
 
     function refreshPaths() {
         const activeBtn = document.querySelector('.sidebar-btn.active'); if(!activeBtn) return;
-        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='s-shape'?"S型":"蝴蝶結"));
+        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"收果":m==='z-shape'?"Z字":"S型"));
         const lg = activeLayers[mode]; if(!lg) return;
-        lg.clearLayers(); 
-        helperDots.forEach(h => map?.removeLayer(h)); helperDots = [];
+        lg.clearLayers(); helperDots.forEach(h => map?.removeLayer(h)); helperDots = [];
         rangeCircles.forEach(c => map?.removeLayer(c)); rangeCircles = [];
         const fullList = [];
 
         for (let i = 0; i < currentData.length; i++) {
-            // 繪製 60m 透明白色範圍框
-            const rangeCircle = L.circle([currentData[i].lat, currentData[i].lng], {
-                radius: 30, color: 'white', weight: 1.5, opacity: 0.5, fillOpacity: 0.1, dashArray: '5, 5'
-            }).addTo(lg);
-            rangeCircles.push(rangeCircle);
+            const circle = L.circle([currentData[i].lat, currentData[i].lng], { radius: 30, color: 'white', weight: 1, fillOpacity: 0.1, dashArray: '5, 5' }).addTo(lg);
+            rangeCircles.push(circle);
 
             const group = buildGroup(currentData[i], mode);
             fullList.push(...group);
             const isSel = (editingIdx === i);
             const poly = L.polyline(group.map(p => [p[1], p[0]]), { color: isSel ? '#2f9e44' : '#1971c2', weight: isSel ? 10 : 7, opacity: 0.8 }).addTo(lg);
-            poly.on('click', (e) => { L.DomEvent.stopPropagation(e); triggerEdit(i); });
+            poly.on('click', (e) => { L.DomEvent.stopPropagation(e); if(!isPickingOrder) triggerEdit(i); });
 
-            const icon = L.divIcon({ className: 'number-icon' + (isSel ? ' selected' : ''), html: i + 1, iconSize: [32, 32], iconAnchor: [16, 16] });
+            // 序號標記邏輯修正
+            let label = i + 1;
+            let cssClass = 'number-icon' + (isSel ? ' selected' : '');
+            if (isPickingOrder) {
+                const pickIdx = pickedSequence.indexOf(i);
+                label = pickIdx !== -1 ? pickIdx + 1 : "?";
+                cssClass = pickIdx !== -1 ? 'number-icon selected' : 'number-icon picking';
+            }
+
+            const icon = L.divIcon({ className: cssClass, html: label, iconSize: [32, 32], iconAnchor: [16, 16] });
             const m = L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg);
-            m.bindPopup(`緯度: ${currentData[i].lat}<br>經度: ${currentData[i].lng}`);
-            m.on('click', (e) => { L.DomEvent.stopPropagation(e); triggerEdit(i); m.openPopup(); });
+            m.on('click', (e) => { L.DomEvent.stopPropagation(e); handleMarkerClick(i); });
             markers[i] = m;
 
-            if (isSel && mode !== 'linear' && mode !== 'bowtie') {
+            if (isSel && mode !== 'linear') {
                 group.forEach((pt, idx) => {
                     const h = L.circleMarker([pt[1], pt[0]], {radius: 6, color: '#fcc419', fillOpacity: 1}).addTo(lg);
                     h.on('click', (e) => { L.DomEvent.stopPropagation(e); currentData[i].offset = (currentData[i].offset + idx) % group.length; refreshPaths(); });
@@ -299,20 +303,42 @@
         }
     }
 
-    function triggerEdit(idx) { 
-        editingIdx = idx; 
-        document.getElementById('edit-label').innerText = `正在編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; 
-        document.getElementById('bottom-editor').style.display = 'flex'; 
-        refreshPaths(); 
+    // --- 自選順序邏輯 ---
+    function togglePickingMode() {
+        isPickingOrder = !isPickingOrder;
+        pickedSequence = [];
+        document.getElementById('btn-pick-order').innerText = isPickingOrder ? "請依序點擊點位" : "👆 自選順序";
+        document.getElementById('btn-pick-order').style.background = isPickingOrder ? "#e03131" : "#fcc419";
+        document.getElementById('btn-pick-order').style.color = isPickingOrder ? "white" : "#333";
+        closeEditor();
     }
+
+    function handleMarkerClick(idx) {
+        if (!isPickingOrder) {
+            triggerEdit(idx);
+            markers[idx].bindPopup(`緯度: ${currentData[idx].lat}<br>經度: ${currentData[idx].lng}`).openPopup();
+            return;
+        }
+        if (pickedSequence.includes(idx)) return;
+        pickedSequence.push(idx);
+        refreshPaths();
+        if (pickedSequence.length === currentData.length) {
+            const newData = pickedSequence.map(i => currentData[i]);
+            currentData = newData;
+            togglePickingMode();
+            refreshPaths();
+        }
+    }
+
+    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
     function moveSequence(dir) { if(editingIdx < 0) return; const next = editingIdx + dir; if(next >= 0 && next < currentData.length) { [currentData[editingIdx], currentData[next]] = [currentData[next], currentData[editingIdx]]; editingIdx = next; refreshPaths(); triggerEdit(next); } }
     function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
     function cycleOffset() { if(editingIdx < 0) return; currentData[editingIdx].offset = (currentData[editingIdx].offset + 1) % 5; refreshPaths(); }
-    function restoreGlobalOriginal() { if(confirm("恢復全路徑原始狀態？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
-    function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
+    function restoreGlobalOriginal() { if(confirm("確定要恢復全路徑原始狀態？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
+    function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); rawBackup.splice(editingIdx, 1); closeEditor(); renderEditor(); }
 
     function getFinalPoly(m) { let path = []; currentData.forEach(curr => path.push(...buildGroup(curr, m))); if (path.length) path.push(path[0]); return path; }
-    async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"串接":m==='z-shape'?"Z字":m==='s-shape'?"S型":"蝴蝶結")); await exportGPX(getFinalPoly(mKey), mKey); }
+    async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const mKey = activeModes.find(m => btn.innerText.includes(m==='linear'?"收果":m==='z-shape'?"Z字":"S型")); await exportGPX(getFinalPoly(mKey), mKey); }
 
     async function exportGPX(pts, modeName) {
         const now = new Date(); const timeStr = now.getFullYear().toString() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0') + now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
