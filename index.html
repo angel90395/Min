@@ -340,6 +340,29 @@
         const b = new Blob([gpx], { type: 'application/gpx+xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; a.click();
     }
     async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const m = activeModes.find(m => btn.innerText.includes(m==='linear'?"收果":m==='z-shape'?"Z字":"S型")); await exportGPX(getFinalPoly(m), m); }
+</script><script>
+    // 1. 禁用右鍵選單
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    // 2. 禁用 F12、Ctrl+U (檢視原始碼)、Ctrl+Shift+I (檢查)
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123) return false; // F12
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+    };
 </script>
+<script>
+    setInterval(function() {
+        const start = new Date();
+        debugger; // 這是關鍵，開發者工具打開時會卡在這裡
+        const end = new Date();
+        if (end - start > 100) {
+            window.location.href = "about:blank"; // 如果被檢查，直接跳往空白頁
+        }
+    }, 1000);
+</script>
+
 </body>
 </html>
