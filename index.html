@@ -14,7 +14,7 @@
         #controls { width: 100%; min-height: 100vh; padding: 20px; background: white; z-index: 100; overflow-y: auto; }
         .is-hidden { display: none !important; }
 
-        /* 公告與說明文案保持原始 */
+        /* 公告欄文案保持原始 */
         #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
         #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
         #main-generator-area { display: none; }
@@ -47,18 +47,20 @@
         .sidebar-btn { background: #fff; border: 1px solid #ced4da; padding: 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-align: left; cursor: pointer; }
         .sidebar-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
 
-        /* 底部編輯條 */
+        /* 底部編輯條：解決全頻擋住問題 */
         #bottom-editor { 
             position: absolute; bottom: 0; left: 0; width: 100%; 
-            background: white; z-index: 10000; border-top: 5px solid var(--p-green); 
+            background: white; z-index: 10001; border-top: 5px solid var(--p-green); 
             padding: 12px 10px calc(15px + env(safe-area-inset-bottom)); 
             display: none; flex-direction: column; gap: 8px; 
             box-shadow: 0 -5px 25px rgba(0,0,0,0.15); 
         }
-        #edit-label { font-size: 11px; font-weight: bold; color: var(--p-green); text-align: center; margin-bottom: 4px; }
-        .action-row { display: flex; gap: 6px; justify-content: center; }
-        .btn-act { flex: 1; padding: 12px 5px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
+        #edit-label { font-size: 11px; font-weight: bold; color: var(--p-green); text-align: center; margin-bottom: 4px; width: 100%; }
+        .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
+        .btn-act { flex: 1; padding: 12px 5px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; transition: background 0.2s; }
+        .btn-act:active { opacity: 0.8; }
 
+        /* 序號標記 */
         .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
         .number-icon.selected { background: var(--p-green); transform: scale(1.15); z-index: 1000 !important; }
 
@@ -95,7 +97,7 @@
         </div>
         
         <div class="card">
-            <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇模式 (可複選)</label>
+            <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇模式</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 花苗座標串連(適合收果)</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形(約剩113-129花瓣)</label>
@@ -118,7 +120,7 @@
 
         <div id="manualSection" class="card">
             <textarea id="coordInput" placeholder="緯度, 經度 (每行一組)"></textarea>
-            <button class="main-btn" style="background:var(--p-orange); padding:10px; font-size:14px; margin-top:5px;" onclick="clearData()">清除輸入資料</button>
+            <button class="main-btn" style="background:var(--p-orange); padding:10px; font-size:14px; margin-top:5px;" onclick="clearData()">清除資料</button>
         </div>
 
         <div id="fileSection" class="card is-hidden" style="border-left-color: #fcc419;">
@@ -155,14 +157,14 @@
     <div id="map"></div>
 
     <div id="bottom-editor">
-        <div id="edit-label">編輯中</div>
+        <div id="edit-label">正在編輯...</div>
         <div class="action-row">
             <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingMode()">👆 自選順序</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(-1)">⬆ 前移</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(1)">⬇ 後移</button>
         </div>
         <div class="action-row">
-            <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(45)">↻ 旋轉</button>
+            <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(45)">↻ 旋轉圖形</button>
             <button class="btn-act" style="background:#fd7e14; color:white; flex: 1.2" onclick="restoreGlobalOriginal()">⏮ 恢復原始</button>
             <button class="btn-act" style="background:var(--p-red); color:white" onclick="deletePoint()">🗑️ 刪除組</button>
             <button class="btn-act" style="background:var(--p-dark); color:white" onclick="closeEditor()">完成</button>
@@ -181,7 +183,13 @@
     function toggleSource() { const t = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', t!=='manual'); document.getElementById('fileSection').classList.toggle('is-hidden', t==='manual'); }
     function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; }
     function closeMap() { document.getElementById('map-container').style.display = 'none'; closeEditor(); }
-    function toggleSize() { const c = document.getElementById('map-container'); c.classList.toggle('is-fullscreen'); setTimeout(()=>map.invalidateSize(),400); }
+    
+    function toggleSize() { 
+        const c = document.getElementById('map-container');
+        c.classList.toggle('is-fullscreen');
+        setTimeout(() => { if(map) map.invalidateSize(); }, 400); 
+    }
+    
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; isPickingOrder = false; refreshPaths(); }
     function adjustSpeed(val) { currentSpeed = Math.max(1, currentSpeed + val); document.getElementById('speed-val').innerText = currentSpeed; refreshPaths(); }
 
@@ -196,7 +204,8 @@
         if(!modes.length) return alert("請勾選模式");
         try {
             let centers = [];
-            if(document.getElementById('sourceType').value === 'manual') {
+            const type = document.getElementById('sourceType').value;
+            if(type === 'manual') {
                 const txt = document.getElementById('coordInput').value;
                 const matches = txt.match(/-?\d+\.\d+/g);
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
@@ -259,12 +268,10 @@
         const fullList = [];
         for (let i = 0; i < currentData.length; i++) {
             const r = (mode === 'z-shape') ? 41 : 30;
-            const circle = L.circle([currentData[i].lat, currentData[i].lng], { radius: r, color: 'white', weight: 1.5, fillOpacity: 0.1, dashArray: '5, 5' }).addTo(lg);
-            rangeCircles.push(circle);
+            L.circle([currentData[i].lat, currentData[i].lng], { radius: r, color: 'white', weight: 1.5, fillOpacity: 0.1, dashArray: '5, 5' }).addTo(lg);
             const group = buildGroup(currentData[i], mode); fullList.push(...group);
             const isSel = (editingIdx === i);
             const poly = L.polyline(group.map(p => [p[1], p[0]]), { color: isSel ? '#2f9e44' : '#1971c2', weight: isSel ? 10 : 7, opacity: 0.8 }).addTo(lg);
-            poly.on('click', (e) => { L.DomEvent.stopPropagation(e); if(!isPickingOrder) triggerEdit(i); });
             const icon = L.divIcon({ className: 'number-icon' + (isSel ? ' selected' : ''), html: isPickingOrder ? (pickedSequence.indexOf(i) !== -1 ? pickedSequence.indexOf(i)+1 : "?") : i+1, iconSize: [34, 34], iconAnchor: [17, 17] });
             const m = L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg);
             m.on('click', (e) => { L.DomEvent.stopPropagation(e); handleMarkerClick(i); }); markers[i] = m;
@@ -279,18 +286,23 @@
 
     function togglePickingMode() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
     function handleMarkerClick(idx) {
-        if (!isPickingOrder) { triggerEdit(idx); markers[idx].bindPopup(`(${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`).openPopup(); return; }
+        if (!isPickingOrder) { triggerEdit(idx); markers[idx].bindPopup(`緯度: ${currentData[idx].lat.toFixed(6)}<br>經度: ${currentData[idx].lng.toFixed(6)}`).openPopup(); return; }
         if (pickedSequence.includes(idx)) return; pickedSequence.push(idx); refreshPaths();
         if (pickedSequence.length === currentData.length) { currentData = pickedSequence.map(i => currentData[i]); togglePickingMode(); refreshPaths(); }
     }
-    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `正在編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
+    function triggerEdit(idx) { 
+        editingIdx = idx; 
+        document.getElementById('edit-label').innerText = `正在編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; 
+        document.getElementById('bottom-editor').style.display = 'flex'; 
+        refreshPaths(); 
+    }
     function moveSequence(dir) { if(editingIdx < 0) return; const next = editingIdx + dir; if(next >= 0 && next < currentData.length) { [currentData[editingIdx], currentData[next]] = [currentData[next], currentData[editingIdx]]; editingIdx = next; refreshPaths(); triggerEdit(next); } }
     function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
     function deletePoint() { if(editingIdx < 0) { currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); } }
     function restoreGlobalOriginal() { if(confirm("還原路徑設定？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
     function getFinalPoly(m) { let path = []; currentData.forEach(curr => path.push(...buildGroup(curr, m))); if (path.length) path.push(path[0]); return path; }
 
-    // --- 地理查詢與自動命名系統 ---
+    // --- 地理查詢與自動命名系統 (補上苗字) ---
     async function exportGPX(pts, modeKey) {
         const modeNames = { 'linear': '收果串連', 'z-shape': 'Z字圖形', 's-shape': 'S型圖形' };
         const modeChi = modeNames[modeKey] || modeKey;
@@ -300,19 +312,16 @@
 
         let c_en = "Region", c_zh = "地區", a_zh = "";
         try {
-            // 查詢中文地名
             const resZh = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=10&accept-language=zh-TW`);
             const dZh = await resZh.json();
             c_zh = dZh.address.country || "未知國家";
             a_zh = dZh.address.city || dZh.address.town || dZh.address.state || "區域";
-            
-            // 查詢英文國家名
             const resEn = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=en`);
             const dEn = await resEn.json();
             c_en = dEn.address.country || "Country";
         } catch(e) {}
 
-        const pathName = `(${modeChi})${c_zh}${a_zh}${count}`;
+        const pathName = "(" + modeChi + ")" + c_zh + a_zh + count + "苗"; // 補上苗字
         const fileName = `pikmingpx_${modeKey}_${count}苗_${c_en.replace(/\s+/g,'')}_${c_zh}_${dateStr}_${rand}.gpx`;
 
         let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${pathName}</name><trkseg>`;
