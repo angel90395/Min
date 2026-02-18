@@ -9,17 +9,20 @@
         :root { --p-green: #2f9e44; --p-blue: #1971c2; --p-orange: #f08c00; --p-red: #e03131; --p-dark: #343a40; }
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; background: #f8f9fa; font-family: -apple-system, "微軟正黑體", sans-serif; overflow: hidden; -webkit-user-select: none; }
-        body { display: flex; flex-direction: column; }
-
-        /* 主控制區 */
-        #controls { width: 100%; min-height: 100vh; padding: 20px; background: white; z-index: 100; overflow-y: auto; }
+        
+        /* 1. 主控制區佈局優化：解決按鈕遮擋問題 */
+        #controls { 
+            width: 100%; min-height: 100vh; padding: 20px; 
+            padding-bottom: 120px; /* 大量留白，確保底部按鈕不被遮擋 */
+            background: white; z-index: 100; overflow-y: auto; position: relative; 
+        }
         .is-hidden { display: none !important; }
 
         /* 守則公告欄 */
         #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
         #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
 
-        /* 生成器區 (預設隱藏) */
+        /* 生成器區預設隱藏 */
         #main-generator-area { display: none; }
         .instruction-card { background: #e7f5ff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 6px solid var(--p-blue); }
         .instruction-card ol { margin: 0; padding-left: 20px; font-size: 0.85rem; color: #444; line-height: 1.6; }
@@ -28,7 +31,7 @@
         .mode-option, .order-option { display: flex; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; }
         .mode-option input, .order-option input { margin-right: 12px; width: 20px; height: 20px; accent-color: var(--p-green); }
 
-        /* 地圖介面 */
+        /* 地圖視窗 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
         #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
         #map { width: 100%; height: 100%; z-index: 1; }
@@ -40,7 +43,7 @@
         /* 統計與調速 */
         #map-sidebar-wrapper { position: absolute; top: 120px; left: 15px; z-index: 2000; display: flex; flex-direction: column; width: 195px; }
         #map-container.is-fullscreen #map-sidebar-wrapper { top: 20px; }
-        #stat-panel { background: var(--p-dark); padding: 12px; border-radius: 12px; color: white; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        #stat-panel { background: var(--p-dark); padding: 12px; border-radius: 10px; color: white; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .stat-line { font-size: 11px; font-weight: bold; margin: 3px 0; display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
         .speed-ctrl { display: flex; gap: 5px; align-items: center; background: #495057; border-radius: 6px; padding: 2px 6px; }
         .speed-btn { background: none; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; padding: 0 4px; }
@@ -49,10 +52,10 @@
         .sidebar-btn { background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 6px; font-size: 10px; font-weight: bold; text-align: left; cursor: pointer; }
         .sidebar-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
 
-        /* 底部編輯條：終極上移避開導覽列 */
+        /* 2. 底部編輯條優化：物理上移避免全頻遮擋 */
         #bottom-editor { 
             position: absolute; 
-            bottom: 110px; /* 大幅上移，解決被系統擋住問題 */
+            bottom: 130px; /* 大幅上移，解決被系統擋住問題 */
             left: 5%; width: 90%; 
             background: white; z-index: 10001; 
             border: 2.5px solid var(--p-green); border-radius: 20px;
@@ -62,7 +65,7 @@
         }
         #edit-label { font-size: 12px; font-weight: bold; color: var(--p-green); text-align: center; margin-bottom: 5px; }
         .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
-        .btn-act { flex: 1; padding: 12px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .btn-act { flex: 1; padding: 12px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
 
         .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
         .number-icon.selected { background: var(--p-green); transform: scale(1.15); z-index: 1000 !important; }
@@ -90,7 +93,7 @@
     
     <div id="bulletin-section">
         <h4>📢 生成器的用途與目的</h4>
-        <p>大家都在上班之餘種花自給自足或投餵新手、陸軍，沒有時間使用飛機模式畫路徑，這是一個方便皮克敏飛人收果、種花的GPX生成器，但請不要用來產生別人的花田路徑，請自律當一個友善的飛人。</p>
+        <p>大家都在上班之餘種花自給自足或投餵新手、陸軍，沒有時間使用飛機模式畫路徑，這是一個方便皮克敏飛人收果、種花的 GPX 生成器。</p>
         <h4>⚠️ 請遵守自律守則：</h4>
         <ul>
             <li>1.有花痕的田 不開發 不占為己用</li>
@@ -105,14 +108,14 @@
             <h4>📢 使用說明與提醒</h4>
             <ol>
                 <li>手動輸入：將座標依序貼入，一行一個。</li>
-                <li>上傳檔案：可上傳既有座標路徑的gpx，會保留原順序。</li>
-                <li>座標查看：點擊地圖紅點可顯示座標並進行微調。</li>
-                <li>自動顯示：進入地圖後會自動載入第一項勾選的路徑。</li>
+                <li>座標查看：點擊地圖紅點可顯示座標並開啟編輯面板。</li>
+                <li>自選順序：再次點擊已選號點可取消選取恢復為 "?"。</li>
+                <li>自動載入：生成後地圖會自動顯示第一個勾選模式的線條。</li>
             </ol>
         </div>
         
         <div class="card">
-            <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇生成模式</label>
+            <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇模式 (可複選)</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 花苗座標串連(適合收果)</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形(約剩113-129花瓣)</label>
@@ -127,7 +130,7 @@
         </div>
 
         <div class="card" style="border-left-color: #fcc419;">
-            <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ced4da;">
+            <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px; border-radius:8px;">
                 <option value="manual">手動貼上座標</option>
                 <option value="file">上傳 GPX 檔案</option>
             </select>
@@ -135,7 +138,7 @@
 
         <div id="manualSection" class="card">
             <textarea id="coordInput" placeholder="緯度, 經度"></textarea>
-            <button class="main-btn" style="background:var(--p-orange); padding:10px; font-size:14px; margin-top:5px;" onclick="clearData()">清除資料</button>
+            <button class="main-btn" style="background:var(--p-orange); padding:10px; font-size:14px; margin-top:5px;" onclick="clearData()">清除輸入資料</button>
         </div>
 
         <div id="fileSection" class="card is-hidden" style="border-left-color: #fcc419;">
@@ -165,13 +168,13 @@
 
     <div class="map-btn-group">
         <button class="map-ctrl-btn" onclick="toggleSize()">全頻/縮小</button>
-        <button class="map-ctrl-btn" style="background:var(--p-green)" id="btn-dl-active" onclick="downloadActive()">儲存下載</button>
+        <button class="map-ctrl-btn" style="background:var(--p-green)" id="btn-final-dl" onclick="downloadActive()">儲存下載</button>
         <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
 
     <div id="bottom-editor">
-        <div id="edit-label">編輯中</div>
+        <div id="edit-label">編輯面板</div>
         <div class="action-row">
             <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingMode()">👆 自選順序</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(-1)">⬆ 前移</button>
@@ -180,7 +183,7 @@
         <div class="action-row">
             <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(45)">↻ 旋轉</button>
             <button class="btn-act" style="background:#fd7e14; color:white; flex: 1.2" onclick="restoreGlobalOriginal()">⏮ 恢復原始</button>
-            <button class="btn-act" style="background:var(--p-red); color:white" onclick="deletePoint()">🗑️ 刪除組</button>
+            <button class="btn-act" style="background:var(--p-red); color:white" id="btn-del" onclick="deletePoint()">🗑️ 刪除組</button>
             <button class="btn-act" style="background:var(--p-dark); color:white" onclick="closeEditor()">完成</button>
         </div>
     </div>
@@ -229,7 +232,7 @@
             currentData = centers; rawBackup = JSON.parse(JSON.stringify(centers)); activeModes = modes;
             if(!preview) { for(const m of modes) await exportGPX(getFinalPoly(m), m); }
             else { renderEditor(); openMap(); }
-        } catch(e) { alert("座標解析錯誤"); }
+        } catch(e) { alert("處理出錯"); }
     }
 
     function renderEditor() {
@@ -257,14 +260,7 @@
             return [v.tl, v.tr, C, v.bl, v.br, v.mr];
         } 
         if (mode === 's-shape') {
-            const r = 30; const v = { 
-                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, 
-                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, 
-                ml: turf.destination(cp, r, curr.angle-90, {units:'meters'}).geometry.coordinates, 
-                mr: turf.destination(cp, r, curr.angle+90, {units:'meters'}).geometry.coordinates, 
-                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, 
-                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates 
-            };
+            const r = 30; const v = { tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, ml: turf.destination(cp, r, curr.angle-90, {units:'meters'}).geometry.coordinates, mr: turf.destination(cp, r, curr.angle+90, {units:'meters'}).geometry.coordinates, br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates };
             return [v.tr, v.tl, v.ml, C, v.mr, v.br, v.bl];
         }
         return [C];
@@ -294,6 +290,8 @@
     }
 
     function togglePickingMode() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
+    
+    // 修復：再次點選已選點位取消序號
     function handleMarkerClick(idx) {
         if (!isPickingOrder) { triggerEdit(idx); return; }
         const pIdx = pickedSequence.indexOf(idx);
@@ -301,7 +299,8 @@
         refreshPaths();
         if (pickedSequence.length === currentData.length && currentData.length > 0) { currentData = pickedSequence.map(i => currentData[i]); togglePickingMode(); refreshPaths(); }
     }
-    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
+
+    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `正在編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
     function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
     function moveSequence(dir) { if(editingIdx < 0) return; const n = editingIdx + dir; if(n >= 0 && n < currentData.length) { [currentData[editingIdx], currentData[n]] = [currentData[n], currentData[editingIdx]]; editingIdx = n; refreshPaths(); triggerEdit(n); } }
     function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
@@ -328,7 +327,7 @@
         let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${pathName}</name><trkseg>`;
         pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
-        const b = new Blob([gpx], { type: 'application/gpx+xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fileName; a.click();
+        const b = new Blob([gpx], { type: 'application/gpx+xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; a.click();
     }
     async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const m = activeModes.find(m => btn.innerText.includes(m==='linear'?"收果":m==='z-shape'?"Z字":"S型")); await exportGPX(getFinalPoly(m), m); }
 </script>
