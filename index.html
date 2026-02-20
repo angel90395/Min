@@ -10,7 +10,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; margin: 0; padding: 0; background: #f8f9fa; font-family: -apple-system, "微軟正黑體", sans-serif; overflow: hidden; }
         
-        /* 側邊選單 */
+        /* 側邊選單系統 */
         #side-menu { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: white; z-index: 10005; transition: 0.3s; box-shadow: 2px 0 15px rgba(0,0,0,0.2); padding-top: 70px; }
         #side-menu.open { left: 0; }
         .menu-item { padding: 18px 25px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; color: var(--p-dark); font-size: 15px; }
@@ -51,7 +51,7 @@
         .sidebar-btn { background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; text-align: left; cursor: pointer; }
         .sidebar-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
 
-        /* 懸浮編輯面板 */
+        /* 物理上移避開遮擋 */
         #bottom-editor { 
             position: absolute; bottom: 140px; left: 5%; width: 90%; 
             background: white; z-index: 10001; border: 2.5px solid var(--p-green); border-radius: 20px;
@@ -116,7 +116,7 @@
             <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇生成模式</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 花苗座標串連(適合收果)</label>
             <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
-            <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形(約剩113-129花瓣)</label>
+            <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形</label>
         </div>
 
         <div class="card" style="border-left-color: var(--p-orange);">
@@ -150,14 +150,14 @@
     <div id="modifier-area" class="is-hidden">
         <div class="card" style="text-align:center; padding: 50px 20px;">
             <h3 style="color:var(--p-blue);">路徑修改器</h3>
-            <p>包含分割與合併功能，整合開發中。</p>
+            <p>整合路徑分割與路徑合併功能，開發中。</p>
         </div>
     </div>
 
     <div id="feedback-area" class="is-hidden">
         <div class="card" style="text-align:center; padding: 50px 20px;">
             <h3 style="color:var(--p-orange);">意見反饋</h3>
-            <p>如有建議，請聯絡開發人員。</p>
+            <p>如有任何建議，請聯繫開發團隊。</p>
         </div>
     </div>
 </div>
@@ -179,7 +179,7 @@
     </div>
     <div class="map-btn-group">
         <button class="map-ctrl-btn" onclick="toggleSize()">全頻/縮小</button>
-        <button class="map-ctrl-btn" style="background:var(--p-green)" id="btn-final-save" onclick="downloadActive()">儲存下載</button>
+        <button class="map-ctrl-btn" style="background:var(--p-green)" id="btn-main-save" onclick="downloadActive()">儲存下載</button>
         <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
@@ -207,9 +207,8 @@
     var map, currentData = [], rawBackup = [], activeLayers = {}, markers = [], activeModes = [], editingIdx = -1;
     var isPickingOrder = false, pickedSequence = [], currentSpeed = 20;
 
-    // --- 選單與跳轉邏輯 ---
+    // --- 選單跳轉與標題連動 ---
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
-    
     function navigate(v) {
         if (document.getElementById('side-menu').classList.contains('open')) toggleMenu();
         closeMap();
@@ -224,12 +223,8 @@
         else if(v==='feedback') { document.getElementById('feedback-area').classList.remove('is-hidden'); titleEl.innerText = "意見反饋"; }
     }
 
-    // 按下同意，直接進入生成器，不開選單
-    function acceptNotice() {
-        document.getElementById('bulletin-section').classList.add('is-hidden');
-        document.getElementById('main-generator-area').style.display = 'block';
-        document.getElementById('page-title').innerText = "路徑生成器";
-    }
+    // 按下同意，直接跳轉生成器
+    function acceptNotice() { navigate('generator'); }
 
     function toggleSource() { const t = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', t!=='manual'); document.getElementById('fileSection').classList.toggle('is-hidden', t==='manual'); }
     function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; }
@@ -254,6 +249,7 @@
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
                 const f = document.getElementById('gpxFile').files[0];
+                if(!f) return alert("請選擇檔案");
                 const xml = await f.text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0});
@@ -286,7 +282,7 @@
         if(firstBtn && map) setTimeout(() => firstBtn.click(), 150);
     }
 
-    // --- 標準 Z 邏輯恢復 ---
+    // --- 軌跡邏輯 ---
     function buildGroup(curr, mode) {
         const cp = turf.point([curr.lng, curr.lat]);
         const C = [curr.lng, curr.lat];
@@ -368,7 +364,7 @@
             const dEn = await rEn.json(); c_en = dEn.address.country || "Country";
             clearTimeout(timeoutId);
         } catch(e) {}
-        const pathName = `(${modeChi})${c_zh}${a_zh}${count}苗`; 
+        const pathName = `(${modeChi})${c_zh}${a_zh}${count}苗`;
         const fileName = `pikmingpx_${modeKey}_${count}苗_${c_en.replace(/\s+/g,'')}_${c_zh}_${dStr}_${Math.random().toString(36).substr(2,5)}.gpx`;
         let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${pathName}</name><trkseg>`;
         pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
