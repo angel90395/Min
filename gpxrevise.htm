@@ -18,16 +18,13 @@
         #controls { width: 100%; height: 100%; padding: 20px; padding-top: 70px; background: white; overflow-y: auto; }
         .is-hidden { display: none !important; }
         
-        /* 模式選擇卡片 */
         .mode-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .mode-card { background: #f1f3f5; padding: 15px 5px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; font-weight: bold; font-size: 14px; }
         .mode-card.active { background: white; border-color: var(--p-green); color: var(--p-green); box-shadow: 0 4px 12px rgba(47,158,68,0.2); }
 
         .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
-        .file-list-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         
-        /* 地圖與 UI */
-        #map-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 999; display: none; background: white; }
+        #map-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; display: none; background: white; }
         #map { width: 100%; height: 100%; }
         .map-btn-group { position: absolute; top: 20px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
         .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
@@ -36,16 +33,16 @@
         .action-row { display: flex; gap: 6px; margin-top: 8px; }
         .btn-act { flex: 1; padding: 12px 2px; border-radius: 10px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; }
 
-        /* 標記樣式 */
-        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
-        .number-icon.selected { background: var(--p-green); }
-        .number-icon.in-box { background: var(--p-orange); transform: scale(1.2); box-shadow: 0 0 15px var(--p-orange); z-index: 1000 !important; }
+        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .number-icon.selected-for-action { background: var(--p-orange) !important; transform: scale(1.2); box-shadow: 0 0 15px var(--p-orange); border-color: white; }
+        .number-icon.active-edit { background: var(--p-green) !important; }
 
         textarea { width: 100%; height: 100px; font-size: 14px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 10px; }
         button.main-btn { width: 100%; padding: 18px; margin: 8px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; }
         
         #dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100000; display: none; align-items: center; justify-content: center; }
         .dialog-box { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
+        .badge { background: var(--p-blue); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 5px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -65,41 +62,43 @@
         <div class="mode-card" onclick="switchMode('split')">✂️ 分割</div>
     </div>
 
+    <div class="card" style="border-left-color: var(--p-dark);">
+        <label style="font-weight:bold;">圖形模式 (將依此模式還原上傳點位)：</label>
+        <div style="display:flex; gap:15px; margin-top:10px;">
+            <label><input type="radio" name="globalMode" value="linear" checked onchange="updateDetectBadge()"> 收果</label>
+            <label><input type="radio" name="globalMode" value="z-shape" id="radio-z" onchange="updateDetectBadge()"> Z字</label>
+            <label><input type="radio" name="globalMode" value="s-shape" id="radio-s" onchange="updateDetectBadge()"> S型</label>
+        </div>
+        <div id="detect-badge-area"></div>
+    </div>
+
     <div id="section-merge" class="card">
-        <label style="font-weight:bold;">上傳多個 GPX 檔案：</label>
+        <label style="font-weight:bold;">合併多個 GPX 檔案：</label>
         <div id="file-upload-list" style="margin-top:10px;">
-            <div class="file-list-item"><input type="file" accept=".gpx" class="merge-file-input" style="width:100%;"></div>
+            <div style="margin-bottom:10px;"><input type="file" accept=".gpx" class="merge-file-input" onchange="autoDetectMode(this)"></div>
         </div>
         <button class="main-btn" style="background:var(--p-blue); padding:10px; font-size:14px;" onclick="addUploadField()">➕ 再增加一個檔案</button>
     </div>
 
     <div id="section-add" class="card is-hidden" style="border-left-color: var(--p-orange);">
-        <label style="font-weight:bold;">上傳原始 GPX 檔案：</label>
-        <input type="file" id="add-file-input" accept=".gpx" style="width:100%; margin:10px 0;">
+        <label style="font-weight:bold;">原始 GPX 檔案：</label>
+        <input type="file" id="add-file-input" accept=".gpx" style="width:100%; margin:10px 0;" onchange="autoDetectMode(this)">
         <label style="font-weight:bold;">追加座標點位：</label>
-        <textarea id="add-coord-input" placeholder="緯度, 經度 (例如：25.012, 121.456) 一行一個"></textarea>
+        <textarea id="add-coord-input" placeholder="緯度, 經度 一行一個"></textarea>
     </div>
 
     <div id="section-split" class="card is-hidden" style="border-left-color: var(--p-red);">
-        <label style="font-weight:bold;">上傳要處理的 GPX 檔案：</label>
-        <input type="file" id="split-file-input" accept=".gpx" style="width:100%; margin:10px 0;">
+        <label style="font-weight:bold;">上傳要分割的 GPX 檔案：</label>
+        <input type="file" id="split-file-input" accept=".gpx" style="width:100%; margin:10px 0;" onchange="autoDetectMode(this)">
     </div>
 
-    <div class="card" style="border-left-color: var(--p-dark);">
-        <label style="font-weight:bold;">圖形模式：</label>
-        <div style="display:flex; gap:15px; margin-top:10px;">
-            <label><input type="radio" name="globalMode" value="linear" checked> 收果</label>
-            <label><input type="radio" name="globalMode" value="z-shape" id="radio-z"> Z字</label>
-            <label><input type="radio" name="globalMode" value="s-shape" id="radio-s"> S型</label>
-        </div>
-    </div>
-
-    <button class="main-btn" style="background:var(--p-green)" onclick="initApp()">讀取資料並進入地圖</button>
+    <button class="main-btn" style="background:var(--p-green)" onclick="initApp()">解析並進入地圖</button>
 </div>
 
 <div id="map-container">
     <div class="map-btn-group">
-        <button class="map-ctrl-btn" id="box-select-btn" style="background:var(--p-blue)" onclick="toggleBoxSelect()">🟦 開啟框選模式</button>
+        <button class="map-ctrl-btn" id="selection-mode-btn" style="background:var(--p-blue)" onclick="toggleSelectionMode()">👆 開始點選座標</button>
+        <button class="map-ctrl-btn" id="confirm-selection-btn" style="background:var(--p-orange); display:none;" onclick="showSplitDialog()">✅ 確認選取範圍</button>
         <button class="map-ctrl-btn" style="background:var(--p-green)" onclick="showSaveDialog()">💾 儲存路徑</button>
         <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">退出</button>
     </div>
@@ -108,7 +107,7 @@
     <div id="bottom-editor">
         <div id="edit-label" style="text-align:center; font-weight:bold; color:var(--p-green); font-size:12px;">點位調整</div>
         <div class="action-row">
-            <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingOrder()">👆 自選順序</button>
+            <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingOrder()">🔢 自選順序</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(-1)">⬆ 前移</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(1)">⬇ 後移</button>
         </div>
@@ -122,10 +121,11 @@
 
 <div id="dialog-overlay">
     <div id="split-action" class="dialog-box" style="display:none;">
-        <h3 id="sel-count-text">已選中 0 個點位</h3>
-        <button class="main-btn" style="background:var(--p-blue)" onclick="executeSplit(true)">✂️ 分割為兩檔案下載</button>
-        <button class="main-btn" style="background:var(--p-red)" onclick="executeSplit(false)">🗑️ 刪除框選外的點</button>
-        <button class="main-btn" style="background:#ced4da; color:#333;" onclick="cancelSelection()">取消</button>
+        <h3 id="sel-count-text">已選中 0 個座標點</h3>
+        <button class="main-btn" style="background:var(--p-blue)" onclick="executeAction('split')">✂️ 分割為兩個檔案</button>
+        <button class="main-btn" style="background:var(--p-red)" onclick="executeAction('keep-selected')">保留選中 (刪除其餘)</button>
+        <button class="main-btn" style="background:var(--p-dark)" onclick="executeAction('keep-unselected')">保留未選 (刪除選中)</button>
+        <button class="main-btn" style="background:#ced4da; color:#333;" onclick="cancelAction()">取消</button>
     </div>
 
     <div id="save-dialog" class="dialog-box" style="display:none;">
@@ -141,7 +141,7 @@
 
 <script>
     var map, markers = [], currentPathData = [], activeMode = 'linear';
-    var isBoxSelect = false, pointsInBoxIdx = [], editingIdx = -1;
+    var isSelectionMode = false, selectedIdxList = [], editingIdx = -1;
     var isPickingOrder = false, pickedSequence = [];
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
@@ -149,31 +149,55 @@
     function switchMode(m) {
         document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
         event.currentTarget.classList.add('active');
-        document.getElementById('section-merge').classList.add('is-hidden');
-        document.getElementById('section-add').classList.add('is-hidden');
-        document.getElementById('section-split').classList.add('is-hidden');
+        ['merge', 'add', 'split'].forEach(s => document.getElementById(`section-${s}`).classList.add('is-hidden'));
         document.getElementById(`section-${m}`).classList.remove('is-hidden');
     }
 
     function addUploadField() {
-        const container = document.getElementById('file-upload-list');
         const div = document.createElement('div');
-        div.className = "file-list-item";
-        div.innerHTML = `<input type="file" accept=".gpx" class="merge-file-input" style="width:100%;">`;
-        container.appendChild(div);
+        div.style.marginBottom = "10px";
+        div.innerHTML = `<input type="file" accept=".gpx" class="merge-file-input" onchange="autoDetectMode(this)">`;
+        document.getElementById('file-upload-list').appendChild(div);
     }
 
-    async function parseFile(file) {
+    // 自動辨識模式
+    async function autoDetectMode(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const text = await file.text();
+        const badgeArea = document.getElementById('detect-badge-area');
+        if(text.includes("z-shape") || text.includes("Z字圖形")) {
+            document.getElementById('radio-z').checked = true;
+            badgeArea.innerHTML = `<span class="badge">偵測到 Z字 格式</span>`;
+        } else if(text.includes("s-shape") || text.includes("S型圖形")) {
+            document.getElementById('radio-s').checked = true;
+            badgeArea.innerHTML = `<span class="badge">偵測到 S型 格式</span>`;
+        } else {
+            badgeArea.innerHTML = "";
+        }
+        activeMode = document.querySelector('input[name="globalMode"]:checked').value;
+    }
+
+    function updateDetectBadge() { activeMode = document.querySelector('input[name="globalMode"]:checked').value; }
+
+    // 還原中心座標邏輯
+    async function getPointsFromFile(file) {
         if(!file) return [];
         const text = await file.text();
-        // 自動偵測模式
-        if(text.includes("z-shape") || text.includes("Z字")) document.getElementById('radio-z').checked = true;
-        if(text.includes("s-shape") || text.includes("S型")) document.getElementById('radio-s').checked = true;
-        
         const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
-        let pts = [], m;
-        while((m = regex.exec(text)) !== null) pts.push({lat: parseFloat(m[1]), lng: parseFloat(m[2]), angle: 0});
-        return pts;
+        let allPts = [], m;
+        while((m = regex.exec(text)) !== null) allPts.push({lat: parseFloat(m[1]), lng: parseFloat(m[2]), angle: 0});
+        
+        // 核心：根據模式還原主座標
+        let centers = [];
+        if(activeMode === 'z-shape' && allPts.length >= 5) {
+            for(let i=2; i < allPts.length; i+=5) centers.push(allPts[i]);
+        } else if(activeMode === 's-shape' && allPts.length >= 7) {
+            for(let i=3; i < allPts.length; i+=7) centers.push(allPts[i]);
+        } else {
+            centers = allPts;
+        }
+        return centers;
     }
 
     async function initApp() {
@@ -182,24 +206,18 @@
 
         if(mode === 'merge') {
             const inputs = document.querySelectorAll('.merge-file-input');
-            for(let input of inputs) {
-                if(input.files[0]) combinedPts.push(...(await parseFile(input.files[0])));
-            }
+            for(let input of inputs) combinedPts.push(...(await getPointsFromFile(input.files[0])));
         } else if(mode === 'add') {
-            const file = document.getElementById('add-file-input').files[0];
-            if(file) combinedPts.push(...(await parseFile(file)));
+            combinedPts.push(...(await getPointsFromFile(document.getElementById('add-file-input').files[0])));
             const str = document.getElementById('add-coord-input').value;
             const matches = str.match(/-?\d+\.\d+/g);
-            if(matches) {
-                for(let i=0; i<matches.length; i+=2) combinedPts.push({lat: parseFloat(matches[i]), lng: parseFloat(matches[i+1]), angle: 0});
-            }
+            if(matches) for(let i=0; i<matches.length; i+=2) combinedPts.push({lat: parseFloat(matches[i]), lng: parseFloat(matches[i+1]), angle: 0});
         } else {
-            const file = document.getElementById('split-file-input').files[0];
-            if(file) combinedPts.push(...(await parseFile(file)));
+            combinedPts.push(...(await getPointsFromFile(document.getElementById('split-file-input').files[0])));
         }
 
-        if(combinedPts.length === 0) return alert("請先提供座標資料或檔案");
-
+        if(combinedPts.length === 0) return alert("請先提供資料");
+        
         // 去重
         const seen = new Set();
         currentPathData = combinedPts.filter(p => {
@@ -207,7 +225,6 @@
             return seen.has(k) ? false : seen.add(k);
         });
 
-        activeMode = document.querySelector('input[name="globalMode"]:checked').value;
         openMap();
         refreshPaths();
     }
@@ -218,62 +235,73 @@
             map = L.map('map', {zoomControl: false});
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.control.zoom({position: 'bottomright'}).addTo(map);
-
-            // 框選事件：核心修復
-            map.on('boxzoomend', function(e) {
-                const bounds = e.boxZoomBounds;
-                pointsInBoxIdx = [];
-                currentPathData.forEach((pt, i) => {
-                    if(bounds.contains([pt.lat, pt.lng])) {
-                        pointsInBoxIdx.push(i);
-                        markers[i].getElement().classList.add('in-box');
-                    }
-                });
-                if(pointsInBoxIdx.length > 0) {
-                    document.getElementById('sel-count-text').innerText = `已選中 ${pointsInBoxIdx.length} 個點位`;
-                    document.getElementById('dialog-overlay').style.display = 'flex';
-                    document.getElementById('split-action').style.display = 'block';
-                }
-                toggleBoxSelect(); // 完成後關閉模式
-            });
         }
     }
 
-    function toggleBoxSelect() {
-        isBoxSelect = !isBoxSelect;
-        const btn = document.getElementById('box-select-btn');
-        if(isBoxSelect) {
-            map.dragging.disable();
-            map.boxZoom.enable();
-            btn.innerText = "⏹ 停止框選 (請在圖上拉出藍框)";
+    function toggleSelectionMode() {
+        isSelectionMode = !isSelectionMode;
+        selectedIdxList = [];
+        const btn = document.getElementById('selection-mode-btn');
+        const confirmBtn = document.getElementById('confirm-selection-btn');
+        
+        if(isSelectionMode) {
+            btn.innerText = "⏹ 停止點選";
             btn.style.background = "var(--p-orange)";
-            map.getContainer().style.cursor = 'crosshair';
+            confirmBtn.style.display = "block";
         } else {
-            map.dragging.enable();
-            btn.innerText = "🟦 開啟框選模式";
+            btn.innerText = "👆 開始點選座標";
             btn.style.background = "var(--p-blue)";
-            map.getContainer().style.cursor = '';
+            confirmBtn.style.display = "none";
         }
+        refreshPaths();
     }
 
-    function cancelSelection() {
-        document.getElementById('dialog-overlay').style.display = 'none';
-        markers.forEach(m => m.getElement().classList.remove('in-box'));
-    }
-
-    function executeSplit(downloadTwo) {
-        const inData = currentPathData.filter((_, i) => pointsInBoxIdx.includes(i));
-        const outData = currentPathData.filter((_, i) => !pointsInBoxIdx.includes(i));
-
-        if(downloadTwo) {
-            downloadGPX(inData, "Split_Part_A");
-            downloadGPX(outData, "Split_Part_B");
-        } else {
-            currentPathData = inData; // 刪除框外點 = 僅保留框內點
+    function handleMarkerClick(idx) {
+        if(isSelectionMode) {
+            const pos = selectedIdxList.indexOf(idx);
+            if(pos > -1) selectedIdxList.splice(pos, 1);
+            else selectedIdxList.push(idx);
             refreshPaths();
+            return;
         }
-        cancelSelection();
+        if(isPickingOrder) {
+            const pIdx = pickedSequence.indexOf(idx);
+            if(pIdx > -1) pickedSequence.splice(pIdx, 1); else pickedSequence.push(idx);
+            if(pickedSequence.length === currentPathData.length) { 
+                currentPathData = pickedSequence.map(i => currentPathData[i]); 
+                pickedSequence = []; isPickingOrder = false; 
+            }
+            refreshPaths(); return;
+        }
+        editingIdx = idx; document.getElementById('bottom-editor').style.display = 'block'; refreshPaths();
     }
+
+    function showSplitDialog() {
+        if(selectedIdxList.length === 0) return alert("請先點選座標點");
+        document.getElementById('sel-count-text').innerText = `已選中 ${selectedIdxList.length} 個座標點`;
+        document.getElementById('dialog-overlay').style.display = 'flex';
+        document.getElementById('split-action').style.display = 'block';
+    }
+
+    function executeAction(type) {
+        const selectedData = currentPathData.filter((_, i) => selectedIdxList.includes(i));
+        const unselectedData = currentPathData.filter((_, i) => !selectedIdxList.includes(i));
+
+        if(type === 'split') {
+            downloadGPX(selectedData, "Part_A_Selected");
+            downloadGPX(unselectedData, "Part_B_Remaining");
+        } else if(type === 'keep-selected') {
+            currentPathData = selectedData;
+        } else if(type === 'keep-unselected') {
+            currentPathData = unselectedData;
+        }
+        
+        toggleSelectionMode();
+        cancelAction();
+        refreshPaths();
+    }
+
+    function cancelAction() { document.getElementById('dialog-overlay').style.display = 'none'; }
 
     function refreshPaths() {
         map.eachLayer(l => { if(l instanceof L.Marker || l instanceof L.Polyline) map.removeLayer(l); });
@@ -283,8 +311,13 @@
         currentPathData.forEach((curr, i) => {
             const group = buildGroup(curr, activeMode);
             fullTrack.push(...group);
+            
+            let iconClass = 'number-icon';
+            if(isSelectionMode && selectedIdxList.includes(i)) iconClass += ' selected-for-action';
+            if(editingIdx === i) iconClass += ' active-edit';
+
             const m = L.marker([curr.lat, curr.lng], { 
-                icon: L.divIcon({ className: 'number-icon' + (editingIdx===i?' selected':''), html: isPickingOrder?(pickedSequence.indexOf(i)+1||'?'):i+1, iconSize:[34,34] })
+                icon: L.divIcon({ className: iconClass, html: isPickingOrder?(pickedSequence.indexOf(i)+1||'?'):i+1, iconSize:[34,34] })
             }).addTo(map);
             m.on('click', () => handleMarkerClick(i));
             markers[i] = m;
@@ -294,7 +327,7 @@
         if(fullTrack.length > 1) {
             fullTrack.push(fullTrack[0]);
             L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 2, opacity: 0.3, dashArray: '5,5' }).addTo(map);
-            map.fitBounds(L.featureGroup(markers.filter(m=>m)).getBounds(), {padding:[50,50]});
+            if(!isSelectionMode) map.fitBounds(L.featureGroup(markers.filter(m=>m)).getBounds(), {padding:[50,50]});
         }
     }
 
@@ -313,17 +346,8 @@
         return [[curr.lng, curr.lat]];
     }
 
-    function handleMarkerClick(idx) {
-        if(isPickingOrder) {
-            const pIdx = pickedSequence.indexOf(idx);
-            if(pIdx !== -1) pickedSequence.splice(pIdx, 1); else pickedSequence.push(idx);
-            if(pickedSequence.length === currentPathData.length) { currentPathData = pickedSequence.map(i => currentPathData[i]); pickedSequence = []; isPickingOrder = false; }
-            refreshPaths(); return;
-        }
-        editingIdx = idx; document.getElementById('bottom-editor').style.display = 'block'; refreshPaths();
-    }
-
     function downloadGPX(data, name) {
+        if(data.length === 0) return;
         let pts = []; data.forEach(c => pts.push(...buildGroup(c, activeMode)));
         if(pts.length) pts.push(pts[0]);
         let gpx = `<?xml version="1.1"?><gpx version="1.1"><trk><name>${name}</name><trkseg>` + pts.map(p => `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`).join('') + `\n</trkseg></trk></gpx>`;
@@ -337,11 +361,10 @@
     function executeFinalSave() { downloadGPX(currentPathData, document.getElementById('save-filename').value || "export"); hideSaveDialog(); }
     function closeMap() { document.getElementById('map-container').style.display = 'none'; }
     function deletePoint() { if(editingIdx >= 0) { currentPathData.splice(editingIdx, 1); editingIdx = -1; refreshPaths(); } }
-    function moveSequence(dir) { if(editingIdx < 0) return; const target = editingIdx + dir; if(target >= 0 && target < currentPathData.length) { [currentPathData[editingIdx], currentPathData[target]] = [currentPathData[target], currentPathData[editingIdx]]; editingIdx = target; refreshPaths(); } }
+    function moveSequence(dir) { const data = currentPathData; if(editingIdx < 0) return; const target = editingIdx + dir; if(target >= 0 && target < data.length) { [data[editingIdx], data[target]] = [data[target], data[editingIdx]]; editingIdx = target; refreshPaths(); } }
     function rotatePoint(v) { if(editingIdx >= 0) { currentPathData[editingIdx].angle = (currentPathData[editingIdx].angle + v) % 360; refreshPaths(); } }
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; refreshPaths(); }
     function togglePickingOrder() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
-    function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(()=>map.invalidateSize(), 400); }
 </script>
 </body>
 </html>
