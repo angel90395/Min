@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>皮克敏路徑修改器</title>
+    <title>皮克敏路徑修改器 Pro</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --p-green: #2f9e44; --p-blue: #1971c2; --p-orange: #f08c00; --p-red: #e03131; --p-dark: #343a40; }
@@ -18,30 +18,40 @@
         #controls { width: 100%; height: 100%; padding: 20px; padding-top: 70px; background: white; overflow-y: auto; }
         .is-hidden { display: none !important; }
         
+        /* 模式切換器 */
         .mode-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .mode-card { background: #f1f3f5; padding: 15px 5px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; font-weight: bold; font-size: 14px; }
         .mode-card.active { background: white; border-color: var(--p-green); color: var(--p-green); box-shadow: 0 4px 12px rgba(47,158,68,0.2); }
 
         .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
         
+        /* 地圖佈局 */
         #map-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; display: none; background: white; }
         #map { width: 100%; height: 100%; }
-        .map-btn-group { position: absolute; top: 20px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        
+        /* 側邊欄分段選擇 */
+        #session-sidebar { position: absolute; top: 100px; left: 15px; z-index: 2000; width: 150px; display: flex; flex-direction: column; gap: 8px; }
+        .session-btn { background: rgba(255,255,255,0.9); border: 2px solid var(--p-blue); padding: 10px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .session-btn.active { background: var(--p-blue); color: white; }
 
+        .map-btn-group { position: absolute; top: 20px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+        /* 底部編輯器 */
         #bottom-editor { position: absolute; bottom: 30px; left: 5%; width: 90%; background: white; z-index: 10001; border: 2.5px solid var(--p-green); border-radius: 20px; padding: 15px; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
         .action-row { display: flex; gap: 6px; margin-top: 8px; }
         .btn-act { flex: 1; padding: 12px 2px; border-radius: 10px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; }
 
-        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .number-icon.selected-for-action { background: var(--p-orange) !important; transform: scale(1.2); box-shadow: 0 0 15px var(--p-orange); border-color: white; }
+        /* Marker 視覺 */
+        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; z-index: 1000 !important; }
+        .number-icon.selected-for-action { background: var(--p-orange) !important; transform: scale(1.2); box-shadow: 0 0 15px var(--p-orange); }
         .number-icon.active-edit { background: var(--p-green) !important; }
 
         textarea { width: 100%; height: 100px; font-size: 14px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 10px; }
         button.main-btn { width: 100%; padding: 18px; margin: 8px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; }
         
         #dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100000; display: none; align-items: center; justify-content: center; }
-        .dialog-box { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
+        .dialog-box { background: white; padding: 25px; border-radius: 25px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .badge { background: var(--p-blue); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 5px; display: inline-block; }
     </style>
 </head>
@@ -57,13 +67,13 @@
     <h2 style="text-align: center; color: var(--p-green); margin-top: 0;">皮克敏路徑修改器</h2>
     
     <div class="mode-selector">
-        <div class="mode-card active" onclick="switchMode('merge')">🔗 合併</div>
-        <div class="mode-card" onclick="switchMode('add')">➕ 新增</div>
-        <div class="mode-card" onclick="switchMode('split')">✂️ 分割</div>
+        <div class="mode-card active" onclick="switchMode('merge')">🔗 合併模式</div>
+        <div class="mode-card" onclick="switchMode('add')">➕ 追加模式</div>
+        <div class="mode-card" onclick="switchMode('split')">✂️ 分割模式</div>
     </div>
 
     <div class="card" style="border-left-color: var(--p-dark);">
-        <label style="font-weight:bold;">圖形模式 (將依此模式還原上傳點位)：</label>
+        <label style="font-weight:bold;">圖形模式設定：</label>
         <div style="display:flex; gap:15px; margin-top:10px;">
             <label><input type="radio" name="globalMode" value="linear" checked onchange="updateDetectBadge()"> 收果</label>
             <label><input type="radio" name="globalMode" value="z-shape" id="radio-z" onchange="updateDetectBadge()"> Z字</label>
@@ -73,7 +83,7 @@
     </div>
 
     <div id="section-merge" class="card">
-        <label style="font-weight:bold;">合併多個 GPX 檔案：</label>
+        <label style="font-weight:bold;">選擇多個檔案合併：</label>
         <div id="file-upload-list" style="margin-top:10px;">
             <div style="margin-bottom:10px;"><input type="file" accept=".gpx" class="merge-file-input" onchange="autoDetectMode(this)"></div>
         </div>
@@ -81,31 +91,33 @@
     </div>
 
     <div id="section-add" class="card is-hidden" style="border-left-color: var(--p-orange);">
-        <label style="font-weight:bold;">原始 GPX 檔案：</label>
+        <label style="font-weight:bold;">原始檔案：</label>
         <input type="file" id="add-file-input" accept=".gpx" style="width:100%; margin:10px 0;" onchange="autoDetectMode(this)">
-        <label style="font-weight:bold;">追加座標點位：</label>
+        <label style="font-weight:bold;">手動追加座標：</label>
         <textarea id="add-coord-input" placeholder="緯度, 經度 一行一個"></textarea>
     </div>
 
     <div id="section-split" class="card is-hidden" style="border-left-color: var(--p-red);">
-        <label style="font-weight:bold;">上傳要分割的 GPX 檔案：</label>
+        <label style="font-weight:bold;">上傳待分割路徑：</label>
         <input type="file" id="split-file-input" accept=".gpx" style="width:100%; margin:10px 0;" onchange="autoDetectMode(this)">
     </div>
 
-    <button class="main-btn" style="background:var(--p-green)" onclick="initApp()">解析並進入地圖</button>
+    <button class="main-btn" style="background:var(--p-green)" onclick="initApp()">讀取資料並進行編修</button>
 </div>
 
 <div id="map-container">
+    <div id="session-sidebar" class="is-hidden"></div>
+
     <div class="map-btn-group">
-        <button class="map-ctrl-btn" id="selection-mode-btn" style="background:var(--p-blue)" onclick="toggleSelectionMode()">👆 開始點選座標</button>
-        <button class="map-ctrl-btn" id="confirm-selection-btn" style="background:var(--p-orange); display:none;" onclick="showSplitDialog()">✅ 確認選取範圍</button>
-        <button class="map-ctrl-btn" style="background:var(--p-green)" onclick="showSaveDialog()">💾 儲存路徑</button>
+        <button class="map-ctrl-btn" id="selection-mode-btn" style="background:var(--p-blue)" onclick="toggleSelectionMode()">👆 點選座標</button>
+        <button class="map-ctrl-btn" id="confirm-selection-btn" style="background:var(--p-orange); display:none;" onclick="showSplitDialog()">✅ 執行處理</button>
+        <button class="map-ctrl-btn" style="background:var(--p-green)" onclick="showSaveDialog()">💾 儲存此段</button>
         <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">退出</button>
     </div>
     <div id="map"></div>
 
     <div id="bottom-editor">
-        <div id="edit-label" style="text-align:center; font-weight:bold; color:var(--p-green); font-size:12px;">點位調整</div>
+        <div id="edit-label" style="text-align:center; font-weight:bold; color:var(--p-green); font-size:12px;">點位順序調整</div>
         <div class="action-row">
             <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingOrder()">🔢 自選順序</button>
             <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(-1)">⬆ 前移</button>
@@ -121,17 +133,18 @@
 
 <div id="dialog-overlay">
     <div id="split-action" class="dialog-box" style="display:none;">
-        <h3 id="sel-count-text">已選中 0 個座標點</h3>
-        <button class="main-btn" style="background:var(--p-blue)" onclick="executeAction('split')">✂️ 分割為兩個檔案</button>
-        <button class="main-btn" style="background:var(--p-red)" onclick="executeAction('keep-selected')">保留選中 (刪除其餘)</button>
-        <button class="main-btn" style="background:var(--p-dark)" onclick="executeAction('keep-unselected')">保留未選 (刪除選中)</button>
+        <h3 id="sel-count-text">選中 0 個座標</h3>
+        <button class="main-btn" style="background:var(--p-blue)" onclick="executeAction('split')">✂️ 分割為兩組並個別編輯</button>
+        <button class="main-btn" style="background:var(--p-red)" onclick="executeAction('keep-selected')">保留選中 (其餘刪除)</button>
+        <button class="main-btn" style="background:var(--p-dark)" onclick="executeAction('keep-unselected')">保留未選 (選中刪除)</button>
         <button class="main-btn" style="background:#ced4da; color:#333;" onclick="cancelAction()">取消</button>
     </div>
 
     <div id="save-dialog" class="dialog-box" style="display:none;">
-        <h3>儲存 GPX</h3>
-        <input type="text" id="save-filename" placeholder="檔案名稱" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #ddd;">
-        <button class="main-btn" style="background:var(--p-green)" onclick="executeFinalSave()">確認下載</button>
+        <h3>自訂儲存名稱</h3>
+        <p style="font-size:12px; color:#666;">檔名與路徑內部名稱將會同步</p>
+        <input type="text" id="save-filename" placeholder="輸入名稱 (例如：中山區花田)" style="width:100%; padding:15px; margin-bottom:15px; border-radius:12px; border:1.5px solid #ddd; font-size:16px;">
+        <button class="main-btn" style="background:var(--p-green)" onclick="executeFinalSave()">確認下載 GPX</button>
         <button class="main-btn" style="background:#ced4da; color:#333;" onclick="hideSaveDialog()">取消</button>
     </div>
 </div>
@@ -140,47 +153,39 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    var map, markers = [], currentPathData = [], activeMode = 'linear';
+    var map, markers = [], activeMode = 'linear';
+    var sessions = {}; // 管理多個路徑分段
+    var currentSessionKey = "";
     var isSelectionMode = false, selectedIdxList = [], editingIdx = -1;
     var isPickingOrder = false, pickedSequence = [];
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
-
     function switchMode(m) {
         document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
         event.currentTarget.classList.add('active');
         ['merge', 'add', 'split'].forEach(s => document.getElementById(`section-${s}`).classList.add('is-hidden'));
         document.getElementById(`section-${m}`).classList.remove('is-hidden');
     }
-
     function addUploadField() {
-        const div = document.createElement('div');
-        div.style.marginBottom = "10px";
+        const div = document.createElement('div'); div.style.marginBottom = "10px";
         div.innerHTML = `<input type="file" accept=".gpx" class="merge-file-input" onchange="autoDetectMode(this)">`;
         document.getElementById('file-upload-list').appendChild(div);
     }
-
-    // 自動辨識模式
     async function autoDetectMode(input) {
-        const file = input.files[0];
-        if(!file) return;
+        const file = input.files[0]; if(!file) return;
         const text = await file.text();
         const badgeArea = document.getElementById('detect-badge-area');
         if(text.includes("z-shape") || text.includes("Z字圖形")) {
             document.getElementById('radio-z').checked = true;
-            badgeArea.innerHTML = `<span class="badge">偵測到 Z字 格式</span>`;
+            badgeArea.innerHTML = `<span class="badge">偵測：Z字路徑</span>`;
         } else if(text.includes("s-shape") || text.includes("S型圖形")) {
             document.getElementById('radio-s').checked = true;
-            badgeArea.innerHTML = `<span class="badge">偵測到 S型 格式</span>`;
-        } else {
-            badgeArea.innerHTML = "";
+            badgeArea.innerHTML = `<span class="badge">偵測：S型路徑</span>`;
         }
         activeMode = document.querySelector('input[name="globalMode"]:checked').value;
     }
-
     function updateDetectBadge() { activeMode = document.querySelector('input[name="globalMode"]:checked').value; }
 
-    // 還原中心座標邏輯
     async function getPointsFromFile(file) {
         if(!file) return [];
         const text = await file.text();
@@ -188,22 +193,17 @@
         let allPts = [], m;
         while((m = regex.exec(text)) !== null) allPts.push({lat: parseFloat(m[1]), lng: parseFloat(m[2]), angle: 0});
         
-        // 核心：根據模式還原主座標
+        // 逆向中心還原
         let centers = [];
-        if(activeMode === 'z-shape' && allPts.length >= 5) {
-            for(let i=2; i < allPts.length; i+=5) centers.push(allPts[i]);
-        } else if(activeMode === 's-shape' && allPts.length >= 7) {
-            for(let i=3; i < allPts.length; i+=7) centers.push(allPts[i]);
-        } else {
-            centers = allPts;
-        }
+        if(activeMode === 'z-shape' && allPts.length >= 5) { for(let i=2; i < allPts.length; i+=5) centers.push(allPts[i]); }
+        else if(activeMode === 's-shape' && allPts.length >= 7) { for(let i=3; i < allPts.length; i+=7) centers.push(allPts[i]); }
+        else centers = allPts;
         return centers;
     }
 
     async function initApp() {
-        const mode = document.querySelector('.mode-card.active').innerText.includes("合併") ? 'merge' : (document.querySelector('.mode-card.active').innerText.includes("新增") ? 'add' : 'split');
+        const mode = document.querySelector('.mode-card.active').innerText.includes("合併") ? 'merge' : (document.querySelector('.mode-card.active').innerText.includes("追加") ? 'add' : 'split');
         let combinedPts = [];
-
         if(mode === 'merge') {
             const inputs = document.querySelectorAll('.merge-file-input');
             for(let input of inputs) combinedPts.push(...(await getPointsFromFile(input.files[0])));
@@ -216,17 +216,18 @@
             combinedPts.push(...(await getPointsFromFile(document.getElementById('split-file-input').files[0])));
         }
 
-        if(combinedPts.length === 0) return alert("請先提供資料");
+        if(combinedPts.length === 0) return alert("請上傳檔案或貼上座標");
         
         // 去重
         const seen = new Set();
-        currentPathData = combinedPts.filter(p => {
+        const finalPts = combinedPts.filter(p => {
             const k = `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
             return seen.has(k) ? false : seen.add(k);
         });
 
-        openMap();
-        refreshPaths();
+        sessions = { "主路徑": finalPts };
+        currentSessionKey = "主路徑";
+        openMap(); refreshPaths(); updateSessionSidebar();
     }
 
     function openMap() {
@@ -238,86 +239,53 @@
         }
     }
 
+    function updateSessionSidebar() {
+        const sidebar = document.getElementById('session-sidebar');
+        const keys = Object.keys(sessions);
+        if(keys.length <= 1) { sidebar.classList.add('is-hidden'); return; }
+        
+        sidebar.classList.remove('is-hidden');
+        sidebar.innerHTML = "<div style='font-size:10px; font-weight:bold; color:#666; margin-bottom:5px;'>選擇編輯路徑：</div>";
+        keys.forEach(key => {
+            const btn = document.createElement('div');
+            btn.className = "session-btn" + (key === currentSessionKey ? " active" : "");
+            btn.innerText = key + ` (${sessions[key].length}點)`;
+            btn.onclick = () => { currentSessionKey = key; updateSessionSidebar(); refreshPaths(); closeEditor(); };
+            sidebar.appendChild(btn);
+        });
+    }
+
     function toggleSelectionMode() {
         isSelectionMode = !isSelectionMode;
         selectedIdxList = [];
         const btn = document.getElementById('selection-mode-btn');
         const confirmBtn = document.getElementById('confirm-selection-btn');
-        
-        if(isSelectionMode) {
-            btn.innerText = "⏹ 停止點選";
-            btn.style.background = "var(--p-orange)";
-            confirmBtn.style.display = "block";
-        } else {
-            btn.innerText = "👆 開始點選座標";
-            btn.style.background = "var(--p-blue)";
-            confirmBtn.style.display = "none";
-        }
+        if(isSelectionMode) { btn.innerText = "⏹ 停止點選"; btn.style.background = "var(--p-orange)"; confirmBtn.style.display = "block"; }
+        else { btn.innerText = "👆 點選座標"; btn.style.background = "var(--p-blue)"; confirmBtn.style.display = "none"; }
         refreshPaths();
     }
-
-    function handleMarkerClick(idx) {
-        if(isSelectionMode) {
-            const pos = selectedIdxList.indexOf(idx);
-            if(pos > -1) selectedIdxList.splice(pos, 1);
-            else selectedIdxList.push(idx);
-            refreshPaths();
-            return;
-        }
-        if(isPickingOrder) {
-            const pIdx = pickedSequence.indexOf(idx);
-            if(pIdx > -1) pickedSequence.splice(pIdx, 1); else pickedSequence.push(idx);
-            if(pickedSequence.length === currentPathData.length) { 
-                currentPathData = pickedSequence.map(i => currentPathData[i]); 
-                pickedSequence = []; isPickingOrder = false; 
-            }
-            refreshPaths(); return;
-        }
-        editingIdx = idx; document.getElementById('bottom-editor').style.display = 'block'; refreshPaths();
-    }
-
-    function showSplitDialog() {
-        if(selectedIdxList.length === 0) return alert("請先點選座標點");
-        document.getElementById('sel-count-text').innerText = `已選中 ${selectedIdxList.length} 個座標點`;
-        document.getElementById('dialog-overlay').style.display = 'flex';
-        document.getElementById('split-action').style.display = 'block';
-    }
-
-    function executeAction(type) {
-        const selectedData = currentPathData.filter((_, i) => selectedIdxList.includes(i));
-        const unselectedData = currentPathData.filter((_, i) => !selectedIdxList.includes(i));
-
-        if(type === 'split') {
-            downloadGPX(selectedData, "Part_A_Selected");
-            downloadGPX(unselectedData, "Part_B_Remaining");
-        } else if(type === 'keep-selected') {
-            currentPathData = selectedData;
-        } else if(type === 'keep-unselected') {
-            currentPathData = unselectedData;
-        }
-        
-        toggleSelectionMode();
-        cancelAction();
-        refreshPaths();
-    }
-
-    function cancelAction() { document.getElementById('dialog-overlay').style.display = 'none'; }
 
     function refreshPaths() {
-        map.eachLayer(l => { if(l instanceof L.Marker || l instanceof L.Polyline) map.removeLayer(l); });
-        markers = [];
-        const fullTrack = [];
+        const data = sessions[currentSessionKey] || [];
+        map.eachLayer(l => { if(l instanceof L.Marker || l instanceof L.Polyline || l instanceof L.Circle) map.removeLayer(l); });
+        markers = []; const fullTrack = [];
 
-        currentPathData.forEach((curr, i) => {
+        data.forEach((curr, i) => {
             const group = buildGroup(curr, activeMode);
             fullTrack.push(...group);
             
-            let iconClass = 'number-icon';
-            if(isSelectionMode && selectedIdxList.includes(i)) iconClass += ' selected-for-action';
-            if(editingIdx === i) iconClass += ' active-edit';
+            // 30米統一半徑框
+            L.circle([curr.lat, curr.lng], {
+                radius: 30, color: 'white', weight: 1.5,
+                fillColor: (isSelectionMode && selectedIdxList.includes(i)) ? 'var(--p-orange)' : (editingIdx === i ? 'var(--p-green)' : 'var(--p-blue)'),
+                fillOpacity: 0.15, dashArray: '5, 5'
+            }).addTo(map);
 
             const m = L.marker([curr.lat, curr.lng], { 
-                icon: L.divIcon({ className: iconClass, html: isPickingOrder?(pickedSequence.indexOf(i)+1||'?'):i+1, iconSize:[34,34] })
+                icon: L.divIcon({ 
+                    className: 'number-icon' + (isSelectionMode && selectedIdxList.includes(i) ? ' selected-for-action' : '') + (editingIdx === i ? ' active-edit' : ''), 
+                    html: isPickingOrder ? (pickedSequence.indexOf(i)+1||'?') : i+1, iconSize:[34,34] 
+                })
             }).addTo(map);
             m.on('click', () => handleMarkerClick(i));
             markers[i] = m;
@@ -326,8 +294,8 @@
 
         if(fullTrack.length > 1) {
             fullTrack.push(fullTrack[0]);
-            L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 2, opacity: 0.3, dashArray: '5,5' }).addTo(map);
-            if(!isSelectionMode) map.fitBounds(L.featureGroup(markers.filter(m=>m)).getBounds(), {padding:[50,50]});
+            L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 3, opacity: 0.8 }).addTo(map);
+            if(!isSelectionMode && markers.length > 0) map.fitBounds(L.featureGroup(markers.filter(m=>m)).getBounds(), {padding:[50,50]});
         }
     }
 
@@ -346,23 +314,69 @@
         return [[curr.lng, curr.lat]];
     }
 
-    function downloadGPX(data, name) {
-        if(data.length === 0) return;
-        let pts = []; data.forEach(c => pts.push(...buildGroup(c, activeMode)));
-        if(pts.length) pts.push(pts[0]);
-        let gpx = `<?xml version="1.1"?><gpx version="1.1"><trk><name>${name}</name><trkseg>` + pts.map(p => `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`).join('') + `\n</trkseg></trk></gpx>`;
-        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `${name}_${new Date().getTime()}.gpx`; a.click();
+    function handleMarkerClick(idx) {
+        if(isSelectionMode) {
+            const pos = selectedIdxList.indexOf(idx); if(pos > -1) selectedIdxList.splice(pos, 1); else selectedIdxList.push(idx);
+            refreshPaths(); return;
+        }
+        if(isPickingOrder) {
+            const pIdx = pickedSequence.indexOf(idx); if(pIdx > -1) pickedSequence.splice(pIdx, 1); else pickedSequence.push(idx);
+            if(pickedSequence.length === sessions[currentSessionKey].length) { sessions[currentSessionKey] = pickedSequence.map(i => sessions[currentSessionKey][i]); pickedSequence = []; isPickingOrder = false; }
+            refreshPaths(); return;
+        }
+        editingIdx = idx; document.getElementById('bottom-editor').style.display = 'block'; refreshPaths();
     }
 
-    function showSaveDialog() { document.getElementById('dialog-overlay').style.display = 'flex'; document.getElementById('save-dialog').style.display = 'block'; document.getElementById('split-action').style.display = 'none'; }
+    function executeAction(type) {
+        const data = sessions[currentSessionKey];
+        const sData = data.filter((_, i) => selectedIdxList.includes(i));
+        const uData = data.filter((_, i) => !selectedIdxList.includes(i));
+
+        if(type === 'split') {
+            const timeTag = new Date().toLocaleTimeString();
+            sessions["分段 A"] = sData;
+            sessions["分段 B"] = uData;
+            delete sessions[currentSessionKey];
+            currentSessionKey = "分段 A";
+        } else if(type === 'keep-selected') {
+            sessions[currentSessionKey] = sData;
+        } else if(type === 'keep-unselected') {
+            sessions[currentSessionKey] = uData;
+        }
+        toggleSelectionMode(); cancelAction(); refreshPaths(); updateSessionSidebar();
+    }
+
+    function showSaveDialog() {
+        document.getElementById('dialog-overlay').style.display = 'flex';
+        document.getElementById('save-dialog').style.display = 'block';
+        document.getElementById('split-action').style.display = 'none';
+        document.getElementById('save-filename').value = currentSessionKey === "主路徑" ? "" : currentSessionKey;
+    }
+
+    function executeFinalSave() {
+        const data = sessions[currentSessionKey];
+        const name = document.getElementById('save-filename').value || "Pikmin_Route";
+        if(!data || data.length === 0) return;
+        
+        let pts = []; data.forEach(c => pts.push(...buildGroup(c, activeMode)));
+        if(pts.length) pts.push(pts[0]);
+        
+        // 檔名與路徑內部名稱一致
+        let gpx = `<?xml version="1.1"?><gpx version="1.1"><trk><name>${name}</name><trkseg>` + pts.map(p => `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`).join('') + `\n</trkseg></trk></gpx>`;
+        
+        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `${name}.gpx`; a.click();
+        hideSaveDialog();
+    }
+
+    function showSplitDialog() { document.getElementById('sel-count-text').innerText = `已選中 ${selectedIdxList.length} 個座標`; document.getElementById('dialog-overlay').style.display = 'flex'; document.getElementById('split-action').style.display = 'block'; }
+    function cancelAction() { document.getElementById('dialog-overlay').style.display = 'none'; }
     function hideSaveDialog() { document.getElementById('dialog-overlay').style.display = 'none'; }
-    function executeFinalSave() { downloadGPX(currentPathData, document.getElementById('save-filename').value || "export"); hideSaveDialog(); }
-    function closeMap() { document.getElementById('map-container').style.display = 'none'; }
-    function deletePoint() { if(editingIdx >= 0) { currentPathData.splice(editingIdx, 1); editingIdx = -1; refreshPaths(); } }
-    function moveSequence(dir) { const data = currentPathData; if(editingIdx < 0) return; const target = editingIdx + dir; if(target >= 0 && target < data.length) { [data[editingIdx], data[target]] = [data[target], data[editingIdx]]; editingIdx = target; refreshPaths(); } }
-    function rotatePoint(v) { if(editingIdx >= 0) { currentPathData[editingIdx].angle = (currentPathData[editingIdx].angle + v) % 360; refreshPaths(); } }
+    function closeMap() { if(confirm("確定要退出並清除目前編修嗎？")) document.getElementById('map-container').style.display = 'none'; }
+    function deletePoint() { if(editingIdx >= 0) { sessions[currentSessionKey].splice(editingIdx, 1); editingIdx = -1; refreshPaths(); updateSessionSidebar(); } }
+    function moveSequence(dir) { const data = sessions[currentSessionKey]; if(editingIdx < 0) return; const target = editingIdx + dir; if(target >= 0 && target < data.length) { [data[editingIdx], data[target]] = [data[target], data[editingIdx]]; editingIdx = target; refreshPaths(); } }
+    function rotatePoint(v) { if(editingIdx >= 0) { sessions[currentSessionKey][editingIdx].angle = (sessions[currentSessionKey][editingIdx].angle + v) % 360; refreshPaths(); } }
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; refreshPaths(); }
     function togglePickingOrder() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
 </script>
