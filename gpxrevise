@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>皮克敏路徑修改器</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --p-green: #2f9e44; --p-blue: #1971c2; --p-orange: #f08c00; --p-red: #e03131; --p-dark: #343a40; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; margin: 0; padding: 0; background: #f8f9fa; font-family: -apple-system, "微軟正黑體", sans-serif; overflow: hidden; }
+        
+        /* 選單與佈局 */
+        #menu-btn { position: fixed; top: 15px; left: 15px; z-index: 10006; background: white; border: 2px solid var(--p-green); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        #side-menu { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: white; z-index: 10005; transition: 0.3s; box-shadow: 2px 0 15px rgba(0,0,0,0.2); padding-top: 70px; }
+        #side-menu.open { left: 0; }
+        .menu-item { padding: 18px 25px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; color: var(--p-dark); text-decoration: none; display: block; }
+        .menu-item:hover { background: #f8f9fa; color: var(--p-green); }
+
+        #controls { width: 100%; height: 100%; padding: 20px; padding-top: 80px; background: white; overflow-y: auto; }
+        .is-hidden { display: none !important; }
+        .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
+
+        /* 地圖介面 */
+        #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
+        #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
+        #map { width: 100%; height: 100%; }
+
+        .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        #map-container.is-fullscreen .map-btn-group { top: 20px; }
+        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
+
+        /* 側邊欄 Session 選擇 */
+        #map-sidebar-wrapper { position: absolute; top: 120px; left: 15px; z-index: 2000; display: flex; flex-direction: column; width: 180px; gap: 10px; }
+        #stat-panel { background: var(--p-dark); padding: 10px; border-radius: 12px; color: white; font-size: 10px; }
+        .session-group { background: rgba(255,255,255,0.9); border-radius: 12px; padding: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .session-title { font-size: 11px; font-weight: bold; color: var(--p-blue); margin-bottom: 5px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
+        .sidebar-btn { width: 100%; background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; margin-bottom: 5px; text-align: left; }
+        .sidebar-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
+
+        /* 彈窗 */
+        #dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100000; display: none; align-items: center; justify-content: center; }
+        .dialog-box { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+        .input-group input { width: 100%; padding: 12px; border: 1.5px solid #dee2e6; border-radius: 10px; }
+        
+        /* 編輯面板 */
+        #bottom-editor { 
+            position: absolute; bottom: 140px; left: 5%; width: 90%; 
+            background: white; z-index: 10001; border: 2.5px solid var(--p-green); border-radius: 20px;
+            padding: 15px 12px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); 
+        }
+        .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
+        .btn-act { flex: 1; padding: 13px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
+
+        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
+        .number-icon.selected { background: var(--p-green); }
+        .number-icon.in-box { background: var(--p-orange); border-color: yellow; }
+
+        textarea { width: 100%; height: 100px; font-size: 14px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 10px; }
+        button.main-btn { width: 100%; padding: 18px; margin: 8px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; }
+    </style>
+</head>
+<body>
+
+<button id="menu-btn" onclick="toggleMenu()">☰</button>
+<div id="side-menu">
+    <a href="index.html" class="menu-item">路徑生成器</a>
+    <a href="#" class="menu-item" onclick="location.reload()">路徑修改器</a>
+</div>
+
+<div id="controls">
+    <h2 id="page-title" style="text-align: center; color: var(--p-green);">路徑修改器</h2>
+    
+    <div class="card" style="border-left-color: var(--p-blue);">
+        <label style="font-weight:bold;">1. 讀取資料來源 (第一組路徑)</label>
+        <textarea id="baseInput" placeholder="在此貼上座標 (緯度, 經度) 一行一個"></textarea>
+        <p style="text-align:center; margin: 5px 0;">或是</p>
+        <input type="file" id="baseGpxFile" accept=".gpx" style="width:100%;">
+    </div>
+
+    <div class="card">
+        <label style="font-weight:bold;">2. 選擇圖形模式</label>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <label><input type="checkbox" name="pathMode" value="linear" checked> 收果</label>
+            <label><input type="checkbox" name="pathMode" value="z-shape"> Z字</label>
+            <label><input type="checkbox" name="pathMode" value="s-shape"> S型</label>
+        </div>
+    </div>
+
+    <button class="main-btn" style="background:var(--p-green)" onclick="processStart()">開啟地圖預覽與修改</button>
+</div>
+
+<div id="map-container">
+    <div id="map-sidebar-wrapper" class="is-hidden">
+        <div id="stat-panel">
+            <div id="session-name-display" style="font-weight:bold; color:var(--p-orange); margin-bottom:5px;">當前：主路徑</div>
+            <div id="dist-val">總距離：0.00 km</div>
+            <div id="points-count">點位：0</div>
+        </div>
+        
+        <div class="session-group">
+            <div class="session-title">分割工作階段</div>
+            <div id="session-list"></div>
+        </div>
+    </div>
+
+    <div class="map-btn-group">
+        <button class="map-ctrl-btn" id="box-select-btn" style="background:var(--p-blue)" onclick="toggleBoxSelect()">🟦 框選模式: 關</button>
+        <button class="map-ctrl-btn" style="background:var(--p-green)" onclick="showSaveDialog()">💾 儲存此段</button>
+        <button class="map-ctrl-btn" onclick="toggleSize()">全頻</button>
+        <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">關閉</button>
+    </div>
+    <div id="map"></div>
+
+    <div id="bottom-editor">
+        <div id="edit-label" style="text-align:center; font-weight:bold; color:var(--p-green); font-size:12px;">點位調整</div>
+        <div class="action-row">
+            <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingOrder()">👆 自選順序</button>
+            <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(-1)">⬆ 前移</button>
+            <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(1)">⬇ 後移</button>
+        </div>
+        <div class="action-row">
+            <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(45)">↻ 旋轉圖形</button>
+            <button class="btn-act" style="background:var(--p-red); color:white" onclick="deletePoint()">🗑️ 刪除點位</button>
+            <button class="btn-act" style="background:var(--p-dark); color:white" onclick="closeEditor()">完成</button>
+        </div>
+    </div>
+</div>
+
+<div id="dialog-overlay">
+    <div id="action-choice" class="dialog-box" style="display:none;">
+        <h3>已選中 <span id="selected-count">0</span> 個點位</h3>
+        <button class="main-btn" style="background:var(--p-blue)" onclick="executeSplit()">✂️ 分割為獨立階段 (可分別調整)</button>
+        <button class="main-btn" style="background:var(--p-red)" onclick="deleteInBox()">🗑️ 直接刪除選中點位</button>
+        <button class="main-btn" style="background:#ced4da; color:#333;" onclick="cancelSelection()">取消</button>
+    </div>
+
+    <div id="save-dialog" class="dialog-box" style="display:none;">
+        <h3>儲存當前路徑</h3>
+        <div class="input-group">
+            <label>檔案名稱 (.gpx)</label>
+            <input type="text" id="save-filename" placeholder="例如：Pikmin_Route_A">
+        </div>
+        <div class="input-group">
+            <label>路徑內部名稱 (顯示於 App)</label>
+            <input type="text" id="save-pathname" placeholder="例如：我的花田-01">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="main-btn" style="background:var(--p-green)" onclick="executeSave()">確認下載</button>
+            <button class="main-btn" style="background:#ced4da; color:#333;" onclick="hideSaveDialog()">取消</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+<script>
+    var map, activeModes = [], editingIdx = -1;
+    var sessions = { "主路徑": [] };
+    var currentSessionKey = "主路徑";
+    var isBoxSelectMode = false, selectionRect = null, startPoint = null, pointsInBoxIdx = [];
+    var isPickingOrder = false, pickedSequence = [], markers = [];
+
+    function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
+
+    async function processStart() {
+        let pts = [];
+        const str = document.getElementById('baseInput').value;
+        const matches = str.match(/-?\d+\.\d+/g);
+        if(matches) { for(let i=0; i<matches.length; i+=2) pts.push({lat: parseFloat(matches[i]), lng: parseFloat(matches[i+1]), angle: 0}); }
+        
+        const file = document.getElementById('baseGpxFile').files[0];
+        if(file) {
+            const xml = await file.text();
+            const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
+            let m; while((m = regex.exec(xml))!==null) pts.push({lat: parseFloat(m[1]), lng: parseFloat(m[2]), angle: 0});
+        }
+
+        if(pts.length === 0) return alert("請貼上座標或上傳 GPX 檔案");
+        sessions = { "主路徑": pts };
+        currentSessionKey = "主路徑";
+        activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+        if(!activeModes.length) activeModes = ['linear'];
+
+        openMap();
+        updateSessionList();
+        refreshPaths();
+    }
+
+    function openMap() {
+        document.getElementById('map-container').style.display = 'block';
+        if (!map) {
+            map = L.map('map', {zoomControl: false});
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.control.zoom({position: 'bottomright'}).addTo(map);
+            
+            map.on('mousedown', e => {
+                if(!isBoxSelectMode) return;
+                startPoint = e.latlng;
+                if(selectionRect) selectionRect.remove();
+                selectionRect = L.rectangle([startPoint, startPoint], {color: 'var(--p-blue)', weight: 2, fillOpacity: 0.2}).addTo(map);
+                map.dragging.disable();
+            });
+            map.on('mousemove', e => { if(isBoxSelectMode && startPoint && selectionRect) selectionRect.setBounds([startPoint, e.latlng]); });
+            map.on('mouseup', e => {
+                if(!isBoxSelectMode || !startPoint) return;
+                map.dragging.enable();
+                processSelection(selectionRect.getBounds());
+                startPoint = null;
+            });
+        }
+    }
+
+    function updateSessionList() {
+        const list = document.getElementById('session-list');
+        list.innerHTML = "";
+        Object.keys(sessions).forEach(key => {
+            const btn = document.createElement('button');
+            btn.className = "sidebar-btn" + (key === currentSessionKey ? " active" : "");
+            btn.innerText = `${key} (${sessions[key].length}點)`;
+            btn.onclick = () => { currentSessionKey = key; updateSessionList(); refreshPaths(); closeEditor(); };
+            list.appendChild(btn);
+        });
+        document.getElementById('session-name-display').innerText = `當前：${currentSessionKey}`;
+        document.getElementById('map-sidebar-wrapper').classList.remove('is-hidden');
+    }
+
+    function processSelection(bounds) {
+        pointsInBoxIdx = [];
+        const currentData = sessions[currentSessionKey];
+        currentData.forEach((pt, i) => {
+            if(bounds.contains([pt.lat, pt.lng])) {
+                pointsInBoxIdx.push(i);
+                if(markers[i]) markers[i].getElement().classList.add('in-box');
+            }
+        });
+
+        if(pointsInBoxIdx.length > 0) {
+            document.getElementById('selected-count').innerText = pointsInBoxIdx.length;
+            document.getElementById('dialog-overlay').style.display = 'flex';
+            document.getElementById('action-choice').style.display = 'block';
+            document.getElementById('save-dialog').style.display = 'none';
+        }
+    }
+
+    function executeSplit() {
+        const data = sessions[currentSessionKey];
+        const inData = data.filter((_, i) => pointsInBoxIdx.includes(i));
+        const outData = data.filter((_, i) => !pointsInBoxIdx.includes(i));
+        const timeId = new Date().toLocaleTimeString().replace(/\s/g, '');
+        
+        sessions[`區域內_${timeId}`] = inData;
+        sessions[`剩餘_${timeId}`] = outData;
+        
+        delete sessions[currentSessionKey]; 
+        currentSessionKey = `區域內_${timeId}`;
+        
+        cancelSelection();
+        updateSessionList();
+        refreshPaths();
+    }
+
+    function deleteInBox() {
+        sessions[currentSessionKey] = sessions[currentSessionKey].filter((_, i) => !pointsInBoxIdx.includes(i));
+        cancelSelection();
+        refreshPaths();
+        updateSessionList();
+    }
+
+    function cancelSelection() {
+        document.getElementById('dialog-overlay').style.display = 'none';
+        if(selectionRect) selectionRect.remove();
+        selectionRect = null;
+        markers.forEach(m => { if(m) m.getElement().classList.remove('in-box'); });
+    }
+
+    function refreshPaths() {
+        const data = sessions[currentSessionKey];
+        const mode = getActiveMode();
+        map.eachLayer(l => { if(l instanceof L.Marker || l instanceof L.Polyline || (l instanceof L.Rectangle && l !== selectionRect)) map.removeLayer(l); });
+        markers = [];
+        const fullTrack = [];
+
+        data.forEach((curr, i) => {
+            const group = buildGroup(curr, mode);
+            fullTrack.push(...group);
+            const m = L.marker([curr.lat, curr.lng], { 
+                icon: L.divIcon({ className: 'number-icon' + (editingIdx===i?' selected':''), html: isPickingOrder?(pickedSequence.indexOf(i)+1||'?'):i+1, iconSize:[34,34] })
+            }).addTo(map);
+            m.on('click', () => handleMarkerClick(i));
+            markers[i] = m;
+            L.polyline(group.map(p => [p[1], p[0]]), { color: editingIdx===i?'#2f9e44':'#1971c2', weight: 4 }).addTo(map);
+        });
+
+        document.getElementById('points-count').innerText = `點位：${data.length}`;
+        if(fullTrack.length > 1) {
+            fullTrack.push(fullTrack[0]);
+            L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 2, opacity: 0.3, dashArray: '5,5' }).addTo(map);
+            const dist = turf.length(turf.lineString(fullTrack), {units: 'kilometers'});
+            document.getElementById('dist-val').innerText = `總距離：${dist.toFixed(2)} km`;
+        }
+        if(data.length > 0) map.fitBounds(L.featureGroup(markers.filter(m=>m)).getBounds(), {padding:[50,50]});
+    }
+
+    function showSaveDialog() {
+        document.getElementById('dialog-overlay').style.display = 'flex';
+        document.getElementById('action-choice').style.display = 'none';
+        document.getElementById('save-dialog').style.display = 'block';
+        document.getElementById('save-filename').value = currentSessionKey.replace(/[:\s]/g, '_');
+    }
+    function hideSaveDialog() { document.getElementById('dialog-overlay').style.display = 'none'; }
+    function executeSave() {
+        const data = sessions[currentSessionKey];
+        const mode = getActiveMode();
+        const fileName = document.getElementById('save-filename').value || "Pikmin_Route";
+        const pathName = document.getElementById('save-pathname').value || "皮克敏路徑";
+        
+        let pts = []; data.forEach(c => pts.push(...buildGroup(c, mode)));
+        if(pts.length) pts.push(pts[0]);
+        let gpx = `<?xml version="1.1"?><gpx version="1.1"><trk><name>${pathName}</name><trkseg>` + pts.map(p => `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`).join('') + `\n</trkseg></trk></gpx>`;
+        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `${fileName}.gpx`; a.click();
+        hideSaveDialog();
+    }
+
+    function buildGroup(curr, mode) {
+        const cp = turf.point([curr.lng, curr.lat]);
+        if (mode === 'z-shape') {
+            const r = 41;
+            const v = {
+                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates,
+                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates,
+                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates,
+                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates
+            };
+            return [v.tl, v.tr, [curr.lng, curr.lat], v.bl, v.br];
+        } 
+        if (mode === 's-shape') {
+            const r = 30;
+            const v = {
+                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates,
+                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates,
+                ml: turf.destination(cp, r, curr.angle-90, {units:'meters'}).geometry.coordinates,
+                mr: turf.destination(cp, r, curr.angle+90, {units:'meters'}).geometry.coordinates,
+                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates,
+                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates
+            };
+            return [v.tr, v.tl, v.ml, [curr.lng, curr.lat], v.mr, v.br, v.bl];
+        }
+        return [[curr.lng, curr.lat]];
+    }
+
+    function handleMarkerClick(idx) {
+        if(isPickingOrder) {
+            const pIdx = pickedSequence.indexOf(idx);
+            if(pIdx !== -1) pickedSequence.splice(pIdx, 1); else pickedSequence.push(idx);
+            if(pickedSequence.length === sessions[currentSessionKey].length) { sessions[currentSessionKey] = pickedSequence.map(i => sessions[currentSessionKey][i]); pickedSequence = []; isPickingOrder = false; }
+            refreshPaths(); return;
+        }
+        editingIdx = idx; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths();
+    }
+
+    function deletePoint() { if(editingIdx >= 0) { sessions[currentSessionKey].splice(editingIdx, 1); editingIdx = -1; refreshPaths(); updateSessionList(); } }
+    function moveSequence(dir) {
+        const data = sessions[currentSessionKey];
+        if(editingIdx < 0) return; const target = editingIdx + dir;
+        if(target >= 0 && target < data.length) { [data[editingIdx], data[target]] = [data[target], data[editingIdx]]; editingIdx = target; refreshPaths(); }
+    }
+    function rotatePoint(v) { if(editingIdx >= 0) { sessions[currentSessionKey][editingIdx].angle = (sessions[currentSessionKey][editingIdx].angle + v) % 360; refreshPaths(); } }
+    function getActiveMode() { return activeModes[0] || 'linear'; }
+    function toggleBoxSelect() { isBoxSelectMode = !isBoxSelectMode; document.getElementById('box-select-btn').innerText = isBoxSelectMode ? "⏹ 停止框選" : "🟦 框選模式: 關"; map.getContainer().style.cursor = isBoxSelectMode ? "crosshair" : ""; }
+    function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(()=>map.invalidateSize(), 400); }
+    function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; refreshPaths(); }
+    function togglePickingOrder() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
+    function closeMap() { document.getElementById('map-container').style.display = 'none'; }
+</script>
+</body>
+</html>
