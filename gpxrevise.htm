@@ -62,9 +62,9 @@
     <h2 style="text-align: center; color: var(--p-green); margin-top: 0;">皮克敏路徑修改器</h2>
     
     <div class="mode-selector">
-        <div class="mode-card active" onclick="switchMode('merge')">🔗 合併</div>
-        <div class="mode-card" onclick="switchMode('add')">➕ 新增</div>
-        <div class="mode-card" onclick="switchMode('split')">✂️ 分割</div>
+        <div class="mode-card active" id="mode-merge" onclick="switchMode('merge')">🔗 合併</div>
+        <div class="mode-card" id="mode-add" onclick="switchMode('add')">➕ 新增</div>
+        <div class="mode-card" id="mode-split" onclick="switchMode('split')">✂️ 分割</div>
     </div>
 
     <div class="card" style="border-left-color: var(--p-dark);">
@@ -86,14 +86,14 @@
     </div>
 
     <div id="section-add" class="card is-hidden" style="border-left-color: var(--p-orange);">
-        <label style="font-weight:bold;">原始 GPX：</label>
+        <label style="font-weight:bold;">原始 GPX 檔案：</label>
         <input type="file" id="add-file-input" accept=".gpx" style="width:100%; margin:10px 0;" onchange="autoDetectMode(this)">
-        <label style="font-weight:bold;">追加座標：</label>
+        <label style="font-weight:bold;">追加座標點位：</label>
         <textarea id="add-coord-input" placeholder="緯度, 經度 一行一個"></textarea>
     </div>
 
     <div id="section-split" class="card is-hidden" style="border-left-color: var(--p-red);">
-        <label style="font-weight:bold;">上傳檔案進行分割：</label>
+        <label style="font-weight:bold;">上傳待分割檔案：</label>
         <input type="file" id="split-file-input" accept=".gpx" style="width:100%; margin:10px 0;" onchange="autoDetectMode(this)">
     </div>
 
@@ -104,8 +104,9 @@
     <div id="session-sidebar" class="is-hidden"></div>
 
     <div class="map-btn-group">
-        <button class="map-ctrl-btn" id="selection-mode-btn" style="background:var(--p-blue)" onclick="toggleSelectionMode()">👆 點選座標</button>
-        <button class="map-ctrl-btn" id="confirm-selection-btn" style="background:var(--p-orange); display:none;" onclick="showSplitDialog()">✅ 確認選取</button>
+        <button class="map-ctrl-btn is-hidden" id="selection-mode-btn" style="background:var(--p-blue)" onclick="toggleSelectionMode()">👆 點選座標</button>
+        <button class="map-ctrl-btn is-hidden" id="confirm-selection-btn" style="background:var(--p-orange)" onclick="showSplitDialog()">✅ 確認選取</button>
+        
         <button class="map-ctrl-btn" style="background:var(--p-green)" onclick="showSaveDialog()">💾 儲存下載</button>
         <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">退出</button>
     </div>
@@ -136,8 +137,8 @@
 
     <div id="save-dialog" class="dialog-box" style="display:none;">
         <h3>自訂存檔名稱</h3>
-        <input type="text" id="save-filename" placeholder="請輸入檔名 (如：花田A區)" style="width:100%; padding:15px; margin-bottom:15px; border-radius:12px; border:1.5px solid #ddd; font-size:16px;">
-        <button class="main-btn" style="background:var(--p-green)" onclick="executeFinalSave()">確認儲存</button>
+        <input type="text" id="save-filename" placeholder="請輸入檔名" style="width:100%; padding:15px; margin-bottom:15px; border-radius:12px; border:1.5px solid #ddd; font-size:16px;">
+        <button class="main-btn" style="background:var(--p-green)" onclick="executeFinalSave()">確認下載</button>
         <button class="main-btn" style="background:#ced4da; color:#333;" onclick="hideSaveDialog()">取消</button>
     </div>
 </div>
@@ -146,24 +147,28 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    var map, markers = [], activeMode = 'linear';
+    var map, markers = [], activeMode = 'linear', appMode = 'merge';
     var sessions = {}; 
     var currentSessionKey = "";
     var isSelectionMode = false, selectedIdxList = [], editingIdx = -1;
     var isPickingOrder = false, pickedSequence = [];
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
+    
     function switchMode(m) {
+        appMode = m;
         document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        document.getElementById(`mode-${m}`).classList.add('active');
         ['merge', 'add', 'split'].forEach(s => document.getElementById(`section-${s}`).classList.add('is-hidden'));
         document.getElementById(`section-${m}`).classList.remove('is-hidden');
     }
+
     function addUploadField() {
         const div = document.createElement('div'); div.style.marginBottom = "10px";
         div.innerHTML = `<input type="file" accept=".gpx" class="merge-file-input" onchange="autoDetectMode(this)">`;
         document.getElementById('file-upload-list').appendChild(div);
     }
+
     async function autoDetectMode(input) {
         const file = input.files[0]; if(!file) return;
         const text = await file.text();
@@ -177,6 +182,7 @@
         }
         activeMode = document.querySelector('input[name="globalMode"]:checked').value;
     }
+
     function updateDetectBadge() { activeMode = document.querySelector('input[name="globalMode"]:checked').value; }
 
     async function getPointsFromFile(file) {
@@ -194,12 +200,11 @@
     }
 
     async function initApp() {
-        const mode = document.querySelector('.mode-card.active').innerText.includes("合併") ? 'merge' : (document.querySelector('.mode-card.active').innerText.includes("新增") ? 'add' : 'split');
         let combinedPts = [];
-        if(mode === 'merge') {
+        if(appMode === 'merge') {
             const inputs = document.querySelectorAll('.merge-file-input');
             for(let input of inputs) combinedPts.push(...(await getPointsFromFile(input.files[0])));
-        } else if(mode === 'add') {
+        } else if(appMode === 'add') {
             combinedPts.push(...(await getPointsFromFile(document.getElementById('add-file-input').files[0])));
             const str = document.getElementById('add-coord-input').value;
             const matches = str.match(/-?\d+\.\d+/g);
@@ -235,12 +240,17 @@
         const selectBtn = document.getElementById('selection-mode-btn');
         const keys = Object.keys(sessions);
         
-        // 核心修改：如果已經分割(keys > 1)，隱藏點選功能
-        if(keys.length > 1) {
+        // --- 核心邏輯修改：僅在分割模式且尚未分割時顯示點選按鈕 ---
+        if (appMode === 'split' && keys.length === 1) {
+            selectBtn.classList.remove('is-hidden');
+        } else {
             selectBtn.classList.add('is-hidden');
+            document.getElementById('confirm-selection-btn').classList.add('is-hidden');
+        }
+
+        if (keys.length > 1) {
             sidebar.classList.remove('is-hidden');
         } else {
-            selectBtn.classList.remove('is-hidden');
             sidebar.classList.add('is-hidden');
         }
         
@@ -251,8 +261,8 @@
             btn.innerText = key;
             btn.onclick = () => { 
                 currentSessionKey = key; 
-                isSelectionMode = false; // 切換分段時重置點選狀態
-                document.getElementById('confirm-selection-btn').style.display = "none";
+                isSelectionMode = false;
+                document.getElementById('confirm-selection-btn').classList.add('is-hidden');
                 updateSessionSidebar(); 
                 refreshPaths(); 
                 closeEditor(); 
@@ -266,8 +276,8 @@
         selectedIdxList = [];
         const btn = document.getElementById('selection-mode-btn');
         const confirmBtn = document.getElementById('confirm-selection-btn');
-        if(isSelectionMode) { btn.innerText = "⏹ 停止點選"; btn.style.background = "var(--p-orange)"; confirmBtn.style.display = "block"; }
-        else { btn.innerText = "👆 點選座標"; btn.style.background = "var(--p-blue)"; confirmBtn.style.display = "none"; }
+        if(isSelectionMode) { btn.innerText = "⏹ 停止點選"; btn.style.background = "var(--p-orange)"; confirmBtn.classList.remove('is-hidden'); }
+        else { btn.innerText = "👆 點選座標"; btn.style.background = "var(--p-blue)"; confirmBtn.classList.add('is-hidden'); }
         refreshPaths();
     }
 
@@ -347,7 +357,6 @@
         }
         
         isSelectionMode = false;
-        document.getElementById('confirm-selection-btn').style.display = "none";
         cancelAction(); 
         updateSessionSidebar(); 
         refreshPaths();
@@ -378,7 +387,7 @@
     function closeMap() { document.getElementById('map-container').style.display = 'none'; }
     function deletePoint() { if(editingIdx >= 0) { sessions[currentSessionKey].splice(editingIdx, 1); editingIdx = -1; refreshPaths(); } }
     function moveSequence(dir) { const data = sessions[currentSessionKey]; if(editingIdx < 0) return; const target = editingIdx + dir; if(target >= 0 && target < data.length) { [data[editingIdx], data[target]] = [data[target], data[editingIdx]]; editingIdx = target; refreshPaths(); } }
-    function rotatePoint(v) { if(editingIdx >= 0) { sessions[currentSessionKey][editingIdx].angle = (sessions[currentSessionKey][editingIdx].angle + v) % 360; refreshPaths(); } }
+    function rotatePoint(v) { if(editingIdx >= 0) { sessions[currentSessionKey][editingIdx].angle = (currentPathData[editingIdx].angle + v) % 360; refreshPaths(); } }
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; refreshPaths(); }
     function togglePickingOrder() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
 </script>
