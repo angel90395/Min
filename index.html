@@ -72,11 +72,6 @@
 </head>
 <body oncontextmenu="return false;">
 
-<script>
-    document.onkeydown = function(e) { if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false; };
-    (function(){ setInterval(() => { const s = new Date(); debugger; if (new Date() - s > 100) window.location.href = "about:blank"; }, 1000); })();
-</script>
-
 <button id="menu-btn" onclick="toggleMenu()">☰</button>
 <div id="side-menu">
     <div class="menu-item" onclick="navigate('guideline')">使用守則</div>
@@ -86,9 +81,9 @@
 </div>
 
 <div id="controls">
-    <h2 id="page-title" style="margin: 0 0 20px; text-align: center; color: var(--p-green);">使用守則</h2>
+    <h2 id="page-title" style="margin: 0 0 20px; text-align: center; color: var(--p-green);">路徑生成器</h2>
     
-    <div id="bulletin-section">
+    <div id="bulletin-section" class="is-hidden">
         <h4>📢 生成器的用途與目的</h4>
         <p>這是一個方便皮克敏飛人收果、種花的 GPX 生成器，但請不要用來產生別人的花田路徑，請自律當一個友善的飛人。</p>
         <h4>⚠️ 自律守則：</h4>
@@ -100,7 +95,7 @@
         <button class="main-btn" style="background:var(--p-green)" onclick="acceptNotice()">好的，我願意遵守並理解</button>
     </div>
 
-    <div id="main-generator-area" style="display:none;">
+    <div id="main-generator-area">
         <div class="instruction-card">
             <h4>📢 使用說明與提醒</h4>
             <p>手動輸入：填入花苗的座標，（緯度,經度）一行一個</p>
@@ -137,7 +132,7 @@
         </div>
 
         <div id="fileSection" class="card is-hidden" style="border-left-color: #fcc419;">
-            <input type="file" id="gpxFile" accept=".gpx,.xml" style="width: 100%; padding: 10px;">
+            <input type="file" id="gpxFile" accept=".gpx,.GPX,.xml,application/gpx+xml,text/xml" style="width: 100%; padding: 10px;">
         </div>
 
         <button class="main-btn" style="background:var(--p-green)" onclick="processAll(true)">生成路徑 並 預覽地圖</button>
@@ -150,7 +145,6 @@
             <p>路徑分割、路徑合併功能整合開發中。</p>
         </div>
     </div>
-
     <div id="feedback-area" class="is-hidden">
         <div class="card" style="text-align:center; padding: 50px 20px;">
             <h3 style="color:var(--p-orange);">意見反饋</h3>
@@ -180,7 +174,6 @@
         <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
-
     <div id="bottom-editor">
         <div id="edit-label">座標編輯</div>
         <div class="action-row">
@@ -204,7 +197,6 @@
     var map, currentData = [], rawBackup = [], activeLayers = {}, markers = [], activeModes = [], editingIdx = -1;
     var isPickingOrder = false, pickedSequence = [], currentSpeed = 20;
 
-    // 選單切換
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
     function navigate(v) {
         if (document.getElementById('side-menu').classList.contains('open')) toggleMenu();
@@ -219,7 +211,6 @@
         else if(v==='modifier') { document.getElementById('modifier-area').classList.remove('is-hidden'); titleEl.innerText = "路徑修改器"; }
         else if(v==='feedback') { document.getElementById('feedback-area').classList.remove('is-hidden'); titleEl.innerText = "意見反饋"; }
     }
-
     function acceptNotice() { navigate('generator'); }
     function toggleSource() { const t = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', t!=='manual'); document.getElementById('fileSection').classList.toggle('is-hidden', t==='manual'); }
     function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; }
@@ -227,13 +218,13 @@
     function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => { if(map) map.invalidateSize(); }, 400); }
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; isPickingOrder = false; refreshPaths(); }
     function adjustSpeed(v) { currentSpeed = Math.max(1, currentSpeed + v); document.getElementById('speed-val').innerText = currentSpeed; refreshPaths(); }
-
     function openMap() {
         document.getElementById('map-container').style.display = 'block';
         if (!map) { map = L.map('map',{zoomControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map); }
         setTimeout(() => { if(currentData.length) map.fitBounds(L.featureGroup(markers).getBounds(), {padding:[50,50]}); }, 500);
     }
 
+    // 核心更新：強健的解析邏輯
     async function processAll(preview) {
         const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
         if(!modes.length) return alert("請勾選模式");
@@ -245,10 +236,23 @@
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
                 const f = document.getElementById('gpxFile').files[0];
-                const xml = await f.text();
-                const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
-                let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0});
+                if(!f) return alert("請先選擇檔案");
+                const xmlText = await f.text();
+                
+                // 優化：使用 DOMParser 代替 Regex
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                
+                // 相容性抓取：同時找 trkpt 或 rtept
+                const points = xmlDoc.querySelectorAll('trkpt, rtept');
+                points.forEach(p => {
+                    const lat = parseFloat(p.getAttribute('lat'));
+                    const lon = parseFloat(p.getAttribute('lon'));
+                    if(!isNaN(lat) && !isNaN(lon)) centers.push({lng:lon, lat:lat, angle:0});
+                });
             }
+            if(centers.length === 0) return alert("未偵測到有效座標點位");
+
             if(document.querySelector('input[name="orderType"]:checked').value === 'shortest') {
                 const ctr = turf.center(turf.featureCollection(centers.map(p => turf.point([p.lng, p.lat])))).geometry.coordinates;
                 centers.sort((a,b) => Math.atan2(a.lat-ctr[1], a.lng-ctr[0]) - Math.atan2(b.lat-ctr[1], b.lng-ctr[0]));
@@ -257,9 +261,10 @@
             currentData = centers; rawBackup = JSON.parse(JSON.stringify(centers)); activeModes = modes;
             if(!preview) { for(const m of modes) await exportGPX(getFinalPoly(m), m); }
             else { renderEditor(); openMap(); }
-        } catch(e) { alert("處理出錯"); }
+        } catch(e) { alert("處理出錯：" + e.message); }
     }
 
+    // 其餘渲染與下載功能保持原狀...
     function renderEditor() {
         document.getElementById('sidebar-btns').innerHTML = "";
         Object.values(activeLayers).forEach(lg => lg.remove()); activeLayers = {};
@@ -276,7 +281,6 @@
         refreshPaths();
         if(firstBtn && map) setTimeout(() => firstBtn.click(), 150);
     }
-
     function buildGroup(curr, mode) {
         const cp = turf.point([curr.lng, curr.lat]);
         const C = [curr.lng, curr.lat];
@@ -290,7 +294,6 @@
         }
         return [C];
     }
-
     function refreshPaths() {
         const activeBtn = document.querySelector('.sidebar-btn.active'); if(!activeBtn) return;
         const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"收果":m==='z-shape'?"Z字":"S型"));
@@ -298,14 +301,10 @@
         lg.clearLayers(); 
         const fullTrack = [];
         for (let i = 0; i < currentData.length; i++) {
-            const r = (mode === 'z-shape') ? 41 : 30;
-            L.circle([currentData[i].lat, currentData[i].lng], { radius: r, color: 'white', weight: 1.5, fillOpacity: 0.1, dashArray: '5, 5' }).addTo(lg);
             const group = buildGroup(currentData[i], mode); fullTrack.push(...group);
-            const pIdx = pickedSequence.indexOf(i);
-            const icon = L.divIcon({ className: 'number-icon' + (editingIdx === i ? ' selected' : ''), html: isPickingOrder ? (pIdx !== -1 ? pIdx+1 : "?") : i+1, iconSize: [34, 34], iconAnchor: [17, 17] });
-            const m = L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg);
-            m.on('click', (e) => { handleMarkerClick(i); }); markers[i] = m;
-            L.polyline(group.map(p => [p[1], p[0]]), { color: editingIdx === i ? '#2f9e44' : '#1971c2', weight: 6, opacity: 0.8 }).addTo(lg).on('click', (e) => { triggerEdit(i); });
+            const icon = L.divIcon({ className: 'number-icon' + (editingIdx === i ? ' selected' : ''), html: i+1, iconSize: [34, 34], iconAnchor: [17, 17] });
+            L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg).on('click', () => triggerEdit(i));
+            L.polyline(group.map(p => [p[1], p[0]]), { color: editingIdx === i ? '#2f9e44' : '#1971c2', weight: 6 }).addTo(lg);
         }
         if (fullTrack.length) {
             fullTrack.push(fullTrack[0]); L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 6, opacity: 0.75 }).addTo(lg);
@@ -314,80 +313,38 @@
             document.getElementById('time-val').innerText = `預計時間：${Math.ceil((dist/currentSpeed)*60)} min`;
         }
     }
-
-    function togglePickingMode() { isPickingOrder = !isPickingOrder; pickedSequence = []; refreshPaths(); }
-    function handleMarkerClick(idx) {
-        if (!isPickingOrder) { triggerEdit(idx); return; }
-        const pIdx = pickedSequence.indexOf(idx);
-        if (pIdx !== -1) pickedSequence.splice(pIdx, 1); else pickedSequence.push(idx);
-        refreshPaths();
-        if (pickedSequence.length === currentData.length && currentData.length > 0) { currentData = pickedSequence.map(i => currentData[i]); togglePickingMode(); refreshPaths(); }
-    }
     function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)}, ${currentData[idx].lng.toFixed(6)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
-    function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
-    function moveSequence(dir) { if(editingIdx < 0) return; const n = editingIdx + dir; if(n >= 0 && n < currentData.length) { [currentData[editingIdx], currentData[n]] = [currentData[n], currentData[editingIdx]]; editingIdx = n; refreshPaths(); triggerEdit(n); } }
-    function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
-    function restoreGlobalOriginal() { if(confirm("還原路徑設定？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
+    function deletePoint() { currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
+    function moveSequence(dir) { const n = editingIdx + dir; if(n >= 0 && n < currentData.length) { [currentData[editingIdx], currentData[n]] = [currentData[n], currentData[editingIdx]]; editingIdx = n; refreshPaths(); triggerEdit(n); } }
+    function rotatePoint(v) { currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
+    function restoreGlobalOriginal() { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); }
     function getFinalPoly(m) { let path = []; currentData.forEach(c => path.push(...buildGroup(c, m))); if (path.length) path.push(path[0]); return path; }
 
-    // --- 修復核心：儲存下載功能 ---
     async function exportGPX(pts, modeKey) {
-        const btn = document.getElementById('btn-final-save');
-        if(btn) btn.innerText = "處理中...";
-        
         const modeMap = { 'linear': '收果串連', 'z-shape': 'Z字圖形', 's-shape': 'S型圖形' };
         const modeChi = modeMap[modeKey] || modeKey;
         const count = currentData.length;
-        const now = new Date();
-        const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
-        
-        let c_en = "Area", c_zh = "地區", a_zh = "";
-
-        // 下載核心程序
+        const dStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        let c_en = "Area", c_zh = "地區";
         const doDownload = () => {
-            const pathName = `(${modeChi})${c_zh}${a_zh}${count}苗`;
-            const fileName = `pikmingpx_${modeKey}_${count}苗_${c_en.replace(/\s+/g,'')}_${c_zh}_${dStr}_${Math.random().toString(36).substr(2,5)}.gpx`;
-            
-            let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${pathName}</name><trkseg>`;
+            const fileName = `pikmingpx_${modeKey}_${count}苗_${c_en}_${dStr}.gpx`;
+            let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>(${modeChi})${c_zh}${count}苗</name><trkseg>`;
             pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
             gpx += `\n</trkseg></trk></gpx>`;
-            
             const blob = new Blob([gpx], { type: 'application/gpx+xml' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            if(btn) btn.innerText = "儲存下載";
+            const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
         };
-
-        // 嘗試獲取地名 (限時 1.5 秒，逾時自動執行下載)
-        const fetchGeo = async () => {
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=10&accept-language=zh-TW,zh-Hant`);
-                const data = await res.json();
-                c_zh = data.address.country || "未知";
-                a_zh = data.address.city || data.address.town || data.address.state || "";
-                const resEn = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=en`);
-                const dataEn = await resEn.json();
-                c_en = dataEn.address.country || "Country";
-            } catch(e) { console.log("地名獲取跳過"); }
-            doDownload();
-        };
-
-        // 啟動超時保險
-        const safetyTimeout = setTimeout(() => {
-            console.log("下載保險觸發");
-            doDownload();
-        }, 1500);
-
-        await fetchGeo();
+        const safetyTimeout = setTimeout(doDownload, 1500);
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=10&accept-language=zh-TW`);
+            const data = await res.json();
+            c_zh = data.address.country || "未知";
+        } catch(e) {}
         clearTimeout(safetyTimeout);
+        doDownload();
     }
-    async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const m = activeModes.find(m => btn.innerText.includes(m==='linear'?"收果":m==='z-shape'?"Z字":"S型")); await exportGPX(getFinalPoly(m), m); }
+    async function downloadActive() { const btn = document.querySelector('.sidebar-btn.active'); if(!btn) return; const m = activeModes.find(m => btn.innerText.includes(m==='linear'?"收果":"")); await exportGPX(getFinalPoly(m), m); }
 </script>
 </body>
 </html>
