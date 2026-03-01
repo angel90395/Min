@@ -28,14 +28,15 @@
         .instruction-card p { font-size: 0.85rem; color: #444; margin: 8px 0; line-height: 1.5; font-weight: bold; }
 
         .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
-        
+        .mode-option, .order-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
+        .mode-option input, .order-option input { margin-right: 12px; width: 22px; height: 22px; accent-color: var(--p-green); }
+
         /* 地圖介面 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
         #map { width: 100%; height: 100%; }
 
         textarea { width: 100%; height: 120px; font-size: 16px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 12px; }
         button.main-btn { width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; transition: 0.2s; }
-        button.main-btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -67,10 +68,23 @@
             <h4>📢 使用說明與提醒</h4>
             <p>手動輸入：填入花苗的座標，（緯度,經度）一行一個</p>
             <p>上傳GPX檔案：可以上傳目前已有的花苗串接路徑直接生成其他圖形路徑</p>
-            <p>生成路徑並預覽地圖：會進入到地圖預覽模式，可以調整順序或圖形路徑的方向</p>
-            <p>直接生成下載：預設最短路徑直接下載GPX</p>
         </div>
         
+        <div class="card">
+            <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇生成模式</label>
+            <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 花苗座標串連(適合收果)</label>
+            <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
+            <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形</label>
+        </div>
+
+        <div class="card" style="border-left-color: var(--p-orange);">
+            <label style="font-weight:bold; margin-bottom:10px; display:block;">2. 排序方式</label>
+            <div style="display: flex; gap: 15px;">
+                <label class="order-option"><input type="radio" name="orderType" value="original" checked> 照原始順序</label>
+                <label class="order-option"><input type="radio" name="orderType" value="shortest"> 最短距離</label>
+            </div>
+        </div>
+
         <div class="card" style="border-left-color: #fcc419;">
             <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:15px; border-radius:10px;">
                 <option value="manual">手動貼上座標</option>
@@ -79,18 +93,19 @@
         </div>
 
         <div id="fileSection" class="card is-hidden" style="border-left-color: #fcc419;">
-            <input type="file" id="gpxFile" accept=".gpx, .GPX, .xml, text/xml, application/xml, application/gpx+xml" style="width: 100%; padding: 10px;">
+            <input type="file" id="gpxFile" accept=".gpx, .GPX, .xml, application/gpx+xml" style="width: 100%; padding: 10px;">
         </div>
 
         <div id="manualSection" class="card">
-            <textarea id="coordInput" placeholder="緯度, 經度 (例如: 25.033, 121.565)"></textarea>
+            <textarea id="coordInput" placeholder="緯度, 經度"></textarea>
         </div>
 
         <button class="main-btn" style="background:var(--p-green)" onclick="processAll(true)">生成路徑 並 預覽地圖</button>
+        <button class="main-btn" style="background:var(--p-blue)" onclick="processAll(false)">直接生成 下載 GPX</button>
     </div>
 
     <div id="feedback-area" class="is-hidden">
-        <div class="card" style="min-height: 600px; border-left-color: var(--p-orange); padding: 5px;">
+        <div class="card" style="min-height: 600px; border-left-color: var(--p-orange);">
             <iframe data-tally-src="https://tally.so/embed/你的表單ID?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1" loading="lazy" width="100%" height="600" frameborder="0" title="意見反饋"></iframe>
         </div>
     </div>
@@ -109,30 +124,18 @@
 <script async src="https://tally.so/widgets/embed.js"></script>
 
 <script>
-    var map, currentData = [], markers = [];
+    var map, currentData = [], activeModes = [];
 
-    // 選單導航邏輯：確保正確切換顯示狀態
     function navigate(v) {
         if (document.getElementById('side-menu').classList.contains('open')) toggleMenu();
-        
         const titleEl = document.getElementById('page-title');
-        const sections = {
-            'guideline': { id: 'bulletin-section', title: '使用守則' },
-            'generator': { id: 'main-generator-area', title: '路徑生成器' },
-            'feedback': { id: 'feedback-area', title: '意見反饋' }
-        };
+        document.getElementById('bulletin-section').classList.add('is-hidden');
+        document.getElementById('main-generator-area').classList.add('is-hidden');
+        document.getElementById('feedback-area').classList.add('is-hidden');
 
-        // 先隱藏所有區域
-        Object.values(sections).forEach(s => {
-            const el = document.getElementById(s.id);
-            if (el) el.classList.add('is-hidden');
-        });
-
-        // 顯示目標區域
-        if (sections[v]) {
-            document.getElementById(sections[v].id).classList.remove('is-hidden');
-            titleEl.innerText = sections[v].title;
-        }
+        if(v==='guideline') { document.getElementById('bulletin-section').classList.remove('is-hidden'); titleEl.innerText = "使用守則"; }
+        else if(v==='generator') { document.getElementById('main-generator-area').classList.remove('is-hidden'); titleEl.innerText = "路徑生成器"; }
+        else if(v==='feedback') { document.getElementById('feedback-area').classList.remove('is-hidden'); titleEl.innerText = "意見反饋"; }
     }
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
@@ -144,8 +147,39 @@
     }
     function closeMap() { document.getElementById('map-container').style.display = 'none'; }
 
-    // 解析與地圖邏輯 (包含 iOS DOMParser 修正)
+    // 圖形建構邏輯 (Z字與S型)
+    function buildGroup(curr, mode) {
+        const cp = turf.point([curr.lng, curr.lat]);
+        const C = [curr.lng, curr.lat];
+        if (mode === 'z-shape') {
+            const r = 41; 
+            const v = { 
+                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, 
+                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, 
+                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, 
+                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates 
+            };
+            return [v.tl, v.tr, C, v.bl, v.br];
+        } 
+        if (mode === 's-shape') {
+            const r = 30; 
+            const v = { 
+                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, 
+                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, 
+                ml: turf.destination(cp, r, curr.angle-90, {units:'meters'}).geometry.coordinates, 
+                mr: turf.destination(cp, r, curr.angle+90, {units:'meters'}).geometry.coordinates, 
+                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, 
+                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates 
+            };
+            return [v.tr, v.tl, v.ml, C, v.mr, v.br, v.bl];
+        }
+        return [C];
+    }
+
     async function processAll(preview) {
+        activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+        if(!activeModes.length) return alert("請選擇生成模式");
+
         let centers = [];
         if(document.getElementById('sourceType').value === 'file') {
             const f = document.getElementById('gpxFile').files[0];
@@ -156,44 +190,74 @@
             points.forEach(p => {
                 const lat = parseFloat(p.getAttribute('lat'));
                 const lon = parseFloat(p.getAttribute('lon'));
-                if(!isNaN(lat) && !isNaN(lon)) centers.push({ lat, lng: lon });
+                if(!isNaN(lat) && !isNaN(lon)) centers.push({ lat, lng: lon, angle: 0 });
             });
         } else {
             const matches = document.getElementById('coordInput').value.match(/-?\d+\.\d+/g);
-            if(matches) for(let i=0; i<matches.length; i+=2) centers.push({lat:parseFloat(matches[i]), lng:parseFloat(matches[i+1])});
+            if(matches) for(let i=0; i<matches.length; i+=2) centers.push({lat:parseFloat(matches[i]), lng:parseFloat(matches[i+1]), angle:0});
         }
 
-        if(centers.length === 0) return alert("找不到點位");
-        currentData = centers;
-        
-        document.getElementById('map-container').style.display = 'block';
-        if (!map) {
-            map = L.map('map');
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        if(!centers.length) return alert("找不到座標");
+
+        // 排序處理
+        if(document.querySelector('input[name="orderType"]:checked').value === 'shortest') {
+            const ctr = turf.center(turf.featureCollection(centers.map(p => turf.point([p.lng, p.lat])))).geometry.coordinates;
+            centers.sort((a,b) => Math.atan2(a.lat-ctr[1], a.lng-ctr[0]) - Math.atan2(b.lat-ctr[1], b.lng-ctr[0]));
         }
-        map.setView([centers[0].lat, centers[0].lng], 14);
-        setTimeout(() => { map.invalidateSize(true); }, 300);
+        centers.forEach((c, i) => { 
+            const n = centers[(i + 1) % centers.length]; 
+            c.angle = turf.bearing(turf.point([c.lng, c.lat]), turf.point([n.lng, n.lat])); 
+        });
+
+        currentData = centers;
+        if(!preview) { 
+            for(const m of activeModes) await exportGPX(getFinalPoly(m), m); 
+        } else {
+            document.getElementById('map-container').style.display = 'block';
+            if (!map) {
+                map = L.map('map');
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            }
+            map.setView([centers[0].lat, centers[0].lng], 14);
+            setTimeout(() => { map.invalidateSize(true); }, 300);
+        }
     }
 
-    // 下載邏輯 (包含義大利譯名修正與隨機碼)
+    function getFinalPoly(m) {
+        let path = [];
+        currentData.forEach(c => path.push(...buildGroup(c, m)));
+        if (path.length) path.push(path[0]);
+        return path;
+    }
+
     async function downloadActive() {
+        // 這裡預設下載勾選的第一個模式，或可擴充切換邏輯
+        await exportGPX(getFinalPoly(activeModes[0]), activeModes[0]);
+    }
+
+    async function exportGPX(pts, modeKey) {
+        const modeMap = { 'linear': '收果串連', 'z-shape': 'Z字圖形', 's-shape': 'S型圖形' };
+        const modeChi = modeMap[modeKey] || modeKey;
         const now = new Date();
         const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
         const rand = Math.random().toString(36).substr(2, 5);
-        let c_en = "Area", c_zh = "國家";
+        let c_en = "Area", c_zh = "國家", a_zh = "地區";
 
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&accept-language=zh-TW`);
-            const data = await res.json();
-            c_zh = (data.address.country || "未知").replace('意大利', '義大利');
-            const resEn = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&accept-language=en`);
+            const resZh = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=10&accept-language=zh-TW`);
+            const dataZh = await resZh.json();
+            c_zh = (dataZh.address.country || "未知").replace('意大利', '義大利');
+            a_zh = dataZh.address.city || dataZh.address.town || "地區";
+            const resEn = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=en`);
             const dataEn = await resEn.json();
             c_en = (dataEn.address.country || "Unknown").replace(/\s+/g, '');
         } catch(e) {}
 
-        const fileName = `pikmingpx_linear_${currentData.length}苗_${c_en}_${c_zh}_${dStr}_${rand}.gpx`;
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>皮克敏路徑_${c_zh}</name><trkseg>`;
-        currentData.forEach(p => gpx += `\n<trkpt lat="${p.lat.toFixed(8)}" lon="${p.lng.toFixed(8)}"></trkpt>`);
+        const fileName = `pikmingpx_${modeKey}_${currentData.length}苗_${c_en}_${c_zh}_${dStr}_${rand}.gpx`;
+        const pathName = `${modeChi}_${c_zh}_${a_zh}_${currentData.length}苗.gpx`;
+
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1"><trk><name>${pathName}</name><trkseg>`;
+        pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
         gpx += `\n</trkseg></trk></gpx>`;
 
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
