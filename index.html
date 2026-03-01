@@ -10,7 +10,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; margin: 0; padding: 0; background: #f8f9fa; font-family: -apple-system, "微軟正黑體", sans-serif; overflow: hidden; }
         
-        /* 選單與標題樣式 */
+        /* 選單樣式 */
         #side-menu { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: white; z-index: 10005; transition: 0.3s; box-shadow: 2px 0 15px rgba(0,0,0,0.2); padding-top: 70px; }
         #side-menu.open { left: 0; }
         .menu-item { padding: 18px 25px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; color: var(--p-dark); font-size: 15px; }
@@ -20,37 +20,40 @@
         .is-hidden { display: none !important; }
         #page-title { text-align: center; color: var(--p-green); margin-bottom: 20px; font-weight: 900; }
 
-        /* 卡片與說明區塊 */
+        /* 卡片與說明 */
         #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
+        #bulletin-section ul { padding-left: 20px; color: #444; font-size: 0.9rem; line-height: 1.6; }
         .instruction-card { background: #e7f5ff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 6px solid var(--p-blue); }
         .instruction-card p { font-size: 0.85rem; color: #444; margin: 8px 0; line-height: 1.6; font-weight: bold; }
         .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
         .mode-option, .order-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
         .mode-option input, .order-option input { margin-right: 12px; width: 22px; height: 22px; accent-color: var(--p-green); }
 
-        /* 快捷按鈕 */
+        /* 手機快捷按鈕列 */
         .fast-act-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
         .btn-fast { flex: 1; padding: 12px 5px; font-size: 13px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: #e9ecef; color: var(--p-dark); }
+        .btn-fast:active { background: #ced4da; }
 
-        /* 地圖浮動視窗容器 */
-        #map-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #eee; z-index: 50000; display: none; }
+        /* 地圖全頻浮動視窗 */
+        #map-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #f8f9fa; z-index: 50000; display: none; }
         #map { width: 100%; height: 100%; }
-
-        /* 修改工具列與地圖控制項 */
         .map-ui-group { position: absolute; top: 20px; right: 15px; z-index: 50005; display: flex; flex-direction: column; gap: 10px; }
-        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 14px 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 14px 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 
-        /* 修改工具面板回歸 */
+        /* 儲存/座標生成 彈出視窗 */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 60000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 92%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .filename-input-wrapper { display: flex; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 10px; margin: 15px 0; border: 2px solid var(--p-green); }
+        #custom-filename { flex: 1; border: none; background: none; font-size: 14px; outline: none; width: 100%; font-family: monospace; }
+
+        /* 座標編輯面板 */
         #bottom-editor { position: absolute; bottom: 30px; left: 5%; width: 90%; background: white; z-index: 50010; border: 2.5px solid var(--p-green); border-radius: 20px; padding: 15px 12px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
         .action-row { display: flex; gap: 6px; justify-content: center; }
         .btn-act { flex: 1; padding: 14px 2px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
 
-        /* 通用彈窗樣式 */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 60000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 92%; max-width: 420px; }
-        
-        /* 提示文字樣式 */
-        #copy-toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; z-index: 99999; display: none; }
+        /* 提示 Toast */
+        #toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; z-index: 99999; display: none; text-align: center; }
 
         .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
         textarea { width: 100%; height: 180px; font-size: 16px; border: 1.5px solid #ced4da; border-radius: 10px; padding: 12px; }
@@ -59,7 +62,7 @@
 </head>
 <body oncontextmenu="return false;">
 
-<div id="copy-toast">座標已複製</div>
+<div id="toast">座標已複製</div>
 
 <button id="menu-btn" onclick="toggleMenu()">☰</button>
 <div id="side-menu">
@@ -71,9 +74,9 @@
 
 <div id="save-dialog-overlay" class="overlay">
     <div class="modal-box">
-        <h3 style="margin:0 0 10px; color:var(--p-green);">儲存 GPX 檔案</h3>
-        <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin: 15px 0; border: 2px solid var(--p-green); display:flex; align-items:center;">
-            <input type="text" id="custom-filename" style="flex:1; border:none; background:none; outline:none; font-size:14px;">
+        <h3 style="margin:0 0 10px; color:var(--p-green);">確認檔案名稱</h3>
+        <div class="filename-input-wrapper">
+            <input type="text" id="custom-filename" spellcheck="false">
             <span style="font-weight:bold; color:#adb5bd;">.gpx</span>
         </div>
         <div style="display:flex; gap:10px;">
@@ -113,13 +116,13 @@
         <div class="instruction-card">
             <h4>📢 使用說明與提醒</h4>
             <p>手動輸入：填入座標（緯度,經度），一行一個</p>
-            <p>上傳GPX檔案：可將現有路徑直接轉換為其他圖形路徑</p>
-            <p>生成全部座標：若選取座標生成模式，將直接提取文字清單</p>
+            <p>上傳GPX檔案：可將現有路徑轉換為其他圖形路徑</p>
+            <p>生成全部座標：若選取座標生成，將直接提取文字清單</p>
         </div>
 
         <div class="card" style="border-left-color: var(--p-orange);">
-            <label style="font-weight:bold; margin-bottom:10px; display:block;">座標來源選擇</label>
-            <select id="sourceType" onchange="handleSourceChange()" style="width:100%; padding:15px; border-radius:10px; border:1.5px solid #ced4da; font-size: 16px;">
+            <label style="font-weight:bold; margin-bottom:10px; display:block;">選擇座標提供方式</label>
+            <select id="sourceType" onchange="handleSourceChange()" style="width:100%; padding:15px; border-radius:10px; border:1.5px solid #ced4da;">
                 <option value="">請選擇...</option>
                 <option value="manual">手動貼上座標</option>
                 <option value="file">上傳 GPX 檔案</option>
@@ -143,7 +146,7 @@
         <div id="param-options" class="is-hidden">
             <div class="card">
                 <label style="font-weight:bold; margin-bottom:10px; display:block;">選擇生成模式 (可多選)</label>
-                <div id="mode-list" onchange="updateButtonLabels()">
+                <div id="mode-list" onchange="updateMainBtnUI()">
                     <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 花苗座標串連</label>
                     <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
                     <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形</label>
@@ -159,7 +162,7 @@
                 </div>
             </div>
 
-            <div id="action-btns-group">
+            <div id="action-btns">
                 <button class="main-btn" style="background:var(--p-green)" id="btn-preview" onclick="processAll(true)">生成路徑 並 預覽地圖</button>
                 <button class="main-btn" style="background:var(--p-blue)" id="btn-download" onclick="processAll(false)">直接生成 下載 GPX</button>
             </div>
@@ -197,7 +200,7 @@
     var map, currentData = [], rawBackup = [], activeLayers = {}, markers = [], activeModes = [], editingIdx = -1;
     var isPickingOrder = false, pickedSequence = [], pendingExport = null;
 
-    const TW_FIX = { "意大利": "義大利", "意大利共和國": "義大利", "新西蘭": "紐西蘭" };
+    const TW_FIX = { "意大利": "義大利", "意大利共和國": "義大利", "意大利共和国": "義大利" };
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
     function navigate(v) {
@@ -208,7 +211,6 @@
         const titleEl = document.getElementById('page-title');
         if(v==='guideline') { document.getElementById('bulletin-section').classList.remove('is-hidden'); titleEl.innerText = "使用守則"; }
         else if(v==='generator') { document.getElementById('main-params-area').classList.remove('is-hidden'); titleEl.innerText = "路徑生成器"; }
-        else { titleEl.innerText = (v==='modifier'?'路徑修改器':'意見反饋'); }
     }
     function acceptNotice() { navigate('generator'); }
 
@@ -219,32 +221,32 @@
         document.getElementById('fileInputContainer').classList.toggle('is-hidden', type !== 'file');
     }
 
-    function updateButtonLabels() {
+    function updateMainBtnUI() {
         const checked = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(e => e.value);
         const isOnlyCoord = checked.length === 1 && checked[0] === 'coord-gen';
         document.getElementById('btn-preview').innerText = isOnlyCoord ? "生成全部座標" : "生成路徑 並 預覽地圖";
         document.getElementById('btn-download').style.display = isOnlyCoord ? "none" : "block";
     }
 
-    // 手機貼上與權限修復
+    // --- 修復手機貼上邏輯 ---
     async function handlePaste() {
         try {
             const text = await navigator.clipboard.readText();
             document.getElementById('coordInput').value += text;
         } catch(e) {
-            alert("⚠️ 手機安全性限制：\n請長按輸入框，然後點選「貼上」即可貼入座標。");
+            alert("⚠️ 權限提示：\n因手機瀏覽器安全限制，請「長按」輸入框並點選「貼上」即可。");
         }
     }
     function handleSelectAll() { const ta = document.getElementById('coordInput'); ta.focus(); ta.setSelectionRange(0, ta.value.length); }
-    function handleCopy() { const ta = document.getElementById('coordInput'); ta.select(); document.execCommand('copy'); alert("已複製到剪貼簿"); }
+    function handleCopy() { const ta = document.getElementById('coordInput'); ta.select(); document.execCommand('copy'); alert("內容已複製"); }
 
     function showToast(msg) {
-        const t = document.getElementById('copy-toast');
+        const t = document.getElementById('toast');
         t.innerText = msg; t.style.display = "block";
         setTimeout(() => { t.style.display = "none"; }, 2500);
     }
 
-    // --- 核心處理邏輯修復 ---
+    // --- 修復核心處理與地圖顯示 ---
     async function processAll(preview) {
         const type = document.getElementById('sourceType').value;
         let centers = [];
@@ -252,7 +254,7 @@
             if (type === 'manual') {
                 const txt = document.getElementById('coordInput').value;
                 const matches = txt.match(/-?\d+\.\d+/g);
-                if(!matches || matches.length < 2) return alert("座標解析異常，請確認格式。");
+                if(!matches || matches.length < 2) return alert("座標解析異常，請確認格式（緯度,經度）。");
                 for(let i=0; i<matches.length; i+=2) centers.push({lat: parseFloat(matches[i]), lng: parseFloat(matches[i+1]), angle: 0});
             } else {
                 const f = document.getElementById('gpxFile').files[0];
@@ -262,16 +264,13 @@
                 let m; while((m = regex.exec(xml))!==null) centers.push({lat: parseFloat(m[1]), lng: parseFloat(m[2]), angle: 0});
             }
 
-            // 去重複
             const seen = new Set();
             centers = centers.filter(item => {
                 const k = `${item.lat.toFixed(6)},${item.lng.toFixed(6)}`;
                 return seen.has(k) ? false : seen.add(k);
             });
+            if (centers.length === 0) return alert("無有效座標資料。");
 
-            if (centers.length === 0) return alert("無有效座標");
-
-            // 排序
             if(document.querySelector('input[name="orderType"]:checked').value === 'shortest') {
                 const ctr = turf.center(turf.featureCollection(centers.map(p => turf.point([p.lng, p.lat])))).geometry.coordinates;
                 centers.sort((a,b) => Math.atan2(a.lat-ctr[1], a.lng-ctr[0]) - Math.atan2(b.lat-ctr[1], b.lng-ctr[0]));
@@ -283,7 +282,7 @@
             if(!modeEls.length) return alert("請勾選生成模式");
             activeModes = modeEls.map(e => e.value);
 
-            // --- 座標生成流程 ---
+            // 座標生成處理
             if (activeModes.includes('coord-gen')) {
                 const coordStr = centers.map(c => `${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`).join('\n');
                 if (activeModes.length > 1) {
@@ -297,7 +296,7 @@
 
             if(preview) {
                 document.getElementById('map-modal').style.display = 'block';
-                // 延遲初始化地圖確保視窗容器大小已確定
+                // 延遲刷新地圖，修復不顯示問題
                 setTimeout(() => { 
                     if(!map) { map = L.map('map',{zoomControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); }
                     map.invalidateSize(); 
@@ -310,9 +309,8 @@
         } catch(e) { alert("系統處理異常，請檢查資料格式。"); }
     }
 
-    function copyFromModal() { const ta = document.getElementById('coord-modal-text'); ta.select(); document.execCommand('copy'); showToast("已複製全部座標"); }
+    function copyFromModal() { const ta = document.getElementById('coord-modal-text'); ta.select(); document.execCommand('copy'); showToast("已成功複製座標"); }
 
-    // --- 下載與版權聲明核心 ---
     async function startExportFlow(modeKey) {
         pendingExport = { pts: getFinalPoly(modeKey), mode: modeKey };
         let countryZh = "台灣";
@@ -339,7 +337,6 @@
         document.getElementById('save-dialog-overlay').style.display = 'none';
     }
 
-    // --- 地圖軌跡繪製 ---
     function buildGroup(curr, mode) {
         const cp = turf.point([curr.lng, curr.lat]);
         if (mode === 'z-shape') {
