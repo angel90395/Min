@@ -22,12 +22,13 @@
 
         #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
         #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
+        #bulletin-section ul { padding-left: 20px; margin: 10px 0; }
+        #bulletin-section li { margin-bottom: 8px; font-weight: bold; color: #444; font-size: 14px; }
         
         .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
         .mode-option, .order-option { display: flex; align-items: center; padding: 8px; cursor: pointer; font-size: 14px; }
         .mode-option input, .order-option input { margin-right: 12px; width: 20px; height: 20px; accent-color: var(--p-green); }
 
-        /* 工具列 */
         .input-toolbar { display: flex; gap: 5px; margin-top: 5px; }
         .tool-btn { flex: 1; padding: 8px; font-size: 12px; border-radius: 6px; border: 1px solid #ced4da; background: #f8f9fa; cursor: pointer; font-weight: bold; }
 
@@ -86,6 +87,12 @@
     <div id="bulletin-section">
         <h4>📢 生成器的用途與目的</h4>
         <p>這是一個方便皮克敏飛人收果、種花的 GPX 生成器，但請不要用來產生別人的花田路徑，請自律當一個友善的飛人。</p>
+        <h4>⚠️ 自律守則：</h4>
+        <ul>
+            <li>1.有花痕的田 不開發 不占為己用</li>
+            <li>2.有開花的田 僅生成收果路線</li>
+            <li>3.檔案請自用，不要分享。</li>
+        </ul>
         <button class="main-btn" style="background:var(--p-green)" onclick="acceptNotice()">好的，我願意遵守並理解</button>
     </div>
 
@@ -140,8 +147,8 @@
 
         <div style="display: flex; gap: 8px; flex-direction: column;">
             <div style="display: flex; gap: 8px;">
-                <button class="main-btn" style="background:var(--p-green); flex: 1;" onclick="processAll(true)">生成路徑 並 預覽地圖</button>
-                <button class="main-btn" style="background:var(--p-orange); flex: 1; font-size: 13px;" onclick="openCopyModal()">生成座標 直接複製</button>
+                <button class="main-btn" style="background:var(--p-green); flex: 1;" onclick="processAll(true)">預覽地圖</button>
+                <button class="main-btn" style="background:var(--p-orange); flex: 1; font-size: 13px;" onclick="openCopyModal()">座標複製</button>
             </div>
             <button class="main-btn" style="background:var(--p-blue)" onclick="processAll(false)">直接下載 GPX</button>
         </div>
@@ -343,21 +350,16 @@
     async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("複製成功"); }
     function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
 
-    // --- GPX 下載與版權聲明核心 ---
     async function exportGPX(pts, modeKey) {
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
-        
         const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請不要用來產生別人的花田路徑，請自律當一個友善的飛人\nhttps://flowergpx.pages.dev/`;
         const xmlComment = `\n\n`;
-        
         let gpx = `<?xml version="1.0" encoding="UTF-8"?>${xmlComment}<gpx version="1.1" creator="PikminPathGen">`;
         gpx += `\n<metadata><desc>${copyright.replace(/\n/g, ' ')}</desc></metadata>`;
-        
         const pathName = `(${modeMap[modeKey]})${currentData.length}苗_${appType}`;
         const descTag = `<desc>${copyright.replace(/\n/g, ' ')}</desc>`;
-
         if (appType === 'A' || appType === 'B') {
             gpx += `\n<trk><name>${pathName}</name>${descTag}<trkseg>`;
             pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
@@ -370,7 +372,6 @@
             gpx += `\n</rte>`;
         }
         gpx += `\n</gpx>`;
-        
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url;
