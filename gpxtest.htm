@@ -16,11 +16,10 @@
         .menu-item { padding: 18px 25px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; color: var(--p-dark); font-size: 15px; }
         #menu-btn { position: fixed; top: 15px; left: 15px; z-index: 10006; background: white; border: 2px solid var(--p-green); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-        /* 主佈局 */
         #controls { width: 100%; height: 100%; padding: 20px; padding-top: 80px; padding-bottom: 120px; background: white; z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .is-hidden { display: none !important; }
 
-        /* 守則區 */
+        /* 守則與公告 */
         #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
         #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
         .instruction-card { background: #e7f5ff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 6px solid var(--p-blue); }
@@ -28,7 +27,6 @@
         .mode-option, .order-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
         .mode-option input, .order-option input { margin-right: 12px; width: 22px; height: 22px; accent-color: var(--p-green); }
 
-        /* 輸入工具與下載 */
         .tool-bar { display: flex; gap: 5px; margin-top: 8px; }
         .btn-tool { flex: 1; padding: 8px; font-size: 12px; font-weight: bold; background: #eee; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; }
         #filename-input { width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--p-blue); margin-top: 5px; font-size: 14px; font-weight: bold; }
@@ -46,32 +44,23 @@
         .tab-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
         #copy-area { width: 100%; height: 250px; font-size: 12px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: monospace; }
 
-        /* 地圖介面與側邊面板 */
+        /* 地圖介面 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
         #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
         #map { width: 100%; height: 100%; }
-        
         #map-sidebar-wrapper { position: absolute; top: 15px; left: 15px; z-index: 2000; display: flex; flex-direction: column; width: 195px; }
-        #map-container.is-fullscreen #map-sidebar-wrapper { top: 20px; }
-        #stat-panel { background: var(--p-dark); padding: 12px; border-radius: 12px; color: white; margin-bottom: 8px; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #stat-panel { background: var(--p-dark); padding: 12px; border-radius: 12px; color: white; margin-bottom: 8px; font-size: 11px; }
         #map-sidebar { background: rgba(255,255,255,0.95); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
         .sidebar-btn { background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; text-align: left; cursor: pointer; }
         .sidebar-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
 
-        #map-dl-group { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-        .map-dl-btn { background: rgba(0,0,0,0.85); color: white; border: 1px solid #444; padding: 10px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; text-align: left; }
-
-        .map-btn-group { position: absolute; bottom: 120px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 12px; }
-
         #bottom-editor { position: absolute; bottom: 140px; left: 5%; width: 90%; background: white; z-index: 10001; border: 2.5px solid var(--p-green); border-radius: 20px; padding: 15px 12px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
-        .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
         .btn-act { flex: 1; padding: 13px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
 
         textarea { width: 100%; height: 300px; font-size: 16px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 12px; }
         button.main-btn { width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; }
         .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .number-icon.selected { background: var(--p-green); transform: scale(1.1); }
+        .number-icon.selected { background: var(--p-green); }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -103,7 +92,7 @@
             <p>手動輸入：填入花苗的座標，（緯度,經度）一行一個</p>
             <p>上傳GPX檔案：可以上傳目前已有的花苗串接路徑直接生成其他圖形路徑</p>
             <p>生成路徑並預覽地圖：會進入到地圖預覽模式，可以調整順序或圖形路徑的方向</p>
-            <p>直接生成下載：預設最短路徑直接下載 GPX</p>
+            <p>直接生成下載：預設最短路徑直接下載GPX</p>
         </div>
         
         <div class="card">
@@ -155,9 +144,9 @@
 
         <div class="download-hint">GPS JoyStick 基本上三種檔案都能匯入推薦使用 B<br>若有其他飛機使用者歡迎回報給我使用的GPX格式</div>
         <div class="dl-grid">
-            <button class="btn-dl" style="background:var(--p-blue)" onclick="downloadFormatted('rte', false)"><span>A</span>iAnyGo用 GPX下載</button>
-            <button class="btn-dl" style="background:var(--p-green)" onclick="downloadFormatted('trk', false)"><span>B</span>GPS JoyStick用 GPX下載</button>
-            <button class="btn-dl" style="background:var(--p-dark)" onclick="downloadFormatted('wpt', false)"><span>C</span>Flashman用 GPX下載</button>
+            <button class="btn-dl" style="background:var(--p-blue)" onclick="downloadFormatted('rte')"><span>A</span>iAnyGo用 GPX下載</button>
+            <button class="btn-dl" style="background:var(--p-green)" onclick="downloadFormatted('trk')" title="GPS JoyStick&#10;PoGoskill"><span>B</span>GPS JoyStick用 GPX下載</button>
+            <button class="btn-dl" style="background:var(--p-dark)" onclick="downloadFormatted('wpt')"><span>C</span>Flashman用 GPX下載</button>
         </div>
     </div>
 </div>
@@ -178,17 +167,11 @@
             <div id="time-val">預計時間：0 min (20km/h)</div>
         </div>
         <div id="map-sidebar"><div id="sidebar-btns"></div></div>
-        
-        <div id="map-dl-group">
-            <button class="map-dl-btn" onclick="downloadFormatted('rte', true)" style="border-left: 4px solid var(--p-blue);">A - iAnyGo 用下載 (修改後)</button>
-            <button class="map-dl-btn" onclick="downloadFormatted('trk', true)" style="border-left: 4px solid var(--p-green);">B - GPS JoyStick 用下載 (修改後)</button>
-            <button class="map-dl-btn" onclick="downloadFormatted('wpt', true)" style="border-left: 4px solid var(--p-orange);">C - Flashman 航點下載 (修改後)</button>
-        </div>
     </div>
 
-    <div class="map-btn-group">
-        <button class="map-ctrl-btn" onclick="toggleSize()">全頻 / 縮小</button>
-        <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">關閉預覽</button>
+    <div style="position:absolute; top:10px; right:10px; z-index:2000; display:flex; gap:5px;">
+        <button class="btn-tool" onclick="toggleSize()">全頻 / 縮小</button>
+        <button class="btn-tool" style="background:var(--p-red); color:white" onclick="closeMap()">關閉預覽</button>
     </div>
     <div id="map"></div>
 
@@ -245,7 +228,7 @@
         const area = document.getElementById('coordInput');
         if(act==='select') { area.focus(); area.select(); }
         if(act==='copy') { navigator.clipboard.writeText(area.value); alert("已複製原始資料"); }
-        if(act==='paste') { try { const t = await navigator.clipboard.readText(); area.value += t; updateFilenameHint(); } catch(e){ alert("請手動貼上"); } }
+        if(act==='paste') { try { const t = await navigator.clipboard.readText(); area.value += t; updateFilenameHint(); } catch(e){ alert("手動貼上"); } }
     }
 
     async function getCenters() {
@@ -372,8 +355,8 @@
     function rotatePoint(v) { if(editingIdx<0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
     function deletePoint() { if(editingIdx>=0) { currentData.splice(editingIdx, 1); closeEditor(); renderSidebar(); } }
 
-    async function downloadFormatted(type, isModified) {
-        let ptsData = isModified ? currentData : await getCenters();
+    async function downloadFormatted(type, fromMap) {
+        let ptsData = fromMap ? currentData : await getCenters();
         if(!ptsData.length) return alert("座標無效");
         
         const mode = activeModes[0];
@@ -381,13 +364,10 @@
         const rand = Math.random().toString(36).substr(2,5).toUpperCase();
         const baseName = document.getElementById('filename-input').value || `pikmingpx_${mode}_${ptsData.length}苗`;
         
-        let finalFileName = `${baseName}.gpx`;
-        let innerName = baseName;
-        if(type === 'rte') {
-            finalFileName = `${baseName}_A_${dateStr}_${rand}.gpx`;
-            innerName = `${baseName}(A_${dateStr}_${rand})`;
-        }
-        
+        // 檔案命名與內部路徑名稱邏輯
+        let finalFileName = `${baseName}_${type.toUpperCase()}_${dateStr}_${rand}.gpx`;
+        let innerName = `${baseName}(${type.toUpperCase()}_${dateStr}_${rand})`;
+
         let pts = []; ptsData.forEach(c => pts.push(...buildGroup(c, mode))); if(pts.length) pts.push(pts[0]);
         let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="FlowerGPX"><metadata><name>${innerName}</name><desc>${COPYRIGHT}</desc></metadata>`;
         if(type==='wpt') {
@@ -414,7 +394,8 @@
             let out = ""; currentData.forEach(c => buildGroup(c, m).forEach(p => out += `${p[1].toFixed(6)}, ${p[0].toFixed(6)}\n`));
             cached[m] = out;
             const b = document.createElement('button'); b.className = "tab-btn" + (idx===0?' active':'');
-            b.innerText = {'linear':'過苗心','harvest':'純收果','z-shape':'Z型','s-shape':'S型'}[m];
+            const names = {'linear':'過苗心','harvest':'純收果','z-shape':'Z型','s-shape':'S型'};
+            b.innerText = names[m];
             b.onclick = () => { document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active')); b.classList.add('active'); document.getElementById('copy-area').value = cached[m]; };
             box.appendChild(b);
         });
