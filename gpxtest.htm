@@ -46,12 +46,18 @@
         .copy-tabs { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
         .tab-btn { padding: 8px 15px; border-radius: 20px; border: 1.5px solid #ddd; background: white; font-size: 12px; cursor: pointer; white-space: nowrap; font-weight: bold; }
         .tab-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
-        #copy-area { width: 100%; height: 250px; font-size: 12px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: monospace; }
-
+        
         /* 地圖介面 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; }
         #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
         #map { width: 100%; height: 100%; }
+
+        /* 輸入框大小優化：調整高度為 300px */
+        textarea { width: 100%; height: 300px; font-size: 16px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 12px; transition: border-color 0.2s; }
+        textarea:focus { outline: none; border-color: var(--p-green); }
+        
+        /* 彈窗內的文字框高度可稍微縮減以適應手機螢幕 */
+        #copy-area { height: 250px; font-family: monospace; font-size: 12px; }
 
         button.main-btn { width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; }
     </style>
@@ -169,7 +175,6 @@
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
     
-    // --- 修正導覽邏輯：只有在開啟狀態下切換頁面才關閉選單 ---
     function navigate(v) { 
         const sideMenu = document.getElementById('side-menu');
         if (sideMenu.classList.contains('open')) { sideMenu.classList.remove('open'); }
@@ -187,8 +192,8 @@
     async function handleTool(act) {
         const area = document.getElementById('coordInput');
         if(act==='select') { area.focus(); area.select(); }
-        if(act==='copy') { navigator.clipboard.writeText(area.value); alert("已複製"); }
-        if(act==='paste') { try { const t = await navigator.clipboard.readText(); area.value += t; updateFilenameHint(); } catch(e){ alert("請手動貼上"); } }
+        if(act==='copy') { navigator.clipboard.writeText(area.value); alert("已複製原始資料"); }
+        if(act==='paste') { try { const t = await navigator.clipboard.readText(); area.value += t; updateFilenameHint(); } catch(e){ alert("瀏覽器不支援直接貼上，請手動長按貼上"); } }
     }
 
     async function getCenters() {
