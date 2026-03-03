@@ -76,23 +76,23 @@
     </style>
     
     <script>
-        // 1. 禁止右鍵與快捷鍵
+        // 禁止右鍵與快捷鍵
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
-            if (e.keyCode == 123 || // F12
-                (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || // I, J, C
-                (e.ctrlKey && e.keyCode == 85)) { // U (查看原始碼)
+            if (e.keyCode == 123 || 
+                (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+                (e.ctrlKey && e.keyCode == 85)) {
                 return false;
             }
         };
 
-        // 2. Anti-Debugging 陷阱
+        // Anti-Debugging 陷阱
         (function(){
             setInterval(() => {
                 const startTime = new Date();
-                debugger; // 如果開發者工具沒打開，這行不會觸發暫停
-                if (new Date() - startTime > 100) { // 如果執行超過100ms，代表被 debugger 暫停過
-                    window.location.href = "about:blank"; // 強制跳轉空白頁
+                debugger;
+                if (new Date() - startTime > 100) {
+                    window.location.href = "about:blank";
                 }
             }, 1000);
         })();
@@ -382,7 +382,10 @@
         document.getElementById('copy-modal').style.display = "block";
         updateModalText(modes[0]);
     }
-    function updateModalText(m) { document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)}, ${p[0].toFixed(8)}`).join('\n'); }
+    // --- 修正核心：去除座標中間空白 ---
+    function updateModalText(m) { 
+        document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); 
+    }
     async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標已成功複製到剪貼簿"); }
     function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
 
@@ -390,15 +393,12 @@
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
-        
         const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請不要用來產生別人的花田路徑，請自律當一個友善的飛人\nhttps://flowergpx.pages.dev/`;
         const xmlComment = `\n\n`;
-        
         let gpx = `<?xml version="1.0" encoding="UTF-8"?>${xmlComment}<gpx version="1.1" creator="PikminPathGen">`;
         gpx += `\n<metadata><desc>${copyright.replace(/\n/g, ' ')}</desc></metadata>`;
         const pathName = `(${modeMap[modeKey]})${currentData.length}苗_${appType}`;
         const descTag = `<desc>${copyright.replace(/\n/g, ' ')}</desc>`;
-
         if (appType === 'A' || appType === 'B') {
             gpx += `\n<trk><name>${pathName}</name>${descTag}<trkseg>`;
             pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
@@ -411,7 +411,6 @@
             gpx += `\n</rte>`;
         }
         gpx += `\n</gpx>`;
-        
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url;
