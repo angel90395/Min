@@ -36,12 +36,11 @@
         .input-toolbar { display: flex; gap: 5px; margin-top: 5px; }
         .tool-btn { flex: 1; padding: 8px; font-size: 12px; border-radius: 6px; border: 1px solid #ced4da; background: #f8f9fa; cursor: pointer; font-weight: bold; }
 
-        /* 地圖介面 */
+        /* 地圖與複製視窗 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
         #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
         #map { width: 100%; height: 100%; }
 
-        /* 複製浮動視窗 */
         #copy-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; background: white; z-index: 20000; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); padding: 20px; display: none; }
         #copy-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 19999; display: none; }
         .modal-tab { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -76,7 +75,7 @@
     </style>
     
     <script>
-        // 禁止右鍵與快捷鍵
+        // 防止程式碼被偷：禁止右鍵、快捷鍵與 Anti-Debugging
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
             if (e.keyCode == 123 || 
@@ -86,7 +85,6 @@
             }
         };
 
-        // Anti-Debugging 陷阱
         (function(){
             setInterval(() => {
                 const startTime = new Date();
@@ -176,7 +174,7 @@
             </div>
 
             <div id="fileSection" class="is-hidden">
-                <input type="file" id="gpxFile" accept=".gpx,.xml,application/gpx+xml,text/xml" style="width: 100%; padding: 10px;">
+                <input type="file" id="gpxFile" accept=".gpx,.xml,application/gpx+xml,application/xml,text/xml,text/plain,*/*" style="width: 100%; padding: 10px;">
             </div>
         </div>
 
@@ -382,7 +380,7 @@
         document.getElementById('copy-modal').style.display = "block";
         updateModalText(modes[0]);
     }
-    // --- 修正核心：去除座標中間空白 ---
+    // 座標呈現：去除經緯度中間空白
     function updateModalText(m) { 
         document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); 
     }
