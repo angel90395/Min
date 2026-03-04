@@ -20,7 +20,6 @@
         #controls { width: 100%; height: 100%; padding: 20px; padding-top: 80px; padding-bottom: 160px; background: white; z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .is-hidden { display: none !important; }
 
-        /* 公告與說明卡片 */
         #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
         #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
         #bulletin-section ul { padding-left: 20px; margin: 10px 0; }
@@ -47,7 +46,7 @@
         #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
         #map { width: 100%; height: 100%; }
 
-        .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .map-btn-group { position: absolute; top: 15px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
         .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
         .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
@@ -56,21 +55,19 @@
         button.main-btn { width: 100%; padding: 18px; margin: 8px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: bold; color: white; transition: 0.2s; }
         
         .app-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-        .app-opt { border: 1px solid #ddd; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold; }
+        .app-opt { border: 1px solid #ddd; padding: 8px; border-radius: 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold; }
     </style>
     
     <script>
-        // 程式碼防盜保護
+        // 防盜機制
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
             if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
         (function(){
             setInterval(() => {
-                const start = new Date();
-                debugger;
-                // 放寬檢測時間至 300ms 避免手機誤判
-                if (new Date() - start > 300) { window.location.href = "about:blank"; }
+                const s = new Date(); debugger;
+                if (new Date() - s > 300) { window.location.href = "about:blank"; }
             }, 2000);
         })();
     </script>
@@ -104,9 +101,9 @@
         <div class="instruction-card">
             <h4>📢 使用說明與提醒</h4>
             <p>手動輸入：填入花苗的座標，（緯度,經度）一行一個</p>
-            <p>上傳GPX檔案：可以上傳目前已有的花苗串接路徑直接生成其他圖形路徑</p>
-            <p>生成路徑並預覽地圖：會進入到地圖預覽模式，可以調整順序或圖形路徑的方向</p>
-            <p>選擇飛機程式：根據選擇的飛人程式產生對應模式的路徑檔</p>
+            <p>上傳GPX檔案：可以上傳目前已有的路徑直接生成其他圖形</p>
+            <p>生成路徑並預覽地圖：進入地圖調整順序或圖形方向</p>
+            <p>選擇飛機程式：根據選擇的飛人程式產生對應格式路徑</p>
         </div>
 
         <div class="card">
@@ -127,12 +124,12 @@
         <div class="card" style="border-left-color: var(--p-blue);">
             <label style="font-weight:bold; margin-bottom:5px; display:block;">3. 選擇飛機程式</label>
             <div class="app-select-grid">
-                <label class="app-opt"><input type="radio" name="appType" value="A" checked> (A) GPS JoyStick</label>
+                <label class="app-opt"><input type="radio" name="appType" value="A" checked> (A) JoyStick</label>
                 <label class="app-opt"><input type="radio" name="appType" value="B"> (B) PoGoskill</label>
                 <label class="app-opt"><input type="radio" name="appType" value="C"> (C) Flashman</label>
                 <label class="app-opt"><input type="radio" name="appType" value="D"> (D) 魅影</label>
                 <label class="app-opt"><input type="radio" name="appType" value="E"> (E) iAnyGo</label>
-                <label class="app-opt"><input type="radio" name="appType" value="F"> (F) Fake GPS Route</label>
+                <label class="app-opt"><input type="radio" name="appType" value="F"> (F) FakeGPS</label>
             </div>
         </div>
 
@@ -198,7 +195,6 @@
         closeMap();
         document.getElementById('bulletin-section').classList.toggle('is-hidden', v!=='guideline');
         document.getElementById('main-generator-area').style.display = (v==='generator'?'block':'none');
-        document.getElementById('page-title').innerText = (v==='guideline'?'使用守則':v==='generator'?'路徑生成器':v==='modifier'?'路徑修改器':'意見反饋');
     }
 
     function acceptNotice() { navigate('generator'); }
@@ -215,18 +211,7 @@
     function closeMap() { document.getElementById('map-container').style.display = 'none'; }
     function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => { if(map) map.invalidateSize(); }, 400); }
 
-    // 修復：點擊座標複製時直接解析數據
-    async function handleCopyRequest() {
-        const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if(!modes.length) return alert("請勾選生成模式");
-        
-        const success = await processRawData();
-        if(!success) return;
-
-        activeModes = modes;
-        openCopyModal();
-    }
-
+    // 解析數據核心邏輯
     async function processRawData() {
         try {
             let centers = [];
@@ -234,7 +219,7 @@
             if(src === 'manual') {
                 const val = document.getElementById('coordInput').value;
                 const matches = val.match(/-?\d+\.\d+/g);
-                if(!matches || matches.length < 2) { alert("請輸入有效的座標"); return false; }
+                if(!matches || matches.length < 2) { alert("座標無效"); return false; }
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
                 const f = document.getElementById('gpxFile').files[0];
@@ -243,51 +228,47 @@
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0});
             }
-            
             if(!centers.length) { alert("未偵測到座標"); return false; }
-            
-            // 去重
             centers = centers.filter((v,i,a)=>a.findIndex(t=>(t.lat===v.lat && t.lng===v.lng))===i);
-            
-            // 排序
             const orderType = document.querySelector('input[name="orderType"]:checked').value;
             if (orderType === 'shortest' && centers.length > 1) {
                 const fc = turf.featureCollection(centers.map(p => turf.point([p.lng, p.lat])));
                 const ctr = turf.center(fc).geometry.coordinates;
                 centers.sort((a,b) => Math.atan2(a.lat - ctr[1], a.lng - ctr[0]) - Math.atan2(b.lat - ctr[1], b.lng - ctr[0]));
             }
-            
             centers.forEach((c, i) => { const n = centers[(i + 1) % centers.length]; c.angle = turf.bearing(turf.point([c.lng, c.lat]), turf.point([n.lng, n.lat])); });
             currentData = centers; 
             rawBackup = JSON.parse(JSON.stringify(centers));
             return true;
-        } catch(e) { 
-            alert("數據處理出錯，請檢查輸入格式"); 
-            return false;
-        }
+        } catch(e) { alert("處理出錯"); return false; }
+    }
+
+    async function handleCopyRequest() {
+        const success = await processRawData();
+        if(!success) return;
+        activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+        if(!activeModes.length) return alert("請勾選模式");
+        openCopyModal();
     }
 
     async function processAll(preview) {
-        const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if(!modes.length) return alert("請勾選生成模式");
-        
         const success = await processRawData();
         if(!success) return;
+        activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+        if(!activeModes.length) return alert("請勾選模式");
         
-        activeModes = modes;
-        if(!preview) { for(const m of modes) await exportGPX(getFinalPoly(m), m); }
-        else { renderEditor(); openMap(); }
+        if(!preview) { for(const m of activeModes) await exportGPX(getFinalPoly(m), m); }
+        else { openMap(); renderEditor(); }
     }
 
     function openMap() {
         document.getElementById('map-container').style.display = 'block';
-        if (!map) { map = L.map('map',{zoomControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map); }
-        setTimeout(() => { 
-            if(markers.length) {
-                const group = L.featureGroup(markers);
-                map.fitBounds(group.getBounds(), {padding:[50,50]});
-            }
-        }, 500);
+        if (!map) { 
+            map = L.map('map',{zoomControl:false}); 
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
+            L.control.zoom({position:'bottomright'}).addTo(map); 
+        }
+        setTimeout(() => map.invalidateSize(), 100);
     }
 
     function renderEditor() {
@@ -302,18 +283,32 @@
     function buildGroup(curr, mode) {
         const cp = turf.point([curr.lng, curr.lat]); const C = [curr.lng, curr.lat];
         if (mode === 'z-shape') {
-            const r = 41; const v = { tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates };
+            const r = 41; 
+            const v = { 
+                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, 
+                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, 
+                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, 
+                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates 
+            };
             return [v.tl, v.tr, C, v.bl, v.br];
         } 
         if (mode === 's-shape') {
-            const r = 30; const v = { tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, ml: turf.destination(cp, r, curr.angle-90, {units:'meters'}).geometry.coordinates, mr: turf.destination(cp, r, curr.angle+90, {units:'meters'}).geometry.coordinates, br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates };
+            const r = 30; 
+            const v = { 
+                tr: turf.destination(cp, r, curr.angle+45, {units:'meters'}).geometry.coordinates, 
+                tl: turf.destination(cp, r, curr.angle-45, {units:'meters'}).geometry.coordinates, 
+                ml: turf.destination(cp, r, curr.angle-90, {units:'meters'}).geometry.coordinates, 
+                mr: turf.destination(cp, r, curr.angle+90, {units:'meters'}).geometry.coordinates, 
+                br: turf.destination(cp, r, curr.angle+135, {units:'meters'}).geometry.coordinates, 
+                bl: turf.destination(cp, r, curr.angle-135, {units:'meters'}).geometry.coordinates 
+            };
             return [v.tr, v.tl, v.ml, C, v.mr, v.br, v.bl];
         }
         return [C];
     }
 
     function refreshPaths() {
-        const mode = activeModes[0]; const lg = activeLayers[mode]; if(!lg) return;
+        const mode = activeModes[0]; const lg = activeLayers[mode]; if(!lg || !map) return;
         lg.clearLayers(); markers = [];
         for (let i = 0; i < currentData.length; i++) {
             const group = buildGroup(currentData[i], mode);
@@ -322,6 +317,7 @@
             markers.push(m);
             L.polyline(group.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 6, opacity: 0.8 }).addTo(lg);
         }
+        if(markers.length) map.fitBounds(L.featureGroup(markers).getBounds(), {padding:[50,50]});
     }
 
     function openCopyModal() {
@@ -337,25 +333,20 @@
         updateModalText(activeModes[0]);
     }
 
-    function updateModalText(m) { 
-        const pts = getFinalPoly(m);
-        document.getElementById('modal-text').value = pts.map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); 
-    }
-
-    async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標已成功複製"); }
+    function updateModalText(m) { document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); }
+    async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標已複製"); }
     function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
-
     function getFinalPoly(m) { let path = []; currentData.forEach(c => path.push(...buildGroup(c, m))); if (path.length) path.push(path[0]); return path; }
 
     async function exportGPX(pts, modeKey) {
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
-        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\nhttps://flowergpx.pages.dev/`;
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminPathGen">`;
+        const copyright = `專為皮克敏玩家打造的路徑工具\n請自律當一個友善的飛人\nhttps://flowergpx.pages.dev/`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminGen">`;
         const pathName = `(${modeMap[modeKey]})${currentData.length}苗_${appType}`;
         const descTag = `<desc>${copyright.replace(/\n/g, ' ')}</desc>`;
-        if (appType === 'A' || appType === 'B' || appType === 'E') {
+        if (['A', 'B', 'E'].includes(appType)) {
             gpx += `\n<trk><name>${pathName}</name>${descTag}<trkseg>`;
             pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
             gpx += `\n</trkseg></trk>`;
@@ -365,14 +356,9 @@
         gpx += `\n</gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url;
-        a.download = `pikmingpx_${modeKey}_${currentData.length}苗_${appType}_${dStr}.gpx`;
-        a.click();
+        const a = document.createElement('a'); a.href = url; a.download = `pikmin_${modeKey}_${dStr}.gpx`; a.click();
     }
-
-    async function downloadActive() { 
-        const m = activeModes[0]; if(m) await exportGPX(getFinalPoly(m), m); 
-    }
+    async function downloadActive() { const m = activeModes[0]; if(m) await exportGPX(getFinalPoly(m), m); }
 </script>
 </body>
 </html>
