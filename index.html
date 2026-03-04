@@ -39,8 +39,8 @@
         /* 複製視窗與地圖 */
         #copy-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; background: white; z-index: 20000; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); padding: 20px; display: none; }
         #copy-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 19999; display: none; }
-        .modal-tab { display: flex; gap: 5px; margin-bottom: 10px; }
-        .tab-btn { flex:1; padding: 8px; font-size: 12px; border-radius: 6px; border: 1px solid #ddd; background: #eee; cursor: pointer; }
+        .modal-tab { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn { padding: 8px 12px; font-size: 12px; border-radius: 6px; border: 1px solid #ddd; background: #eee; cursor: pointer; }
         .tab-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
 
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
@@ -50,6 +50,8 @@
         .map-btn-group { position: absolute; top: 100px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
         .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
+        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
+        
         textarea { width: 100%; height: 120px; font-size: 16px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 12px; }
         button.main-btn { width: 100%; padding: 18px; margin: 8px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: bold; color: white; transition: 0.2s; }
         
@@ -58,21 +60,18 @@
     </style>
     
     <script>
-        // 程式碼防盜機制
+        // 程式碼防盜保護
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
-            if (e.keyCode == 123 || 
-                (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
-                (e.ctrlKey && e.keyCode == 85)) {
-                return false;
-            }
+            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
         (function(){
             setInterval(() => {
-                const startTime = new Date();
+                const start = new Date();
                 debugger;
-                if (new Date() - startTime > 100) { window.location.href = "about:blank"; }
-            }, 1000);
+                // 放寬檢測時間至 300ms 避免手機誤判
+                if (new Date() - start > 300) { window.location.href = "about:blank"; }
+            }, 2000);
         })();
     </script>
 </head>
@@ -126,7 +125,7 @@
         </div>
 
         <div class="card" style="border-left-color: var(--p-blue);">
-            <label style="font-weight:bold; margin-bottom:5px; display:block;">3. 選擇飛機程式 (決定 GPX 格式)</label>
+            <label style="font-weight:bold; margin-bottom:5px; display:block;">3. 選擇飛機程式</label>
             <div class="app-select-grid">
                 <label class="app-opt"><input type="radio" name="appType" value="A" checked> (A) GPS JoyStick</label>
                 <label class="app-opt"><input type="radio" name="appType" value="B"> (B) PoGoskill</label>
@@ -143,9 +142,8 @@
                 <option value="manual">手動貼上座標</option>
                 <option value="file">上傳 GPX 檔案</option>
             </select>
-            
             <div id="manualSection">
-                <textarea id="coordInput" placeholder="緯度,經度 (例如 25.0,121.0)"></textarea>
+                <textarea id="coordInput" placeholder="緯度,經度 (例如 25.123,121.123)"></textarea>
                 <div class="input-toolbar">
                     <button class="tool-btn" onclick="clearData()">清除</button>
                     <button class="tool-btn" onclick="inputAction('all')">全選</button>
@@ -153,7 +151,6 @@
                     <button class="tool-btn" onclick="inputAction('paste')">貼上</button>
                 </div>
             </div>
-
             <div id="fileSection" class="is-hidden">
                 <input type="file" id="gpxFile" accept=".gpx,.xml,application/gpx+xml,application/xml,text/xml,text/plain,*/*" style="width: 100%; padding: 10px;">
             </div>
@@ -193,8 +190,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    var map, currentData = [], rawBackup = [], activeLayers = {}, markers = [], activeModes = [], editingIdx = -1;
-    var pickedSequence = [];
+    var map, currentData = [], rawBackup = [], activeLayers = {}, markers = [], activeModes = [];
 
     function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
     function navigate(v) {
@@ -202,62 +198,63 @@
         closeMap();
         document.getElementById('bulletin-section').classList.toggle('is-hidden', v!=='guideline');
         document.getElementById('main-generator-area').style.display = (v==='generator'?'block':'none');
+        document.getElementById('page-title').innerText = (v==='guideline'?'使用守則':v==='generator'?'路徑生成器':v==='modifier'?'路徑修改器':'意見反饋');
     }
 
     function acceptNotice() { navigate('generator'); }
     function toggleSource() { const t = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', t!=='manual'); document.getElementById('fileSection').classList.toggle('is-hidden', t==='manual'); }
-    function clearData() { document.getElementById('coordInput').value = ""; }
+    function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; currentData = []; }
     
     async function inputAction(act) {
         const ta = document.getElementById('coordInput');
         if(act === 'all') { ta.focus(); ta.select(); }
         else if(act === 'copy') { await navigator.clipboard.writeText(ta.value); alert("已複製"); }
-        else if(act === 'paste') { try { ta.value = await navigator.clipboard.readText(); } catch(e){ alert("請手動貼上"); } }
+        else if(act === 'paste') { try { ta.value = await navigator.clipboard.readText(); } catch(e){ alert("請長按貼上"); } }
     }
 
     function closeMap() { document.getElementById('map-container').style.display = 'none'; }
     function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => { if(map) map.invalidateSize(); }, 400); }
 
-    // 新增：處理點擊「座標複製」按鈕的邏輯
+    // 修復：點擊座標複製時直接解析數據
     async function handleCopyRequest() {
         const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if(!modes.length) return alert("請勾選模式");
+        if(!modes.length) return alert("請勾選生成模式");
         
-        // 如果數據尚未生成，先執行解析
-        if (currentData.length === 0) {
-            const success = await processRawData();
-            if (!success) return;
-        }
-        
+        const success = await processRawData();
+        if(!success) return;
+
         activeModes = modes;
         openCopyModal();
     }
 
-    // 將核心數據處理邏輯抽離出來
     async function processRawData() {
         try {
             let centers = [];
-            if(document.getElementById('sourceType').value === 'manual') {
-                const matches = document.getElementById('coordInput').value.match(/-?\d+\.\d+/g);
-                if(!matches) { alert("座標無效"); return false; }
+            const src = document.getElementById('sourceType').value;
+            if(src === 'manual') {
+                const val = document.getElementById('coordInput').value;
+                const matches = val.match(/-?\d+\.\d+/g);
+                if(!matches || matches.length < 2) { alert("請輸入有效的座標"); return false; }
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
                 const f = document.getElementById('gpxFile').files[0];
-                if(!f) { alert("未選擇檔案"); return false; }
+                if(!f) { alert("請先上傳檔案"); return false; }
                 const xml = await f.text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0});
             }
+            
+            if(!centers.length) { alert("未偵測到座標"); return false; }
             
             // 去重
             centers = centers.filter((v,i,a)=>a.findIndex(t=>(t.lat===v.lat && t.lng===v.lng))===i);
             
             // 排序
             const orderType = document.querySelector('input[name="orderType"]:checked').value;
-            if (orderType === 'shortest' && centers.length > 0) {
+            if (orderType === 'shortest' && centers.length > 1) {
                 const fc = turf.featureCollection(centers.map(p => turf.point([p.lng, p.lat])));
-                const centerPoint = turf.center(fc).geometry.coordinates;
-                centers.sort((a,b) => Math.atan2(a.lat - centerPoint[1], a.lng - centerPoint[0]) - Math.atan2(b.lat - centerPoint[1], b.lng - centerPoint[0]));
+                const ctr = turf.center(fc).geometry.coordinates;
+                centers.sort((a,b) => Math.atan2(a.lat - ctr[1], a.lng - ctr[0]) - Math.atan2(b.lat - ctr[1], b.lng - ctr[0]));
             }
             
             centers.forEach((c, i) => { const n = centers[(i + 1) % centers.length]; c.angle = turf.bearing(turf.point([c.lng, c.lat]), turf.point([n.lng, n.lat])); });
@@ -265,14 +262,14 @@
             rawBackup = JSON.parse(JSON.stringify(centers));
             return true;
         } catch(e) { 
-            alert("處理出錯"); 
+            alert("數據處理出錯，請檢查輸入格式"); 
             return false;
         }
     }
 
     async function processAll(preview) {
         const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if(!modes.length) return alert("請勾選模式");
+        if(!modes.length) return alert("請勾選生成模式");
         
         const success = await processRawData();
         if(!success) return;
@@ -285,7 +282,12 @@
     function openMap() {
         document.getElementById('map-container').style.display = 'block';
         if (!map) { map = L.map('map',{zoomControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map); }
-        setTimeout(() => { if(currentData.length) map.fitBounds(L.featureGroup(Object.values(markers)).getBounds(), {padding:[50,50]}); }, 500);
+        setTimeout(() => { 
+            if(markers.length) {
+                const group = L.featureGroup(markers);
+                map.fitBounds(group.getBounds(), {padding:[50,50]});
+            }
+        }, 500);
     }
 
     function renderEditor() {
@@ -336,37 +338,36 @@
     }
 
     function updateModalText(m) { 
-        document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); 
+        const pts = getFinalPoly(m);
+        document.getElementById('modal-text').value = pts.map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); 
     }
 
     async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標已成功複製"); }
     function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
+
+    function getFinalPoly(m) { let path = []; currentData.forEach(c => path.push(...buildGroup(c, m))); if (path.length) path.push(path[0]); return path; }
 
     async function exportGPX(pts, modeKey) {
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
         const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\nhttps://flowergpx.pages.dev/`;
-        const xmlComment = `\n\n`;
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?>${xmlComment}<gpx version="1.1" creator="PikminPathGen">`;
-        gpx += `\n<metadata><desc>${copyright.replace(/\n/g, ' ')}</desc></metadata>`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminPathGen">`;
         const pathName = `(${modeMap[modeKey]})${currentData.length}苗_${appType}`;
         const descTag = `<desc>${copyright.replace(/\n/g, ' ')}</desc>`;
-
         if (appType === 'A' || appType === 'B' || appType === 'E') {
             gpx += `\n<trk><name>${pathName}</name>${descTag}<trkseg>`;
             pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
             gpx += `\n</trkseg></trk>`;
-        } else if (appType === 'C' || appType === 'D' || appType === 'F') {
+        } else {
             pts.forEach((p, i) => gpx += `\n<wpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"><name>P${i+1}</name>${descTag}</wpt>`);
         }
         gpx += `\n</gpx>`;
-        
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url;
         a.download = `pikmingpx_${modeKey}_${currentData.length}苗_${appType}_${dStr}.gpx`;
-        a.click(); URL.revokeObjectURL(url);
+        a.click();
     }
 
     async function downloadActive() { 
