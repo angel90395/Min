@@ -3,212 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>皮克敏種花路徑生成修改器</title>
+    <title>皮克敏路徑修改器 - 奈米田專業版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --p-green: #2f9e44; --p-blue: #1971c2; --p-orange: #f08c00; --p-red: #e03131; --p-dark: #343a40; }
+        :root { 
+            --primary: #10ac84; --secondary: #2e86de; --accent: #f39c12; --danger: #ee5253; 
+            --dark: #222f3e; --light: #f5f6fa; --glass: rgba(255, 255, 255, 0.9);
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { height: 100%; margin: 0; padding: 0; background: #f8f9fa; font-family: -apple-system, "微軟正黑體", sans-serif; overflow: hidden; }
+        html, body { height: 100%; margin: 0; padding: 0; background: var(--light); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "微軟正黑體", sans-serif; overflow: hidden; }
         
-        /* 選單系統 */
-        #side-menu { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: white; z-index: 10005; transition: 0.3s; box-shadow: 2px 0 15px rgba(0,0,0,0.2); padding-top: 70px; }
+        /* 全域樣式優化 */
+        #menu-btn { position: fixed; top: 15px; left: 15px; z-index: 10006; background: var(--primary); border: none; border-radius: 12px; width: 44px; height: 44px; cursor: pointer; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(16,172,132,0.3); }
+        #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: white; z-index: 10005; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 5px 0 25px rgba(0,0,0,0.1); padding-top: 80px; }
         #side-menu.open { left: 0; }
-        .menu-item { padding: 18px 25px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; color: var(--p-dark); font-size: 15px; }
-        .menu-item:active { background: #f1f3f5; color: var(--p-green); }
-        #menu-btn { position: fixed; top: 15px; left: 15px; z-index: 10006; background: white; border: 2px solid var(--p-green); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .menu-item { padding: 18px 25px; border-bottom: 1px solid #f1f2f6; cursor: pointer; font-weight: 600; color: var(--dark); display: flex; align-items: center; gap: 12px; }
+        .menu-item:active { background: #f1f2f6; color: var(--primary); }
 
-        #controls { width: 100%; height: 100%; padding: 20px; padding-top: 80px; padding-bottom: 160px; background: white; z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .is-hidden { display: none !important; }
+        #controls { width: 100%; height: 100%; padding: 20px; padding-top: 75px; padding-bottom: 100px; overflow-y: auto; scroll-behavior: smooth; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid rgba(0,0,0,0.03); }
+        .card-header { font-weight: 800; font-size: 17px; margin-bottom: 18px; color: var(--dark); display: flex; align-items: center; gap: 10px; }
 
-        #bulletin-section { background: #fff9db; border: 2px solid #fab005; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-        #bulletin-section h4 { margin: 0 0 10px 0; color: #d9480f; border-bottom: 2px solid #ffe066; padding-bottom: 5px; }
-        #bulletin-section ul { padding-left: 20px; margin: 10px 0; }
-        #bulletin-section li { margin-bottom: 8px; font-weight: bold; color: #444; font-size: 14px; }
-        
-        .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-left: 6px solid var(--p-green); }
-        .mode-option, .order-option { display: flex; align-items: center; padding: 8px; cursor: pointer; font-size: 14px; }
-        .mode-option input, .order-option input { margin-right: 12px; width: 20px; height: 20px; accent-color: var(--p-green); }
+        /* 輸入區域 */
+        textarea { width: 100%; height: 160px; border: 2px solid #edeff2; border-radius: 15px; padding: 15px; font-size: 15px; resize: none; background: #fafbfc; transition: 0.3s; font-family: monospace; }
+        textarea:focus { border-color: var(--primary); background: white; outline: none; }
+        .input-toolbar { display: flex; gap: 10px; margin-top: 12px; }
+        .tool-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #edeff2; font-weight: bold; cursor: pointer; font-size: 13px; color: #576574; transition: 0.2s; }
+        .tool-btn:active { background: #dcdde1; transform: scale(0.95); }
 
-        .input-toolbar { display: flex; gap: 5px; margin-top: 5px; }
-        .tool-btn { flex: 1; padding: 8px; font-size: 12px; border-radius: 6px; border: 1px solid #ced4da; background: #f8f9fa; cursor: pointer; font-weight: bold; }
+        /* 精緻選項按鈕 */
+        .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .opt-label { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: #fafbfc; border: 2px solid #edeff2; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #576574; }
+        .opt-label:has(input:checked) { border-color: var(--primary); background: white; color: var(--primary); box-shadow: 0 4px 12px rgba(16,172,132,0.15); }
+        input[type="radio"], input[type="checkbox"] { display: none; }
 
-        /* 地圖介面與統計 */
-        #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
-        #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
-        #map { width: 100%; height: 100%; background: #ddd; }
+        /* 主按鈕 */
+        .main-btn { width: 100%; padding: 18px; border: none; border-radius: 15px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
 
-        #map-sidebar-wrapper { position: absolute; top: 120px; left: 15px; z-index: 2000; display: flex; flex-direction: column; width: 195px; }
-        #map-container.is-fullscreen #map-sidebar-wrapper { top: 20px; }
-        #stat-panel { background: var(--p-dark); padding: 12px; border-radius: 12px; color: white; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .stat-line { font-size: 11px; font-weight: bold; margin: 3px 0; display: flex; align-items: center; gap: 8px; }
-        .speed-ctrl { display: flex; gap: 5px; align-items: center; background: #495057; border-radius: 6px; padding: 2px 6px; }
-        .speed-btn { background: none; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; }
+        /* 地圖介面 - 沉浸式體驗 */
+        #map-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; display: none; flex-direction: column; animation: fadeIn 0.4s; }
+        #map-nav { padding: 12px; background: var(--glass); backdrop-filter: blur(10px); display: flex; gap: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .nav-tab { flex: 1; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; background: transparent; color: #8395a7; transition: 0.3s; }
+        .nav-tab.active { background: white; color: var(--secondary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
-        #map-sidebar { background: rgba(255,255,255,0.95); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
-        .sidebar-btn { background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; text-align: left; cursor: pointer; }
-        .sidebar-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
+        #stat-overlay { position: absolute; top: 85px; left: 15px; z-index: 2000; background: var(--glass); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.3); min-width: 180px; }
+        .stat-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
 
-        #bottom-editor { position: absolute; bottom: 140px; left: 5%; width: 90%; background: white; z-index: 10001; border: 2.5px solid var(--p-green); border-radius: 20px; padding: 15px 12px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
-        #edit-label { font-size: 12px; font-weight: bold; color: var(--p-green); text-align: center; margin-bottom: 5px; }
-        .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
-        .btn-act { flex: 1; padding: 13px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
+        #map { flex: 1; width: 100%; }
 
-        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
-        .number-icon.selected { background: var(--p-green); transform: scale(1.15); z-index: 1000 !important; }
+        .float-ctrl { position: absolute; top: 85px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .ctrl-circle { width: 50px; height: 50px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(10px); border: none; font-size: 20px; cursor: pointer; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
 
-        #copy-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; background: white; z-index: 20000; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); padding: 20px; display: none; }
-        #copy-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 19999; display: none; }
-        .modal-tab { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
-        .tab-btn { padding: 8px 12px; font-size: 12px; border-radius: 6px; border: 1px solid #ddd; background: #eee; cursor: pointer; }
-        .tab-btn.active { background: var(--p-green); color: white; border-color: var(--p-green); }
+        /* 編輯器升級 */
+        #bottom-editor { background: white; padding: 20px; border-radius: 25px 25px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 12px; }
+        .edit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .edit-tool { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 13px; cursor: pointer; background: #f1f2f6; }
 
-        .map-btn-group { position: absolute; top: 15px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-        .map-ctrl-btn { background: rgba(0,0,0,0.85); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 13px; backdrop-filter: blur(4px); }
+        /* 座標標記樣式 */
+        .number-icon { background: var(--secondary); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; font-size: 12px; width: 30px !important; height: 30px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(46,134,222,0.4); }
+        .number-icon.selected { background: var(--primary); transform: scale(1.25); z-index: 1000 !important; box-shadow: 0 4px 15px rgba(16,172,132,0.5); }
 
-        textarea { width: 100%; height: 120px; font-size: 16px; border: 1.5px solid #ced4da; border-radius: 8px; padding: 12px; }
-        button.main-btn { width: 100%; padding: 18px; margin: 8px 0; border: none; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: bold; color: white; transition: 0.2s; }
+        /* 複製視窗 */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 20000; display: none; backdrop-filter: blur(6px); }
+        #modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 420px; background: white; z-index: 20001; border-radius: 25px; padding: 30px; display: none; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
     
     <script>
+        // 核心安全防護
         document.addEventListener('contextmenu', e => e.preventDefault());
-        document.onkeydown = function(e) {
-            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
-        };
-        (function(){
-            setInterval(() => {
-                const s = new Date(); debugger;
-                if (new Date() - s > 300) { window.location.href = "about:blank"; }
-            }, 2500);
-        })();
+        document.onkeydown = e => { if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false; };
+        (function(){ setInterval(() => { const s = new Date(); debugger; if (new Date() - s > 200) window.location.href = "about:blank"; }, 2000); })();
     </script>
 </head>
 <body>
 
 <button id="menu-btn" onclick="toggleMenu()">☰</button>
 <div id="side-menu">
-    <div class="menu-item" onclick="navigate('guideline')">使用守則</div>
-    <div class="menu-item" onclick="navigate('generator')">路徑生成器</div>
-    <div class="menu-item" onclick="navigate('modifier')">路徑修改器</div>
+    <div class="menu-item" onclick="navigate('guideline')">📜 使用守則</div>
+    <div class="menu-item" onclick="navigate('generator')">💎 路徑生成器</div>
+    <div class="menu-item" onclick="navigate('modifier')">🛠️ 路徑修改器</div>
 </div>
 
 <div id="controls">
-    <h2 id="page-title" style="margin: 0 0 20px; text-align: center; color: var(--p-green);">使用守則</h2>
+    <h2 id="page-title" style="margin: 0 0 25px; text-align: center; color: var(--primary); font-weight: 900; letter-spacing: 1px;">奈米田專業路徑工具</h2>
     
-    <div id="bulletin-section">
-        <h4>📢 生成器的用途與目的</h4>
-        <p>這是一個方便皮克敏飛人收果、種花的 GPX 生成器，但請不要用來產生別人的花田路徑，請自律當一個友善的飛人。</p>
-        <h4>⚠️ 自律守則：</h4>
-        <ul>
-            <li>1.有花痕的田 不開發 不占為己用</li>
-            <li>2.有開花的田 僅生成收果路線</li>
-            <li>3.檔案請自用，不要分享。</li>
-        </ul>
-        <button class="main-btn" style="background:var(--p-green)" onclick="acceptNotice()">好的，我願意遵守並理解</button>
+    <div id="bulletin-section" class="card" style="border-top: 6px solid var(--accent); background: #fffdfa;">
+        <div class="card-header">🛡️ 飛人自律守則</div>
+        <div style="font-size: 14px; line-height: 2; color: #2d3436; font-weight: 700;">
+            • 有花痕的田：不開發、不佔用<br>
+            • 有開花的田：僅生成收果路線<br>
+            • 檔案保護：請自用，嚴禁公開分享
+        </div>
+        <button class="main-btn btn-primary" style="margin-top:20px;" onclick="acceptNotice()">遵守守則並開始</button>
     </div>
 
-    <div id="main-generator-area" style="display:none;">
+    <div id="main-area" style="display:none;">
         <div class="card">
-            <label style="font-weight:bold; margin-bottom:10px; display:block;">1. 選擇生成模式</label>
-            <label class="mode-option"><input type="checkbox" name="pathMode" value="linear" checked> 座標串連(過苗心/可種花)</label>
-            <label class="mode-option"><input type="checkbox" name="pathMode" value="z-shape"> Z字圖形</label>
-            <label class="mode-option"><input type="checkbox" name="pathMode" value="s-shape"> S型圖形</label>
-        </div>
-
-        <div class="card" style="border-left-color: var(--p-orange);">
-            <label style="font-weight:bold; margin-bottom:5px; display:block;">2. 排序方式</label>
-            <div style="display: flex; gap: 15px;">
-                <label class="order-option"><input type="radio" name="orderType" value="original" checked> 照原始順序</label>
-                <label class="order-option"><input type="radio" name="orderType" value="shortest"> 最短距離</label>
-            </div>
-        </div>
-
-        <div class="card" style="border-left-color: var(--p-blue);">
-            <label style="font-weight:bold; margin-bottom:5px; display:block;">3. 選擇飛機程式</label>
-            <div class="app-select-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <label class="app-opt"><input type="radio" name="appType" value="A" checked> (A) JoyStick</label>
-                <label class="app-opt"><input type="radio" name="appType" value="B"> (B) PoGoskill</label>
-                <label class="app-opt"><input type="radio" name="appType" value="C"> (C) Flashman</label>
-                <label class="app-opt"><input type="radio" name="appType" value="D"> (D) 魅影</label>
-                <label class="app-opt"><input type="radio" name="appType" value="E"> (E) iAnyGo</label>
-                <label class="app-opt"><input type="radio" name="appType" value="F"> (F) FakeGPS</label>
-            </div>
-        </div>
-
-        <div class="card" style="border-left-color: #fcc419;">
-            <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:10px; border-radius:10px; border:1.5px solid #ced4da; margin-bottom:10px;">
-                <option value="manual">手動貼上座標</option>
-                <option value="file">上傳 GPX 檔案</option>
+            <div class="card-header">📡 1. 座標數據來源</div>
+            <select id="sourceType" onchange="toggleSource()" style="width:100%; padding:12px; border-radius:12px; border:2px solid #edeff2; font-weight:bold; color: var(--dark);">
+                <option value="manual">手動貼上座標點位</option>
+                <option value="file">上傳 GPX 軌跡檔案</option>
             </select>
-            <div id="manualSection">
-                <textarea id="coordInput" placeholder="緯度,經度"></textarea>
+            <div id="manualSection" style="margin-top:15px;">
+                <textarea id="coordInput" placeholder="緯度,經度 (例如: 25.012,121.567)"></textarea>
                 <div class="input-toolbar">
-                    <button class="tool-btn" onclick="clearData()">清除</button>
+                    <button class="tool-btn" onclick="clearData()">清空</button>
                     <button class="tool-btn" onclick="inputAction('all')">全選</button>
-                    <button class="tool-btn" onclick="inputAction('copy')">複製</button>
-                    <button class="tool-btn" onclick="inputAction('paste')">貼上</button>
+                    <button class="tool-btn" onclick="inputAction('paste')">貼上座標</button>
                 </div>
             </div>
-            <div id="fileSection" class="is-hidden">
-                <input type="file" id="gpxFile" accept=".gpx,.xml,application/gpx+xml,*/*" style="width: 100%; padding: 10px;">
+            <div id="fileSection" style="display:none; margin-top:15px;">
+                <input type="file" id="gpxFile" accept=".gpx,.xml,*/*" style="width: 100%; padding: 15px; border-radius: 12px; background: var(--light);">
             </div>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-direction: column;">
-            <div style="display: flex; gap: 8px;">
-                <button class="main-btn" style="background:var(--p-green); flex: 1;" onclick="processAll(true)">預覽路徑地圖</button>
-                <button class="main-btn" style="background:var(--p-orange); flex: 1; font-size: 13px;" onclick="handleCopyRequest()">複製座標文本</button>
+        <div class="card">
+            <div class="card-header">🧩 2. 生成模式與排序</div>
+            <div style="font-size: 12px; color: #a4b0be; margin-bottom: 8px;">選擇生成的圖形</div>
+            <div class="opt-grid">
+                <label class="opt-label"><input type="checkbox" name="pathMode" value="linear" checked> 📍 串連</label>
+                <label class="opt-label"><input type="checkbox" name="pathMode" value="z-shape"> 🌸 Z字</label>
+                <label class="opt-label"><input type="checkbox" name="pathMode" value="s-shape"> ♻️ S型</label>
             </div>
-            <button class="main-btn" style="background:var(--p-blue)" onclick="processAll(false)">直接下載 GPX 檔</button>
+            <div style="font-size: 12px; color: #a4b0be; margin: 15px 0 8px;">處理排序方式</div>
+            <div class="opt-grid">
+                <label class="opt-label"><input type="radio" name="orderType" value="original" checked> 原始順序</label>
+                <label class="opt-label"><input type="radio" name="orderType" value="shortest"> 最短距離</label>
+            </div>
         </div>
-    </div>
-</div>
 
-<div id="copy-modal-overlay" onclick="closeCopyModal()"></div>
-<div id="copy-modal">
-    <h3 style="margin-top:0; color:var(--p-green)">純座標複製 (無空格)</h3>
-    <div id="modal-tabs" style="margin-bottom:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
-    <textarea id="modal-text" style="height: 200px; font-size: 12px; margin-bottom: 10px;" readonly></textarea>
-    <div style="display: flex; gap: 10px;">
-        <button class="main-btn" style="background:var(--p-green); margin:0; padding:12px;" onclick="copyModalText()">點我複製</button>
-        <button class="main-btn" style="background:#888; margin:0; padding:12px;" onclick="closeCopyModal()">關閉</button>
+        <div class="card">
+            <div class="card-header">✈️ 3. 目標飛機程式</div>
+            <div class="opt-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                <label class="opt-label" style="padding: 10px 5px;"><input type="radio" name="appType" value="A" checked> JoyStick</label>
+                <label class="opt-label" style="padding: 10px 5px;"><input type="radio" name="appType" value="B"> PoGoskill</label>
+                <label class="opt-label" style="padding: 10px 5px;"><input type="radio" name="appType" value="E"> iAnyGo</label>
+                <label class="opt-label" style="padding: 10px 5px;"><input type="radio" name="appType" value="C"> Flashman</label>
+                <label class="opt-label" style="padding: 10px 5px;"><input type="radio" name="appType" value="D"> 魅影</label>
+                <label class="opt-label" style="padding: 10px 5px;"><input type="radio" name="appType" value="F"> FakeGPS</label>
+            </div>
+        </div>
+
+        <button class="main-btn btn-primary" onclick="processAll(true)">🎬 生成並進入地圖預覽</button>
+        <button class="main-btn btn-accent" onclick="handleCopyRequest()">🔗 一鍵複製座標文本</button>
+        <button class="main-btn btn-secondary" onclick="processAll(false)">📥 快速下載 GPX 檔案</button>
     </div>
 </div>
 
 <div id="map-container">
-    <div id="map-sidebar-wrapper" class="is-hidden">
-        <div id="stat-panel">
-            <div class="stat-line" id="dist-val">總距離：0.00 km</div>
-            <div class="stat-line">時速：
-                <div class="speed-ctrl">
-                    <button class="speed-btn" onclick="adjustSpeed(-1)">-</button>
-                    <span id="speed-val">20</span>
-                    <button class="speed-btn" onclick="adjustSpeed(1)">+</button>
-                </div>
-            </div>
-            <div class="stat-line" id="time-val">預計時間：0 min</div>
+    <div id="map-nav">
+        <div class="tab-box" id="map-tabs"></div>
+        <button onclick="closeMap()" style="border:none; background:var(--danger); color:white; border-radius:10px; width:40px; height:40px; font-weight:900;">✕</button>
+    </div>
+
+    <div id="stat-overlay">
+        <div class="stat-item">⏱️ <span id="time-val">--</span></div>
+        <div class="stat-item" style="color:#7f8c8d; font-size:12px;">📏 總長 <span id="dist-val">--</span> km</div>
+        <div class="stat-item" style="margin-top:8px;">
+            🚀 <span style="font-size:12px; margin-right:5px;">時速</span>
+            <button onclick="adjustSpeed(-1)" style="border:none; background:#eee; border-radius:5px; padding:2px 8px;">-</button>
+            <span id="speed-val" style="margin:0 8px;">20</span>
+            <button onclick="adjustSpeed(1)" style="border:none; background:#eee; border-radius:5px; padding:2px 8px;">+</button>
         </div>
-        <div id="map-sidebar"><div id="sidebar-btns"></div></div>
     </div>
-    <div class="map-btn-group">
-        <button class="map-ctrl-btn" onclick="toggleSize()">全頻/縮小</button>
-        <button class="map-ctrl-btn" style="background:var(--p-green)" id="btn-final-save" onclick="downloadActive()">儲存下載</button>
-        <button class="map-ctrl-btn" style="background:var(--p-red)" onclick="closeMap()">關閉預覽</button>
+
+    <div class="float-ctrl">
+        <button class="ctrl-circle" onclick="toggleSize()">全</button>
+        <button class="ctrl-circle" style="background:var(--primary); color:white;" onclick="downloadActive()">💾</button>
     </div>
+
     <div id="map"></div>
+
     <div id="bottom-editor">
         <div id="edit-label">點位編輯</div>
-        <div class="action-row">
-            <button class="btn-act" style="background:var(--p-orange); color:white" onclick="togglePickingMode()">👆 自選順序</button>
-            <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(-1)">⬆ 前移</button>
-            <button class="btn-act" style="background:#f1f3f5" onclick="moveSequence(1)">⬇ 後移</button>
+        <div class="edit-grid">
+            <button class="edit-tool" style="background:var(--accent); color:white;" onclick="togglePickingMode()">👆 自選順序</button>
+            <button class="edit-tool" onclick="moveSequence(-1)">⬅ 前移</button>
+            <button class="edit-tool" onclick="moveSequence(1)">後移 ➡</button>
+            <button class="edit-tool" onclick="rotatePoint(45)">🔄 旋轉圖形</button>
+            <button class="edit-tool" onclick="restoreGlobalOriginal()">⏮ 重置數據</button>
+            <button class="edit-tool" style="background:var(--danger); color:white;" onclick="deletePoint()">🗑 刪除點位</button>
         </div>
-        <div class="action-row">
-            <button class="btn-act" style="background:#f1f3f5" onclick="rotatePoint(45)">↻ 旋轉圖形</button>
-            <button class="btn-act" style="background:#fd7e14; color:white; flex: 1.2" onclick="restoreGlobalOriginal()">⏮ 恢復原始</button>
-            <button class="btn-act" style="background:var(--p-red); color:white" onclick="deletePoint()">🗑️ 刪除</button>
-            <button class="btn-act" style="background:var(--p-dark); color:white" onclick="closeEditor()">完成</button>
-        </div>
+        <button class="main-btn btn-primary" style="margin:0; padding:15px;" onclick="closeEditor()">確認修改</button>
     </div>
+</div>
+
+<div id="modal-overlay" onclick="closeCopyModal()"></div>
+<div id="modal">
+    <h3 style="color:var(--primary); margin-top:0;">📋 座標文本複製</h3>
+    <div id="modal-tabs" style="display:flex; gap:8px; margin-bottom:15px; overflow-x:auto; padding-bottom:5px;"></div>
+    <textarea id="modal-text" style="height: 180px; font-size: 13px; font-family: monospace;" readonly></textarea>
+    <button class="main-btn btn-primary" style="margin:20px 0 0;" onclick="copyModalText()">點我一鍵複製</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -222,23 +212,26 @@
     function navigate(v) {
         if (document.getElementById('side-menu').classList.contains('open')) toggleMenu();
         closeMap();
-        document.getElementById('bulletin-section').classList.toggle('is-hidden', v!=='guideline');
-        document.getElementById('main-generator-area').style.display = (v==='generator'?'block':'none');
+        document.getElementById('bulletin-section').style.display = (v==='guideline'?'block':'none');
+        document.getElementById('main-area').style.display = (v==='generator'?'block':'none');
     }
 
     function acceptNotice() { navigate('generator'); }
-    function toggleSource() { const t = document.getElementById('sourceType').value; document.getElementById('manualSection').classList.toggle('is-hidden', t!=='manual'); document.getElementById('fileSection').classList.toggle('is-hidden', t==='manual'); }
+    function toggleSource() {
+        const type = document.getElementById('sourceType').value;
+        document.getElementById('manualSection').style.display = (type === 'manual' ? 'block' : 'none');
+        document.getElementById('fileSection').style.display = (type === 'file' ? 'block' : 'none');
+    }
     function clearData() { document.getElementById('coordInput').value = ""; document.getElementById('gpxFile').value = ""; currentData = []; }
     
     async function inputAction(act) {
         const ta = document.getElementById('coordInput');
         if(act === 'all') { ta.focus(); ta.select(); }
-        else if(act === 'copy') { await navigator.clipboard.writeText(ta.value); alert("已複製"); }
         else if(act === 'paste') { try { ta.value = await navigator.clipboard.readText(); } catch(e){ alert("請長按貼上"); } }
     }
 
     function closeMap() { document.getElementById('map-container').style.display = 'none'; closeEditor(); }
-    function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => { if(map) map.invalidateSize(); }, 400); }
+    function toggleSize() { document.getElementById('map-container').classList.toggle('is-fullscreen'); setTimeout(() => map.invalidateSize(), 300); }
     function adjustSpeed(v) { currentSpeed = Math.max(1, currentSpeed + v); document.getElementById('speed-val').innerText = currentSpeed; refreshPaths(); }
     function closeEditor() { document.getElementById('bottom-editor').style.display = 'none'; editingIdx = -1; isPickingOrder = false; refreshPaths(); }
 
@@ -247,8 +240,7 @@
             let centers = [];
             const srcType = document.getElementById('sourceType').value;
             if(srcType === 'manual') {
-                const val = document.getElementById('coordInput').value;
-                const matches = val.match(/-?\d+\.\d+/g);
+                const matches = document.getElementById('coordInput').value.match(/-?\d+\.\d+/g);
                 if(!matches || matches.length < 2) return false;
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
@@ -274,7 +266,7 @@
     async function handleCopyRequest() {
         if(await processRawData()) {
             activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-            if(!activeModes.length) return alert("請勾選生成模式");
+            if(!activeModes.length) return alert("請勾選模式");
             openCopyModal();
         }
     }
@@ -282,41 +274,42 @@
     async function processAll(preview) {
         if(await processRawData()) {
             activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-            if(!activeModes.length) return alert("請勾選生成模式");
+            if(!activeModes.length) return alert("請勾選模式");
             if(!preview) { for(const m of activeModes) await exportGPX(getFinalPoly(m), m); }
-            else { 
-                openMap(); 
-                setTimeout(() => renderEditor(), 300); 
-            }
-        }
+            else { openMap(); setTimeout(() => renderEditor(), 300); }
+        } else { alert("座標數據無效"); }
     }
 
     function openMap() {
-        document.getElementById('map-container').style.display = 'block';
+        document.getElementById('map-container').style.display = 'flex';
         if (!map) { 
             map = L.map('map',{zoomControl:false}); 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
-            L.control.zoom({position:'bottomright'}).addTo(map); 
+            L.control.zoom({position:'topright'}).addTo(map); 
         }
-        // 重大修正：多重延遲刷新大小，確保地圖正常顯示
-        setTimeout(() => map.invalidateSize(), 50);
-        setTimeout(() => map.invalidateSize(), 200);
+        setTimeout(() => map.invalidateSize(), 150);
         setTimeout(() => map.invalidateSize(), 500);
     }
 
     function renderEditor() {
-        const sb = document.getElementById('sidebar-btns'); if(sb) sb.innerHTML = "";
+        const tabs = document.getElementById('map-tabs'); tabs.innerHTML = "";
         Object.values(activeLayers).forEach(lg => lg.remove()); activeLayers = {};
-        document.getElementById('map-sidebar-wrapper').classList.remove('is-hidden');
+        document.getElementById('map-sidebar-wrapper')?.classList.remove('is-hidden');
         activeModes.forEach((m, i) => {
             const lg = L.featureGroup(); activeLayers[m] = lg;
-            const b = document.createElement('button'); b.className = "sidebar-btn" + (i === 0 ? " active" : "");
-            b.innerText = m==='linear'?"座標串連":m==='z-shape'?"Z字圖形":"S型圖形";
-            b.onclick = () => { Object.values(activeLayers).forEach(l => l.remove()); lg.addTo(map); document.querySelectorAll('.sidebar-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); closeEditor(); };
-            if(sb) sb.appendChild(b);
+            const b = document.createElement('button'); b.className = "nav-tab" + (i === 0 ? " active" : "");
+            const icon = m==='linear'?'📍':m==='z-shape'?'🌸':'♻️';
+            b.innerHTML = `${icon} ${m==='linear'?'串連':m==='z-shape'?'Z字':'S型'}`;
+            b.onclick = () => { 
+                Object.values(activeLayers).forEach(l => l.remove()); 
+                lg.addTo(map); 
+                document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active')); 
+                b.classList.add('active'); 
+                closeEditor(); 
+            };
+            tabs.appendChild(b);
             if(i === 0) setTimeout(() => b.click(), 100);
         });
-        refreshPaths();
     }
 
     function buildGroup(curr, mode) {
@@ -333,23 +326,24 @@
     }
 
     function refreshPaths() {
-        const activeBtn = document.querySelector('.sidebar-btn.active'); if(!activeBtn || !map) return;
-        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串連":m==='z-shape'?"Z字":"S型"));
+        const activeBtn = document.querySelector('.nav-tab.active'); if(!activeBtn || !map) return;
+        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?'串連':m==='z-shape'?'Z字':'S型'));
         const lg = activeLayers[mode]; if(!lg) return;
         lg.clearLayers(); markers = []; const fullTrack = [];
         for (let i = 0; i < currentData.length; i++) {
+            // 30m 圓框
             L.circle([currentData[i].lat, currentData[i].lng], { radius: 30, color: 'white', weight: 1.5, fillOpacity: 0.1, dashArray: '5, 5', interactive: false }).addTo(lg);
             const group = buildGroup(currentData[i], mode); fullTrack.push(...group);
-            const icon = L.divIcon({ className: 'number-icon' + (editingIdx === i ? ' selected' : ''), html: isPickingOrder ? (pickedSequence.indexOf(i)!==-1?pickedSequence.indexOf(i)+1:"?") : i+1, iconSize: [34, 34], iconAnchor: [17, 17] });
+            const icon = L.divIcon({ className: 'number-icon' + (editingIdx === i ? ' selected' : ''), html: isPickingOrder ? (pickedSequence.indexOf(i)!==-1?pickedSequence.indexOf(i)+1:"?") : i+1, iconSize: [30, 30], iconAnchor: [15, 15] });
             const m = L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg);
             m.on('click', () => handleMarkerClick(i)); markers.push(m);
-            L.polyline(group.map(p => [p[1], p[0]]), { color: editingIdx === i ? '#2f9e44' : '#1971c2', weight: 6, opacity: 0.8 }).addTo(lg).on('click', () => triggerEdit(i));
+            L.polyline(group.map(p => [p[1], p[0]]), { color: editingIdx === i ? '#10ac84' : '#2e86de', weight: 5, opacity: 0.8 }).addTo(lg).on('click', () => triggerEdit(i));
         }
         if (fullTrack.length) {
-            fullTrack.push(fullTrack[0]); L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#1971c2', weight: 6, opacity: 0.7 }).addTo(lg);
+            fullTrack.push(fullTrack[0]); L.polyline(fullTrack.map(p => [p[1], p[0]]), { color: '#2e86de', weight: 5, opacity: 0.5, dashArray: '10, 10' }).addTo(lg);
             const dist = turf.length(turf.lineString(fullTrack), {units: 'kilometers'});
-            document.getElementById('dist-val').innerText = `總距離：${dist.toFixed(2)} km`;
-            document.getElementById('time-val').innerText = `預計時間：${Math.ceil((dist/currentSpeed)*60)} min`;
+            document.getElementById('dist-val').innerText = dist.toFixed(2);
+            document.getElementById('time-val').innerText = `${Math.ceil((dist/currentSpeed)*60)} min`;
             if(editingIdx === -1) map.fitBounds(lg.getBounds(), {padding:[50,50]});
         }
     }
@@ -362,33 +356,32 @@
         refreshPaths();
         if (pickedSequence.length === currentData.length) { currentData = pickedSequence.map(i => currentData[i]); togglePickingMode(); refreshPaths(); }
     }
-    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯第 ${idx+1} 組 (${currentData[idx].lat.toFixed(6)},${currentData[idx].lng.toFixed(6)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
+    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯點位 #${idx+1} (${currentData[idx].lat.toFixed(5)},${currentData[idx].lng.toFixed(5)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
     function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
     function moveSequence(dir) { if(editingIdx < 0) return; const n = editingIdx + dir; if(n >= 0 && n < currentData.length) { [currentData[editingIdx], currentData[n]] = [currentData[n], currentData[editingIdx]]; editingIdx = n; refreshPaths(); triggerEdit(n); } }
     function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
-    function restoreGlobalOriginal() { if(confirm("還原數據？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
+    function restoreGlobalOriginal() { if(confirm("確定還原所有手動修改？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
     function getFinalPoly(m) { let path = []; currentData.forEach(c => path.push(...buildGroup(c, m))); if (path.length) path.push(path[0]); return path; }
 
     function openCopyModal() {
-        const tabBox = document.getElementById('modal-tabs'); if(tabBox) tabBox.innerHTML = "";
+        const tabs = document.getElementById('modal-tabs'); tabs.innerHTML = "";
         activeModes.forEach((m, i) => {
-            const btn = document.createElement('button'); btn.className = "tab-btn" + (i===0?" active":"");
-            btn.innerText = m==='linear'?"串連":m==='z-shape'?"Z字":"S型";
-            btn.onclick = () => { document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); updateModalText(m); };
-            if(tabBox) tabBox.appendChild(btn);
+            const b = document.createElement('button'); b.className = "nav-tab" + (i===0?" active":"");
+            b.innerText = m==='linear'?'串連':m==='z-shape'?'Z字':'S型';
+            b.onclick = () => { document.querySelectorAll('#modal-tabs .nav-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); updateModalText(m); };
+            tabs.appendChild(b);
         });
-        document.getElementById('copy-modal-overlay').style.display = "block";
-        document.getElementById('copy-modal').style.display = "block";
+        document.getElementById('modal-overlay').style.display = "block";
+        document.getElementById('modal').style.display = "block";
         updateModalText(activeModes[0]);
     }
-    // 座標去空白修正
+    // 座標精簡格式：Lat,Lng (無空格)
     function updateModalText(m) { document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); }
-    async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標已複製"); }
-    function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
+    async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標文本已複製"); }
+    function closeCopyModal() { document.getElementById('modal-overlay').style.display = "none"; document.getElementById('modal').style.display = "none"; }
 
-    // --- 檔名與路徑命名邏輯修復 ---
+    // --- 智能命名與隱藏聲明下載系統 ---
     async function exportGPX(pts, modeKey) {
-        const btn = document.getElementById('btn-final-save'); if(btn) btn.innerText = "處理中...";
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
         const appMap = { 'A': 'JoyStick', 'B': 'PoGoskill', 'C': 'Flashman', 'D': '魅影', 'E': 'iAnyGo', 'F': 'FakeGPS' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
@@ -402,10 +395,9 @@
             const modeChi = modeMap[modeKey];
             // 路徑內部名稱
             const pathName = `${modeChi}_${c_zh}_${count}苗`;
-            // 檔案名稱規則
+            // 檔案名稱
             const fileName = `pikmin_${modeKey}_${c_en.replace(/\s+/g,'')}_${c_zh}_${count}苗_${dStr}_${rand}(${appName}).gpx`;
-            
-            const copyright = `專為皮克敏玩家打造的路徑工具\nhttps://flowergpx.pages.dev/`;
+            const copyright = `專為皮克敏飛人玩家打造的路徑工具\nhttps://flowergpx.pages.dev/`;
             let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminGen">`;
             if (['A', 'B', 'E'].includes(appType)) {
                 gpx += `\n<trk><name>${pathName}</name><trkseg>`;
@@ -415,32 +407,25 @@
                 pts.forEach((p, i) => gpx += `\n<wpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"><name>P${i+1}</name></wpt>`);
             }
             gpx += `\n</gpx>`;
-            
             const blob = new Blob([gpx], { type: 'application/gpx+xml' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
-            if(btn) btn.innerText = "儲存下載";
         };
 
-        // 嘗試抓取國名，若 1.5 秒未回應則改用預設值，避免按鈕沒反應
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
-
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=zh-TW`, { signal: controller.signal });
-            const data = await res.json(); 
-            c_zh = data.address.country || "地區";
+            const data = await res.json(); c_zh = data.address.country || "地區";
             const resEn = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=en`, { signal: controller.signal });
-            const dataEn = await resEn.json(); 
-            c_en = dataEn.address.country || "Area";
+            const dataEn = await resEn.json(); c_en = dataEn.address.country || "Area";
             clearTimeout(timeoutId);
-        } catch(e) { console.log("抓取地名超時，使用預設值"); }
-        
+        } catch(e) { console.log("Naming skip due to timeout"); }
         doDownload();
     }
     async function downloadActive() { 
-        const activeBtn = document.querySelector('.sidebar-btn.active'); if(!activeBtn) return;
-        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串連":m==='z-shape'?"Z字":"S型"));
+        const activeBtn = document.querySelector('.nav-tab.active'); if(!activeBtn) return;
+        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?'串連':m==='z-shape'?'Z字':'S型'));
         await exportGPX(getFinalPoly(mode), mode); 
     }
 </script>
