@@ -9,11 +9,12 @@
         :root { 
             --primary: #10ac84; --secondary: #2e86de; --accent: #f39c12; --danger: #ee5253; 
             --dark: #222f3e; --light: #f5f6fa; --glass: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; margin: 0; padding: 0; background: var(--light); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "微軟正黑體", sans-serif; overflow: hidden; }
         
-        /* 全域樣式優化 */
+        /* 選單與標題樣式 */
         #menu-btn { position: fixed; top: 15px; left: 15px; z-index: 10006; background: var(--primary); border: none; border-radius: 12px; width: 44px; height: 44px; cursor: pointer; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(16,172,132,0.3); }
         #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: white; z-index: 10005; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 5px 0 25px rgba(0,0,0,0.1); padding-top: 80px; }
         #side-menu.open { left: 0; }
@@ -21,7 +22,7 @@
         .menu-item:active { background: #f1f2f6; color: var(--primary); }
 
         #controls { width: 100%; height: 100%; padding: 20px; padding-top: 75px; padding-bottom: 100px; overflow-y: auto; scroll-behavior: smooth; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid rgba(0,0,0,0.03); }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.03); }
         .card-header { font-weight: 800; font-size: 17px; margin-bottom: 18px; color: var(--dark); display: flex; align-items: center; gap: 10px; }
 
         /* 輸入區域 */
@@ -29,22 +30,20 @@
         textarea:focus { border-color: var(--primary); background: white; outline: none; }
         .input-toolbar { display: flex; gap: 10px; margin-top: 12px; }
         .tool-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #edeff2; font-weight: bold; cursor: pointer; font-size: 13px; color: #576574; transition: 0.2s; }
-        .tool-btn:active { background: #dcdde1; transform: scale(0.95); }
 
-        /* 精緻選項按鈕 */
+        /* 選項與按鈕 */
         .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .opt-label { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: #fafbfc; border: 2px solid #edeff2; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #576574; }
         .opt-label:has(input:checked) { border-color: var(--primary); background: white; color: var(--primary); box-shadow: 0 4px 12px rgba(16,172,132,0.15); }
         input[type="radio"], input[type="checkbox"] { display: none; }
 
-        /* 主按鈕 */
         .main-btn { width: 100%; padding: 18px; border: none; border-radius: 15px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .btn-primary { background: var(--primary); color: white; }
         .btn-secondary { background: var(--secondary); color: white; }
         .btn-accent { background: var(--accent); color: white; }
 
-        /* 地圖介面 - 沉浸式體驗 */
-        #map-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; display: none; flex-direction: column; animation: fadeIn 0.4s; }
+        /* 地圖介面 */
+        #map-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; display: none; flex-direction: column; }
         #map-nav { padding: 12px; background: var(--glass); backdrop-filter: blur(10px); display: flex; gap: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .nav-tab { flex: 1; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; background: transparent; color: #8395a7; transition: 0.3s; }
         .nav-tab.active { background: white; color: var(--secondary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -57,24 +56,19 @@
         .float-ctrl { position: absolute; top: 85px; right: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
         .ctrl-circle { width: 50px; height: 50px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(10px); border: none; font-size: 20px; cursor: pointer; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
 
-        /* 編輯器升級 */
         #bottom-editor { background: white; padding: 20px; border-radius: 25px 25px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 12px; }
         .edit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .edit-tool { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 13px; cursor: pointer; background: #f1f2f6; }
 
-        /* 座標標記樣式 */
         .number-icon { background: var(--secondary); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; font-size: 12px; width: 30px !important; height: 30px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(46,134,222,0.4); }
-        .number-icon.selected { background: var(--primary); transform: scale(1.25); z-index: 1000 !important; box-shadow: 0 4px 15px rgba(16,172,132,0.5); }
+        .number-icon.selected { background: var(--primary); transform: scale(1.25); z-index: 1000 !important; }
 
-        /* 複製視窗 */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 20000; display: none; backdrop-filter: blur(6px); }
         #modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 420px; background: white; z-index: 20001; border-radius: 25px; padding: 30px; display: none; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
     
     <script>
-        // 核心安全防護
+        // 安全防護機制
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = e => { if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false; };
         (function(){ setInterval(() => { const s = new Date(); debugger; if (new Date() - s > 200) window.location.href = "about:blank"; }, 2000); })();
@@ -90,14 +84,14 @@
 </div>
 
 <div id="controls">
-    <h2 id="page-title" style="margin: 0 0 25px; text-align: center; color: var(--primary); font-weight: 900; letter-spacing: 1px;">奈米田專業路徑工具</h2>
+    <h2 id="page-title" style="margin: 0 0 25px; text-align: center; color: var(--primary); font-weight: 900;">奈米田專業路徑工具</h2>
     
     <div id="bulletin-section" class="card" style="border-top: 6px solid var(--accent); background: #fffdfa;">
         <div class="card-header">🛡️ 飛人自律守則</div>
         <div style="font-size: 14px; line-height: 2; color: #2d3436; font-weight: 700;">
-            • 有花痕的田：不開發、不佔用<br>
-            • 有開花的田：僅生成收果路線<br>
-            • 檔案保護：請自用，嚴禁公開分享
+            1.有花痕的田 不開發 不占為己用<br>
+            2.有開花的田 僅生成收果路線<br>
+            3.檔案請自用，不要分享。
         </div>
         <button class="main-btn btn-primary" style="margin-top:20px;" onclick="acceptNotice()">遵守守則並開始</button>
     </div>
@@ -110,7 +104,7 @@
                 <option value="file">上傳 GPX 軌跡檔案</option>
             </select>
             <div id="manualSection" style="margin-top:15px;">
-                <textarea id="coordInput" placeholder="緯度,經度 (例如: 25.012,121.567)"></textarea>
+                <textarea id="coordInput" placeholder="緯度,經度"></textarea>
                 <div class="input-toolbar">
                     <button class="tool-btn" onclick="clearData()">清空</button>
                     <button class="tool-btn" onclick="inputAction('all')">全選</button>
@@ -124,13 +118,12 @@
 
         <div class="card">
             <div class="card-header">🧩 2. 生成模式與排序</div>
-            <div style="font-size: 12px; color: #a4b0be; margin-bottom: 8px;">選擇生成的圖形</div>
             <div class="opt-grid">
                 <label class="opt-label"><input type="checkbox" name="pathMode" value="linear" checked> 📍 串連</label>
                 <label class="opt-label"><input type="checkbox" name="pathMode" value="z-shape"> 🌸 Z字</label>
                 <label class="opt-label"><input type="checkbox" name="pathMode" value="s-shape"> ♻️ S型</label>
             </div>
-            <div style="font-size: 12px; color: #a4b0be; margin: 15px 0 8px;">處理排序方式</div>
+            <div style="margin: 15px 0 8px; font-size: 12px; color: #a4b0be;">排序規則</div>
             <div class="opt-grid">
                 <label class="opt-label"><input type="radio" name="orderType" value="original" checked> 原始順序</label>
                 <label class="opt-label"><input type="radio" name="orderType" value="shortest"> 最短距離</label>
@@ -157,46 +150,41 @@
 
 <div id="map-container">
     <div id="map-nav">
-        <div class="tab-box" id="map-tabs"></div>
+        <div class="tab-box" id="map-tabs" style="display:flex; flex:1; gap:5px;"></div>
         <button onclick="closeMap()" style="border:none; background:var(--danger); color:white; border-radius:10px; width:40px; height:40px; font-weight:900;">✕</button>
     </div>
-
     <div id="stat-overlay">
         <div class="stat-item">⏱️ <span id="time-val">--</span></div>
         <div class="stat-item" style="color:#7f8c8d; font-size:12px;">📏 總長 <span id="dist-val">--</span> km</div>
-        <div class="stat-item" style="margin-top:8px;">
-            🚀 <span style="font-size:12px; margin-right:5px;">時速</span>
+        <div class="stat-item" style="margin-top:8px;">🚀 <span style="font-size:12px; margin-right:5px;">時速</span>
             <button onclick="adjustSpeed(-1)" style="border:none; background:#eee; border-radius:5px; padding:2px 8px;">-</button>
             <span id="speed-val" style="margin:0 8px;">20</span>
             <button onclick="adjustSpeed(1)" style="border:none; background:#eee; border-radius:5px; padding:2px 8px;">+</button>
         </div>
     </div>
-
     <div class="float-ctrl">
         <button class="ctrl-circle" onclick="toggleSize()">全</button>
         <button class="ctrl-circle" style="background:var(--primary); color:white;" onclick="downloadActive()">💾</button>
     </div>
-
     <div id="map"></div>
-
     <div id="bottom-editor">
-        <div id="edit-label">點位編輯</div>
+        <div id="edit-label" style="text-align:center; font-weight:bold; margin-bottom:10px; color:var(--primary);">編輯選單</div>
         <div class="edit-grid">
-            <button class="edit-tool" style="background:var(--accent); color:white;" onclick="togglePickingMode()">👆 自選順序</button>
+            <button class="edit-tool" style="background:var(--accent); color:white;" onclick="togglePickingMode()">👆 自選</button>
             <button class="edit-tool" onclick="moveSequence(-1)">⬅ 前移</button>
             <button class="edit-tool" onclick="moveSequence(1)">後移 ➡</button>
-            <button class="edit-tool" onclick="rotatePoint(45)">🔄 旋轉圖形</button>
-            <button class="edit-tool" onclick="restoreGlobalOriginal()">⏮ 重置數據</button>
-            <button class="edit-tool" style="background:var(--danger); color:white;" onclick="deletePoint()">🗑 刪除點位</button>
+            <button class="edit-tool" onclick="rotatePoint(45)">🔄 旋轉</button>
+            <button class="edit-tool" onclick="restoreGlobalOriginal()">⏮ 重置</button>
+            <button class="edit-tool" style="background:var(--danger); color:white;" onclick="deletePoint()">🗑 刪除</button>
         </div>
-        <button class="main-btn btn-primary" style="margin:0; padding:15px;" onclick="closeEditor()">確認修改</button>
+        <button class="main-btn btn-primary" style="margin:10px 0 0; padding:15px;" onclick="closeEditor()">確認</button>
     </div>
 </div>
 
 <div id="modal-overlay" onclick="closeCopyModal()"></div>
 <div id="modal">
     <h3 style="color:var(--primary); margin-top:0;">📋 座標文本複製</h3>
-    <div id="modal-tabs" style="display:flex; gap:8px; margin-bottom:15px; overflow-x:auto; padding-bottom:5px;"></div>
+    <div id="modal-tabs" style="display:flex; gap:8px; margin-bottom:15px; overflow-x:auto;"></div>
     <textarea id="modal-text" style="height: 180px; font-size: 13px; font-family: monospace;" readonly></textarea>
     <button class="main-btn btn-primary" style="margin:20px 0 0;" onclick="copyModalText()">點我一鍵複製</button>
 </div>
@@ -240,7 +228,8 @@
             let centers = [];
             const srcType = document.getElementById('sourceType').value;
             if(srcType === 'manual') {
-                const matches = document.getElementById('coordInput').value.match(/-?\d+\.\d+/g);
+                const val = document.getElementById('coordInput').value;
+                const matches = val.match(/-?\d+\.\d+/g);
                 if(!matches || matches.length < 2) return false;
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
@@ -294,7 +283,6 @@
     function renderEditor() {
         const tabs = document.getElementById('map-tabs'); tabs.innerHTML = "";
         Object.values(activeLayers).forEach(lg => lg.remove()); activeLayers = {};
-        document.getElementById('map-sidebar-wrapper')?.classList.remove('is-hidden');
         activeModes.forEach((m, i) => {
             const lg = L.featureGroup(); activeLayers[m] = lg;
             const b = document.createElement('button'); b.className = "nav-tab" + (i === 0 ? " active" : "");
@@ -331,7 +319,6 @@
         const lg = activeLayers[mode]; if(!lg) return;
         lg.clearLayers(); markers = []; const fullTrack = [];
         for (let i = 0; i < currentData.length; i++) {
-            // 30m 圓框
             L.circle([currentData[i].lat, currentData[i].lng], { radius: 30, color: 'white', weight: 1.5, fillOpacity: 0.1, dashArray: '5, 5', interactive: false }).addTo(lg);
             const group = buildGroup(currentData[i], mode); fullTrack.push(...group);
             const icon = L.divIcon({ className: 'number-icon' + (editingIdx === i ? ' selected' : ''), html: isPickingOrder ? (pickedSequence.indexOf(i)!==-1?pickedSequence.indexOf(i)+1:"?") : i+1, iconSize: [30, 30], iconAnchor: [15, 15] });
@@ -356,11 +343,11 @@
         refreshPaths();
         if (pickedSequence.length === currentData.length) { currentData = pickedSequence.map(i => currentData[i]); togglePickingMode(); refreshPaths(); }
     }
-    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯點位 #${idx+1} (${currentData[idx].lat.toFixed(5)},${currentData[idx].lng.toFixed(5)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
+    function triggerEdit(idx) { editingIdx = idx; document.getElementById('edit-label').innerText = `編輯點 #${idx+1} (${currentData[idx].lat.toFixed(5)},${currentData[idx].lng.toFixed(5)})`; document.getElementById('bottom-editor').style.display = 'flex'; refreshPaths(); }
     function deletePoint() { if(editingIdx < 0) return; currentData.splice(editingIdx, 1); closeEditor(); renderEditor(); }
     function moveSequence(dir) { if(editingIdx < 0) return; const n = editingIdx + dir; if(n >= 0 && n < currentData.length) { [currentData[editingIdx], currentData[n]] = [currentData[n], currentData[editingIdx]]; editingIdx = n; refreshPaths(); triggerEdit(n); } }
     function rotatePoint(v) { if(editingIdx < 0) return; currentData[editingIdx].angle = (currentData[editingIdx].angle + v) % 360; refreshPaths(); }
-    function restoreGlobalOriginal() { if(confirm("確定還原所有手動修改？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
+    function restoreGlobalOriginal() { if(confirm("確定還原？")) { currentData = JSON.parse(JSON.stringify(rawBackup)); closeEditor(); renderEditor(); } }
     function getFinalPoly(m) { let path = []; currentData.forEach(c => path.push(...buildGroup(c, m))); if (path.length) path.push(path[0]); return path; }
 
     function openCopyModal() {
@@ -375,13 +362,14 @@
         document.getElementById('modal').style.display = "block";
         updateModalText(activeModes[0]);
     }
-    // 座標精簡格式：Lat,Lng (無空格)
+    // 座標去空格修正
     function updateModalText(m) { document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); }
     async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標文本已複製"); }
     function closeCopyModal() { document.getElementById('modal-overlay').style.display = "none"; document.getElementById('modal').style.display = "none"; }
 
-    // --- 智能命名與隱藏聲明下載系統 ---
+    // --- 移除國家命名的下載邏輯修正 ---
     async function exportGPX(pts, modeKey) {
+        const btn = document.getElementById('btn-final-save'); if(btn) btn.innerText = "處理中...";
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
         const appMap = { 'A': 'JoyStick', 'B': 'PoGoskill', 'C': 'Flashman', 'D': '魅影', 'E': 'iAnyGo', 'F': 'FakeGPS' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
@@ -389,39 +377,29 @@
         const count = currentData.length;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
         const rand = Math.random().toString(36).substr(2,5);
-        let c_en = "Area", c_zh = "地區";
 
-        const doDownload = () => {
-            const modeChi = modeMap[modeKey];
-            // 路徑內部名稱
-            const pathName = `${modeChi}_${c_zh}_${count}苗`;
-            // 檔案名稱
-            const fileName = `pikmin_${modeKey}_${c_en.replace(/\s+/g,'')}_${c_zh}_${count}苗_${dStr}_${rand}(${appName}).gpx`;
-            const copyright = `專為皮克敏飛人玩家打造的路徑工具\nhttps://flowergpx.pages.dev/`;
-            let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminGen">`;
-            if (['A', 'B', 'E'].includes(appType)) {
-                gpx += `\n<trk><name>${pathName}</name><trkseg>`;
-                pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
-                gpx += `\n</trkseg></trk>`;
-            } else {
-                pts.forEach((p, i) => gpx += `\n<wpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"><name>P${i+1}</name></wpt>`);
-            }
-            gpx += `\n</gpx>`;
-            const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
-        };
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=zh-TW`, { signal: controller.signal });
-            const data = await res.json(); c_zh = data.address.country || "地區";
-            const resEn = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentData[0].lat}&lon=${currentData[0].lng}&zoom=3&accept-language=en`, { signal: controller.signal });
-            const dataEn = await resEn.json(); c_en = dataEn.address.country || "Area";
-            clearTimeout(timeoutId);
-        } catch(e) { console.log("Naming skip due to timeout"); }
-        doDownload();
+        const modeChi = modeMap[modeKey];
+        // 內部路徑標籤名稱
+        const pathName = `${modeChi}_${count}苗`;
+        // 檔案名稱規則：移除國家名
+        const fileName = `pikmin_${modeKey}_${count}苗_${dStr}_${rand}(${appName}).gpx`;
+        
+        const copyright = `專為皮克敏飛人玩家打造的路徑工具\nhttps://flowergpx.pages.dev/`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminGen">`;
+        if (['A', 'B', 'E'].includes(appType)) {
+            gpx += `\n<trk><name>${pathName}</name><trkseg>`;
+            pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
+            gpx += `\n</trkseg></trk>`;
+        } else {
+            gpx += `\n<name>${pathName}</name>`;
+            pts.forEach((p, i) => gpx += `\n<wpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"><name>P${i+1}</name></wpt>`);
+        }
+        gpx += `\n</gpx>`;
+        
+        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
+        if(btn) btn.innerText = "儲存下載";
     }
     async function downloadActive() { 
         const activeBtn = document.querySelector('.nav-tab.active'); if(!activeBtn) return;
