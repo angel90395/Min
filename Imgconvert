@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極簡專業圖片轉檔工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .drop-zone { transition: all 0.3s ease; }
+        .drop-zone.dragover { border-color: #6366f1; background-color: #eef2ff; transform: scale(1.01); }
+        .glass-morphism { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-12 px-4">
+
+    <div class="max-w-4xl w-full text-center mb-10">
+        <h1 class="text-4xl font-extrabold text-slate-800 mb-2">專業圖片格式轉換</h1>
+        <p class="text-slate-500">純本地處理，圖片不會上傳至伺服器，安全且隱私。</p>
+    </div>
+
+    <main class="max-w-4xl w-full">
+        <div id="dropZone" class="drop-zone relative border-2 border-dashed border-slate-300 rounded-3xl p-12 text-center bg-white shadow-sm cursor-pointer hover:border-indigo-400">
+            <input type="file" id="fileInput" class="hidden" multiple accept="image/*">
+            <div class="flex flex-col items-center">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                </div>
+                <p class="text-lg font-semibold text-slate-700">點擊選擇圖片 或 拖放檔案到這裡</p>
+                <p class="text-sm text-slate-400 mt-1">支援 JPG, PNG, WEBP, BMP, GIF</p>
+            </div>
+        </div>
+
+        <div id="controlPanel" class="hidden mt-8 glass-morphism rounded-3xl p-6 shadow-xl border border-slate-200">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <label class="text-sm font-bold text-slate-600">目標格式：</label>
+                    <select id="targetFormat" class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm">
+                        <option value="image/png">PNG (無損)</option>
+                        <option value="image/jpeg">JPEG (壓縮)</option>
+                        <option value="image/webp">WebP (高效能)</option>
+                        <option value="image/bmp">BMP (標準)</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <label class="text-sm font-bold text-slate-600">品質 (僅限 JPG/WebP):</label>
+                    <input type="range" id="qualityRange" min="0.1" max="1" step="0.1" value="0.9" class="w-32 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                    <span id="qualityVal" class="text-sm text-slate-500 w-8">90%</span>
+                </div>
+
+                <button onclick="startConversion()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-2xl transition-all transform hover:scale-105 shadow-lg shadow-indigo-200">
+                    開始轉換並下載
+                </button>
+            </div>
+
+            <div class="mt-8 border-t border-slate-100 pt-6">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">待處理清單</h3>
+                <div id="filePreviewList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 text-slate-400 text-xs text-center">
+        Powered by Web Canvas API • 不需要任何伺服器傳輸
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const controlPanel = document.getElementById('controlPanel');
+        const filePreviewList = document.getElementById('filePreviewList');
+        const qualityRange = document.getElementById('qualityRange');
+        const qualityVal = document.getElementById('qualityVal');
+        
+        let selectedFiles = [];
+
+        // 更新品質數值顯示
+        qualityRange.oninput = () => qualityVal.innerText = Math.round(qualityRange.value * 100) + '%';
+
+        // 點擊觸發選擇
+        dropZone.onclick = () => fileInput.click();
+
+        // 拖放效果
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        };
+
+        fileInput.onchange = (e) => handleFiles(e.target.files);
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (newFiles.length === 0) return;
+
+            selectedFiles = [...selectedFiles, ...newFiles];
+            renderPreview();
+            controlPanel.classList.remove('hidden');
+        }
+
+        function renderPreview() {
+            filePreviewList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = "flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100 relative group";
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="w-16 h-16 object-cover rounded-xl shadow-sm">
+                        <div class="overflow-hidden">
+                            <p class="text-sm font-semibold text-slate-700 truncate">${file.name}</p>
+                            <p class="text-xs text-slate-400">原始格式: ${file.type.split('/')[1].toUpperCase()} • ${(file.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                        <button onclick="removeFile(${index})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                    `;
+                    filePreviewList.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            if (selectedFiles.length === 0) controlPanel.classList.add('hidden');
+            renderPreview();
+        }
+
+        async function startConversion() {
+            const format = document.getElementById('targetFormat').value;
+            const quality = parseFloat(qualityRange.value);
+            const ext = format.split('/')[1];
+
+            for (const file of selectedFiles) {
+                const bitmap = await createImageBitmap(file);
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+                const ctx = canvas.getContext('2d');
+                
+                // 處理透明背景轉 JPG 變黑色的問題 (設為白色)
+                if (format === 'image/jpeg') {
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                
+                ctx.drawImage(bitmap, 0, 0);
+                
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const newFileName = file.name.split('.')[0] + '.' + ext;
+                    a.href = url;
+                    a.download = newFileName;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }, format, quality);
+            }
+        }
+    </script>
+</body>
+</html>
