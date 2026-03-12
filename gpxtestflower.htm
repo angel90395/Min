@@ -35,7 +35,7 @@
         /* 地圖介面與統計 */
         #map-container { position: fixed; bottom: 20px; right: 20px; width: 340px; height: 340px; z-index: 999; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 20px; border: 4px solid #fff; overflow: hidden; background: white; transition: 0.3s; }
         #map-container.is-fullscreen { top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 9999; }
-        #map { width: 100%; height: 100%; }
+        #map { width: 100%; height: 100%; background: #eee; }
 
         #map-sidebar-wrapper { position: absolute; top: 120px; left: 15px; z-index: 2000; display: flex; flex-direction: column; width: 195px; }
         #map-container.is-fullscreen #map-sidebar-wrapper { top: 20px; }
@@ -298,7 +298,9 @@
     function openMap() {
         document.getElementById('map-container').style.display = 'block';
         if (!map) { map = L.map('map',{zoomControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map); }
-        setTimeout(() => map.invalidateSize(), 200);
+        // 修復地圖灰色問題：多重重新計算尺寸
+        setTimeout(() => map.invalidateSize(), 50);
+        setTimeout(() => map.invalidateSize(), 300);
     }
 
     function renderEditor() {
@@ -335,7 +337,7 @@
         const lg = activeLayers[mode]; if(!lg) return;
         lg.clearLayers(); markers = []; const fullTrack = [];
         for (let i = 0; i < currentData.length; i++) {
-            // --- 重點修復：重新加入 30 公尺模擬圓框 ---
+            // --- 重大修復：圓框恢復指令 ---
             L.circle([currentData[i].lat, currentData[i].lng], {
                 radius: 30,
                 color: 'white',
@@ -356,7 +358,10 @@
             const dist = turf.length(turf.lineString(fullTrack), {units: 'kilometers'});
             document.getElementById('dist-val').innerText = `總距離：${dist.toFixed(2)} km`;
             document.getElementById('time-val').innerText = `預計時間：${Math.ceil((dist/currentSpeed)*60)} min`;
-            if(editingIdx === -1) map.fitBounds(lg.getBounds(), {padding:[50,50]});
+            // 修復 fitBounds 報錯：增加標記點檢查
+            if(editingIdx === -1 && markers.length > 0) {
+                try { map.fitBounds(lg.getBounds(), {padding:[50,50]}); } catch(e) {}
+            }
         }
     }
 
@@ -387,6 +392,7 @@
         document.getElementById('copy-modal').style.display = "block";
         updateModalText(activeModes[0]);
     }
+    // 座標格式：緯度,經度 (中間無空白)
     function updateModalText(m) { document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); }
     async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("座標已複製"); }
     function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
@@ -399,9 +405,14 @@
         const count = currentData.length;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
         const rand = Math.random().toString(36).substr(2,5);
-        const pathName = `${modeMap[modeKey]}_${count}苗`;
+
+        const modeChi = modeMap[modeKey];
+        // 內部名稱：模式_數量苗
+        const pathName = `${modeChi}_${count}苗`;
+        // 檔案名稱：pikmin_模式_數量苗_日期_隨機碼(飛機名稱).gpx
         const fileName = `pikmin_${modeKey}_${count}苗_${dStr}_${rand}(${appName}).gpx`;
-        const copyright = `專為皮克敏玩家打造的路徑工具\nhttps://flowergpx.pages.dev/`;
+        
+        const copyright = `專為皮克敏玩家打造的路徑工具\nhttps://flowergpx.pages.dev/\n請自律當一個友善的飛人`;
         let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminGen">`;
         if (['A', 'B', 'E'].includes(appType)) {
             gpx += `\n<trk><name>${pathName}</name><trkseg>`;
