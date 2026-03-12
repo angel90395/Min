@@ -55,7 +55,7 @@
         .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
         .btn-act { flex: 1; padding: 13px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
 
-        .number-icon { background: var(--p-red); border: 2.5px solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
+        .number-icon { background: var(--p-red); border: 2.5 solid white; border-radius: 50%; color: white; font-weight: 800; text-align: center; font-size: 14px; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
         .number-icon.selected { background: var(--p-green); transform: scale(1.15); z-index: 1000 !important; }
 
         /* 複製視窗 */
@@ -100,7 +100,7 @@
 </div>
 
 <div id="controls">
-    <h2 id="page-title" style="margin: 0 0 20px; text-align: center; color: var(--p-green);">使用守則</h2>
+    <h2 id="page-title" style="margin: 0 0 20px; text-align: center; color: var(--p-green);">路徑生成器</h2>
     
     <div id="bulletin-section">
         <h4>📢 生成器的用途與目的</h4>
@@ -156,7 +156,7 @@
                 <option value="file">上傳 GPX 檔案</option>
             </select>
             <div id="manualSection">
-                <textarea id="coordInput" placeholder="緯度,經度 (25.123,121.123)"></textarea>
+                <textarea id="coordInput" placeholder="緯度,經度"></textarea>
                 <div class="input-toolbar">
                     <button class="tool-btn" onclick="clearData()">清除</button>
                     <button class="tool-btn" onclick="inputAction('all')">全選</button>
@@ -252,7 +252,7 @@
         const ta = document.getElementById('coordInput');
         if(act === 'all') { ta.focus(); ta.select(); }
         else if(act === 'copy') { await navigator.clipboard.writeText(ta.value); alert("已複製"); }
-        else if(act === 'paste') { try { ta.value = await navigator.clipboard.readText(); } catch(e){ alert("請長按貼上"); } }
+        else if(act === 'paste') { try { ta.value = await navigator.clipboard.readText(); } catch(e){ alert("請手動貼上"); } }
     }
 
     function closeMap() { document.getElementById('map-container').style.display = 'none'; closeEditor(); }
@@ -266,11 +266,11 @@
             if(document.getElementById('sourceType').value === 'manual') {
                 const val = document.getElementById('coordInput').value;
                 const matches = val.match(/-?\d+\.\d+/g);
-                if(!matches || matches.length < 2) { alert("座標無效"); return false; }
+                if(!matches || matches.length < 2) return false;
                 for(let i=0; i<matches.length; i+=2) centers.push({lng:parseFloat(matches[i+1]), lat:parseFloat(matches[i]), angle:0});
             } else {
                 const f = document.getElementById('gpxFile').files[0];
-                if(!f) { alert("請先上傳檔案"); return false; }
+                if(!f) return false;
                 const xml = await f.text();
                 const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
                 let m; while((m = regex.exec(xml))!==null) centers.push({lng:parseFloat(m[2]), lat:parseFloat(m[1]), angle:0});
@@ -289,17 +289,17 @@
     }
 
     async function handleCopyRequest() {
-        const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if(!modes.length) return alert("請勾選模式");
-        if(await processRawData()) { activeModes = modes; openCopyModal(); }
+        if(await processRawData()) {
+            activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+            openCopyModal();
+        }
     }
 
     async function processAll(preview) {
-        const modes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
-        if(!modes.length) return alert("請勾選模式");
         if(await processRawData()) {
-            activeModes = modes;
-            if(!preview) { for(const m of modes) await exportGPX(getFinalPoly(m), m); }
+            activeModes = Array.from(document.querySelectorAll('input[name="pathMode"]:checked')).map(el => el.value);
+            if(!activeModes.length) return alert("請勾選模式");
+            if(!preview) { for(const m of activeModes) await exportGPX(getFinalPoly(m), m); }
             else { renderEditor(); openMap(); }
         }
     }
@@ -344,6 +344,16 @@
         const lg = activeLayers[mode]; if(!lg) return;
         lg.clearLayers(); markers = []; const fullTrack = [];
         for (let i = 0; i < currentData.length; i++) {
+            // --- 重點修復：重新加入 30 公尺模擬圓框 ---
+            L.circle([currentData[i].lat, currentData[i].lng], {
+                radius: 30,
+                color: 'white',
+                weight: 1.5,
+                fillOpacity: 0.1,
+                dashArray: '5, 5',
+                interactive: false
+            }).addTo(lg);
+            
             const group = buildGroup(currentData[i], mode); fullTrack.push(...group);
             const icon = L.divIcon({ className: 'number-icon' + (editingIdx === i ? ' selected' : ''), html: isPickingOrder ? (pickedSequence.indexOf(i)!==-1?pickedSequence.indexOf(i)+1:"?") : i+1, iconSize: [34, 34], iconAnchor: [17, 17] });
             const m = L.marker([currentData[i].lat, currentData[i].lng], { icon: icon }).addTo(lg);
@@ -386,34 +396,42 @@
         document.getElementById('copy-modal').style.display = "block";
         updateModalText(activeModes[0]);
     }
-
     function updateModalText(m) { document.getElementById('modal-text').value = getFinalPoly(m).map(p => `${p[1].toFixed(8)},${p[0].toFixed(8)}`).join('\n'); }
     async function copyModalText() { await navigator.clipboard.writeText(document.getElementById('modal-text').value); alert("已複製"); }
     function closeCopyModal() { document.getElementById('copy-modal-overlay').style.display = "none"; document.getElementById('copy-modal').style.display = "none"; }
 
     async function exportGPX(pts, modeKey) {
         const modeMap = { 'linear': '串連', 'z-shape': 'Z字', 's-shape': 'S型' };
+        const appMap = { 'A': 'JoyStick', 'B': 'PoGoskill', 'C': 'Flashman', 'D': '魅影', 'E': 'iAnyGo', 'F': 'FakeGPS' };
         const appType = document.querySelector('input[name="appType"]:checked').value;
+        const appName = appMap[appType];
+        const count = currentData.length;
         const now = new Date(); const dStr = now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
-        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\nhttps://flowergpx.pages.dev/\n請自律當一個友善的飛人`;
+        const rand = Math.random().toString(36).substr(2,5);
+
+        const modeChi = modeMap[modeKey];
+        const pathName = `${modeChi}_${count}苗`;
+        const fileName = `pikmin_${modeKey}_${count}苗_${dStr}_${rand}(${appName}).gpx`;
+        
+        const copyright = `專為皮克敏玩家打造的路徑工具\nhttps://flowergpx.pages.dev/`;
         let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n\n<gpx version="1.1" creator="PikminGen">`;
-        const pathName = `(${modeMap[modeKey]})${currentData.length}苗_${appType}`;
         if (['A', 'B', 'E'].includes(appType)) {
             gpx += `\n<trk><name>${pathName}</name><trkseg>`;
             pts.forEach(p => gpx += `\n<trkpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"></trkpt>`);
             gpx += `\n</trkseg></trk>`;
         } else {
+            gpx += `\n<name>${pathName}</name>`;
             pts.forEach((p, i) => gpx += `\n<wpt lat="${p[1].toFixed(8)}" lon="${p[0].toFixed(8)}"><name>P${i+1}</name></wpt>`);
         }
         gpx += `\n</gpx>`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `pikmin_${modeKey}_${dStr}.gpx`; a.click();
+        const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
     }
     async function downloadActive() { 
         const activeBtn = document.querySelector('.sidebar-btn.active'); if(!activeBtn) return;
-        const m = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串連":m==='z-shape'?"Z字":"S型"));
-        await exportGPX(getFinalPoly(m), m); 
+        const mode = activeModes.find(m => activeBtn.innerText.includes(m==='linear'?"串連":m==='z-shape'?"Z字":"S型"));
+        await exportGPX(getFinalPoly(mode), mode); 
     }
 </script>
 </body>
