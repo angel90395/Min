@@ -16,7 +16,7 @@
             if (e.ctrlKey && e.keyCode == 85) return false;
         };
 
-        // 3. 偵測開發者工具 (Debugger 陷阱)
+        // 3. 偵測開發者工具
         (function() {
             var check = function() {
                 const start = new Date();
@@ -94,7 +94,6 @@
 
         #gpxFile { display: none; }
 
-        /* 座標顯示區 */
         .result-area {
             width: 100%; height: 150px; border: 1.5px solid var(--border);
             border-radius: 12px; padding: 10px; box-sizing: border-box;
@@ -109,14 +108,13 @@
         }
         .btn-copy { background: var(--blue); color: white; }
         .btn-select { background: #adb5bd; color: white; }
-        .btn-sub:active { opacity: 0.8; }
 
         #fileNameInput {
             width: 100%; padding: 12px; border: 2px solid var(--border);
             border-radius: 10px; box-sizing: border-box; font-size: 14px;
-            background: #fff; -webkit-appearance: none;
+            background: #fff;
         }
-        #fileNameInput:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
+        #fileNameInput:focus { outline: none; border-color: var(--primary); }
 
         .hint { font-size: 12px; color: #868e96; margin-top: 10px; line-height: 1.5; font-weight: 500; }
 
@@ -137,12 +135,12 @@
 <div class="container">
     <header>
         <h1>🌱 皮克敏 GPX 座標提取器</h1>
-        <p>上傳檔案，複製所有座標</p>
+        <p>上傳檔案，自動移除重複座標</p>
     </header>
 
     <div class="step-card">
         <div class="step-number">1</div>
-        <label>上傳原始檔案(支援 .gpx / .xml)</label>
+        <label>上傳原始檔案</label>
         <div class="upload-row">
             <div class="upload-area" id="dropZone" onclick="document.getElementById('gpxFile').click()">
                 <p id="fileLabel">選取或拖入檔案</p>
@@ -164,9 +162,9 @@
 
     <div class="step-card">
         <div class="step-number">3</div>
-        <label>修改/確認檔名</label>
+        <label>修改檔名</label>
         <input type="text" id="fileNameInput" placeholder="等待解析...">
-        <p class="hint">※ 點擊下方按鈕將下載為 .txt 純文字檔</p>
+        <p class="hint">※ 系統已自動過濾重複點位</p>
         <div id="status"></div>
     </div>
 
@@ -183,7 +181,6 @@
     const resultText = document.getElementById('resultText');
     const status = document.getElementById('status');
 
-    // 拖曳上傳處理
     dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
     dropZone.ondragleave = () => dropZone.classList.remove('dragover');
     dropZone.ondrop = (e) => {
@@ -220,23 +217,25 @@
     async function processGpxFile() {
         if (fileInput.files.length === 0) return;
         
-        const fileLabel = document.getElementById('fileLabel');
-        fileLabel.innerText = "已選：" + fileInput.files[0].name;
-        status.innerText = "正在提取座標與辨識位置...";
+        document.getElementById('fileLabel').innerText = "已選：" + fileInput.files[0].name;
+        status.innerText = "正在分析並移除重複座標...";
         status.style.display = "block";
 
         const text = await fileInput.files[0].text();
-        // 匹配 lat 和 lon 屬性
         const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']|lon=["']([\d.-]+)["']\s+lat=["']([\d.-]+)["']/g;
-        extractedPts = [];
+        
+        let rawPts = [];
         let m;
         while ((m = regex.exec(text)) !== null) {
-            if (m[1] !== undefined) {
-                extractedPts.push({ lat: m[1], lon: m[2] });
-            } else {
-                extractedPts.push({ lat: m[4], lon: m[3] });
-            }
+            let lat = m[1] !== undefined ? m[1] : m[4];
+            let lon = m[1] !== undefined ? m[2] : m[3];
+            rawPts.push({ lat, lon });
         }
+
+        // --- 核心：移除重複座標 ---
+        extractedPts = rawPts.filter((pt, idx, self) =>
+            idx === self.findIndex((t) => t.lat === pt.lat && t.lon === pt.lon)
+        );
 
         if (extractedPts.length === 0) {
             status.innerText = "❌ 無法解析座標資料";
@@ -244,57 +243,41 @@
             return;
         }
 
-        // 生成顯示用的字串 (緯度,經度 無空白)
         const coordString = extractedPts.map(p => `${p.lat},${p.lon}`).join('\n');
         resultText.value = coordString;
 
-        // 計算去重後的個數 (用於檔名)
-        const uniqueCount = extractedPts.filter((pt, idx, self) =>
-            idx === self.findIndex((t) => t.lat === pt.lat && t.lon === pt.lon)
-        ).length;
-
-        // 生成預設檔名
         const now = new Date();
         const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
         const countryTag = await getCombinedCountryNames(extractedPts[0].lat, extractedPts[0].lon);
         
-        const finalBase = `${countryTag}_${uniqueCount}點_${dStr}`;
-        nameInput.value = finalBase;
-        status.innerText = `✨ 提取成功：${extractedPts.length} 個點位 (國家：${countryTag})`;
+        nameInput.value = `${countryTag}_${extractedPts.length}點_${dStr}`;
+        status.innerText = `✨ 提取成功！原始 ${rawPts.length} 點，去重後剩下 ${extractedPts.length} 點`;
     }
 
     function selectAllText() {
         resultText.select();
-        resultText.setSelectionRange(0, 99999);
     }
 
     function copyToClipboard() {
         if (!resultText.value || resultText.value === "無座標資料") return;
-        resultText.select();
-        resultText.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(resultText.value).then(() => {
             const oldStatus = status.innerText;
-            status.innerText = "✅ 座標已複製到剪貼簿！";
+            status.innerText = "✅ 已複製唯一座標！";
             setTimeout(() => { status.innerText = oldStatus; }, 2000);
         });
     }
 
     function downloadTxt() {
         const content = resultText.value;
-        const fileName = nameInput.value.trim() || "extracted_coords";
-
-        if (!content || content === "無座標資料") {
-            return alert("沒有可下載的座標！");
-        }
+        const fileName = nameInput.value.trim() || "coords";
+        if (!content || content === "無座標資料") return alert("無內容");
 
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${fileName}.txt`;
-        document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
 </script>
