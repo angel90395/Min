@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>皮克敏 GPX 座標提取助手</title>
+    <title>皮克敏飛人小工具-Gpx飛機格式轉換</title>
+    
+    <script>
+        // 1. 禁止右鍵選單
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // 2. 禁止開發者工具快捷鍵
+        document.onkeydown = function(e) {
+            // 封鎖 F12
+            if (e.keyCode == 123) return false;
+            // 封鎖 Ctrl+Shift+I, J, C
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false;
+            // 封鎖 Ctrl+U (查看原始碼)
+            if (e.ctrlKey && e.keyCode == 85) return false;
+        };
+
+        // 3. 偵測開發者工具 (Debugger 陷阱)
+        (function() {
+            var check = function() {
+                const start = new Date();
+                debugger; // 如果開啟開發者工具，會卡在這一行
+                const end = new Date();
+                if (end - start > 100) {
+                    // 偵測到停留時間過長，可能是開啟了檢查工具
+                    window.location.href = "about:blank";
+                }
+            };
+            setInterval(check, 2000);
+        })();
+    </script>
+
     <style>
         :root {
             --primary: #2f9e44;
@@ -13,10 +43,9 @@
             --card-bg: #ffffff;
             --border: #e9ecef;
             --danger: #e03131;
-            --blue: #1c7ed6;
         }
 
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        * { -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -24,6 +53,7 @@
             color: var(--text);
             margin: 0;
             padding: 20px;
+            padding-bottom: env(safe-area-inset-bottom);
             display: flex;
             justify-content: center;
         }
@@ -61,67 +91,56 @@
         
         .btn-clear {
             background: #fff; color: var(--danger); border: 1.5px solid var(--danger);
-            border-radius: 12px; padding: 0 15px; cursor: pointer; font-weight: bold;
+            border-radius: 12px; padding: 0 12px; cursor: pointer; font-weight: bold;
             font-size: 13px;
         }
 
         #gpxFile { display: none; }
 
-        .result-area {
-            width: 100%; height: 180px;
-            background: #f1f3f5; border: 1px solid var(--border);
-            border-radius: 12px; padding: 12px;
-            font-family: "SF Mono", Monaco, Consolas, monospace;
-            font-size: 13px; line-height: 1.6;
-            overflow-y: auto; white-space: pre;
-            margin-bottom: 15px;
+        .app-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .app-opt {
+            border: 1.5px solid var(--border); padding: 10px; border-radius: 12px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            font-size: 13px; transition: 0.2s;
         }
+        .app-opt:hover { border-color: var(--primary); }
+        .app-opt input[type="checkbox"] { accent-color: var(--primary); width: 18px; height: 18px; }
 
         #fileNameInput {
             width: 100%; padding: 12px; border: 2px solid var(--border);
             border-radius: 10px; box-sizing: border-box; font-size: 14px;
-            background: #fff; margin-bottom: 15px;
+            background: #fff; -webkit-appearance: none;
         }
-        #fileNameInput:focus { outline: none; border-color: var(--primary); }
+        #fileNameInput:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
 
-        .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .hint { font-size: 12px; color: #868e96; margin-top: 10px; line-height: 1.5; font-weight: 500; }
 
-        .btn-action {
-            padding: 12px 5px; border: none; border-radius: 12px; 
-            font-size: 13px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 4px;
-            transition: 0.2s;
+        .btn-convert {
+            width: 100%; padding: 16px; background: var(--primary); color: white;
+            border: none; border-radius: 15px; font-size: 17px; font-weight: bold;
+            cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-
-        .btn-select { background: #e9ecef; color: #495057; }
-        .btn-copy { background: var(--primary); color: white; }
-        .btn-download { background: var(--blue); color: white; }
-        .btn-action:active { transform: scale(0.95); opacity: 0.9; }
+        .btn-convert:active { opacity: 0.8; transform: scale(0.98); }
 
         #status {
-            margin-top: 15px; text-align: center; font-size: 13px; color: var(--primary);
+            margin-top: 15px; text-align: center; font-size: 12px; color: var(--primary);
             background: var(--primary-light); padding: 10px; border-radius: 10px; display: none;
-            font-weight: 600;
         }
-
-        .hint { font-size: 12px; color: #868e96; margin-top: 10px; text-align: center; }
     </style>
 </head>
-<body>
-
-<div class="container">
+<body onselectstart="return false"> <div class="container">
     <header>
-        <h1>🌱 皮克敏 GPX 座標提取助手</h1>
-        <p>上傳檔案，提取全部座標</p>
+        <h1>🌱 皮克敏 GPX 批次轉換器</h1>
+        <p>上傳一次檔案，同時生成多種格式</p>
     </header>
 
     <div class="step-card">
         <div class="step-number">1</div>
-        <label>上傳 GPX 檔案</label>
+        <label>上傳原始檔案(支援 .gpx / .xml)</label>
         <div class="upload-row">
             <div class="upload-area" id="dropZone" onclick="document.getElementById('gpxFile').click()">
-                <p id="fileLabel">選取或拖入 .gpx 檔案</p>
-                <input type="file" id="gpxFile" accept=".gpx,.xml">
+                <p id="fileLabel">選取或拖入檔案</p>
+                <input type="file" id="gpxFile" accept=".gpx,.xml,application/gpx+xml,application/xml,text/xml,text/plain,*/*">
             </div>
             <button class="btn-clear" onclick="resetAll()">清空</button>
         </div>
@@ -129,29 +148,34 @@
 
     <div class="step-card">
         <div class="step-number">2</div>
-        <label>基礎檔名預覽 (可自行修改)</label>
-        <input type="text" id="fileNameInput" placeholder="等待解析檔案名稱...">
-        
-        <label>提取結果 (緯度,經度)</label>
-        <div id="resultBox" class="result-area"></div>
-
-        <div class="action-grid">
-            <button class="btn-action btn-select" onclick="selectAllText()">全選文字</button>
-            <button class="btn-action btn-copy" onclick="copyToClipboard()">📋 一鍵複製</button>
-            <button class="btn-action btn-download" onclick="downloadTxt()">💾 下載 TXT</button>
+        <label>選擇飛機格式 (可複選)</label>
+        <div class="app-grid">
+            <label class="app-opt"><input type="checkbox" name="appType" value="JoyStick"> <span>JoyStick (A)</span></label>
+            <label class="app-opt"><input type="checkbox" name="appType" value="PoGoskill"> <span>PoGoskill (B)</span></label>
+            <label class="app-opt"><input type="checkbox" name="appType" value="Flashman"> <span>Flashman (C)</span></label>
+            <label class="app-opt"><input type="checkbox" name="appType" value="魅影"> <span>魅影 (D)</span></label>
+            <label class="app-opt"><input type="checkbox" name="appType" value="iAnyGo"> <span>iAnyGo (E)</span></label>
+            <label class="app-opt"><input type="checkbox" name="appType" value="FakeGPS"> <span>FakeGPS (F)</span></label>
         </div>
-        
-        <div id="status"></div>
-        <p class="hint">※ 系統已自動移除重複座標</p>
     </div>
+
+    <div class="step-card">
+        <div class="step-number">3</div>
+        <label>基礎檔名預覽</label>
+        <input type="text" id="fileNameInput" placeholder="等待解析...">
+        <p class="hint">※ 下載時會自動在前方補上 (飛機名稱)</p>
+        <div id="status"></div>
+    </div>
+
+    <button id="convertBtn" class="btn-convert" onclick="batchDownload()">
+        🚀 批次轉換並下載
+    </button>
 </div>
 
 <script>
+    let extractedPts = [];
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('gpxFile');
-    const resultBox = document.getElementById('resultBox');
-    const status = document.getElementById('status');
-    const fileLabel = document.getElementById('fileLabel');
     const nameInput = document.getElementById('fileNameInput');
 
     dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
@@ -161,18 +185,17 @@
         dropZone.classList.remove('dragover');
         if (e.dataTransfer.files.length > 0) {
             fileInput.files = e.dataTransfer.files;
-            processGPX();
+            autoGenerateName();
         }
     };
 
-    fileInput.onchange = processGPX;
+    fileInput.onchange = autoGenerateName;
 
     function resetAll() {
-        fileInput.value = "";
-        resultBox.innerText = "";
-        nameInput.value = "";
-        fileLabel.innerText = "選取或拖入 .gpx 檔案";
-        status.style.display = "none";
+        fileInput.value = ""; extractedPts = []; nameInput.value = "";
+        document.getElementById('fileLabel').innerText = "選取或拖入檔案";
+        document.getElementById('status').style.display = "none";
+        document.querySelectorAll('input[name="appType"]').forEach(cb => cb.checked = false);
     }
 
     async function getCombinedCountryNames(lat, lon) {
@@ -186,97 +209,82 @@
         } catch (e) { return "Unknown(未知)"; }
     }
 
-    async function processGPX() {
+    async function autoGenerateName() {
         if (fileInput.files.length === 0) return;
+        const status = document.getElementById('status');
+        const fileLabel = document.getElementById('fileLabel');
         
-        const file = fileInput.files[0];
-        fileLabel.innerText = "已選：" + file.name;
-        status.innerText = "正在進行位置辨識與去重...";
+        fileLabel.innerText = "已選：" + fileInput.files[0].name;
+        status.innerText = "正在進行雙語辨識與去重計算...";
         status.style.display = "block";
-        
-        try {
-            const text = await file.text();
-            const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']|lon=["']([\d.-]+)["']\s+lat=["']([\d.-]+)["']/g;
-            
-            let rawCoords = [];
-            let m;
-            while ((m = regex.exec(text)) !== null) {
-                let lat = m[1] !== undefined ? m[1] : m[4];
-                let lon = m[1] !== undefined ? m[2] : m[3];
-                rawCoords.push(`${lat},${lon}`);
+
+        const text = await fileInput.files[0].text();
+        const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']|lon=["']([\d.-]+)["']\s+lat=["']([\d.-]+)["']/g;
+        extractedPts = [];
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+            if (m[1] !== undefined) {
+                extractedPts.push({ lat: parseFloat(m[1]), lon: parseFloat(m[2]) });
+            } else {
+                extractedPts.push({ lat: parseFloat(m[4]), lon: parseFloat(m[3]) });
             }
-
-            if (rawCoords.length === 0) {
-                resultBox.innerText = "無法解析座標。";
-                status.innerText = "❌ 解析失敗";
-                return;
-            }
-
-            // 去重並保留順序
-            const uniqueCoords = [];
-            const seen = new Set();
-            rawCoords.forEach(coord => {
-                if (!seen.has(coord)) {
-                    seen.add(coord);
-                    uniqueCoords.push(coord);
-                }
-            });
-
-            resultBox.innerText = uniqueCoords.join('\n');
-
-            // 產生自動檔名 (邏輯同原始碼)
-            const firstPt = uniqueCoords[0].split(',');
-            const countryTag = await getCombinedCountryNames(firstPt[0], firstPt[1]);
-            const now = new Date();
-            const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
-            const randomID = Math.random().toString(36).substring(2, 6);
-            
-            // 設定基礎檔名到輸入框
-            nameInput.value = `${countryTag}_${uniqueCoords.length}苗_${dStr}_${randomID}`;
-            
-            status.innerText = "✅ 提取完成！";
-
-        } catch (err) {
-            resultBox.innerText = "讀取檔案錯誤。";
-            status.innerText = "❌ 發生錯誤";
         }
-    }
 
-    function selectAllText() {
-        const range = document.createRange();
-        range.selectNodeContents(resultBox);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
+        if (extractedPts.length === 0) {
+            status.innerText = "❌ 無法解析座標資料";
+            return;
+        }
 
-    function copyToClipboard() {
-        const text = resultBox.innerText;
-        if (!text) return;
-        navigator.clipboard.writeText(text).then(() => {
-            const originalMsg = status.innerText;
-            status.innerText = "🚀 已複製到剪貼簿！";
-            setTimeout(() => { status.innerText = originalMsg; }, 1500);
-        });
-    }
+        const uniqueCount = extractedPts.filter((pt, idx, self) =>
+            idx === self.findIndex((t) => t.lat === pt.lat && t.lon === pt.lon)
+        ).length;
 
-    function downloadTxt() {
-        const text = resultBox.innerText;
-        if (!text) return alert("沒有座標資料");
-
-        const baseName = nameInput.value.trim() || "coordinates";
-        // 自動加上預設飛機名稱 (純座標)
-        const finalFileName = `(純座標)${baseName}.txt`;
+        const now = new Date();
+        const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
+        const countryTag = await getCombinedCountryNames(extractedPts[0].lat, extractedPts[0].lon);
         
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = finalFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const finalBase = `${countryTag}_${uniqueCount}苗_${dStr}_${Math.random().toString(36).substring(2, 6)}`;
+        nameInput.value = finalBase;
+        status.innerText = `✨ 解析成功：${uniqueCount} 苗 (國家：${countryTag})`;
+    }
+
+    async function batchDownload() {
+        const selectedApps = Array.from(document.querySelectorAll('input[name="appType"]:checked')).map(cb => cb.value);
+        const baseName = nameInput.value.trim();
+
+        if (extractedPts.length === 0 || selectedApps.length === 0 || !baseName) {
+            return alert("請檢查檔案與格式選取！");
+        }
+
+        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請不要用來產生別人的花田路徑，請自律當一個友善的飛人\nhttps://flowergpx.pages.dev/`;
+
+        for (const app of selectedApps) {
+            const finalFileName = `(${app})${baseName}`;
+            let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PikminTool">\n`;
+            gpx += `  <metadata><name>${finalFileName}</name><desc>${copyright}</desc></metadata>\n`;
+
+            if (['JoyStick', 'PoGoskill', 'iAnyGo'].includes(app)) {
+                gpx += `  <trk><name>${finalFileName}</name><trkseg>\n`;
+                extractedPts.forEach(p => gpx += `    <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"></trkpt>\n`);
+                gpx += `  </trkseg></trk>\n`;
+            } else {
+                extractedPts.forEach((p, i) => {
+                    gpx += `  <wpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"><name>P${i+1}_${finalFileName}</name></wpt>\n`;
+                });
+            }
+            gpx += `</gpx>`;
+
+            const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${finalFileName}.gpx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            await new Promise(r => setTimeout(r, 500));
+        }
     }
 </script>
 
