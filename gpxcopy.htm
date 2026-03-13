@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>皮克敏飛人小工具-Gpx飛機格式轉換</title>
+    <title>皮克敏飛人小工具-Gpx座標提取器</title>
     
     <script>
         // 1. 禁止右鍵選單
@@ -11,11 +11,8 @@
 
         // 2. 禁止開發者工具快捷鍵
         document.onkeydown = function(e) {
-            // 封鎖 F12
             if (e.keyCode == 123) return false;
-            // 封鎖 Ctrl+Shift+I, J, C
             if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false;
-            // 封鎖 Ctrl+U (查看原始碼)
             if (e.ctrlKey && e.keyCode == 85) return false;
         };
 
@@ -23,10 +20,9 @@
         (function() {
             var check = function() {
                 const start = new Date();
-                debugger; // 如果開啟開發者工具，會卡在這一行
+                debugger; 
                 const end = new Date();
                 if (end - start > 100) {
-                    // 偵測到停留時間過長，可能是開啟了檢查工具
                     window.location.href = "about:blank";
                 }
             };
@@ -43,6 +39,7 @@
             --card-bg: #ffffff;
             --border: #e9ecef;
             --danger: #e03131;
+            --blue: #1c7ed6;
         }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -97,14 +94,22 @@
 
         #gpxFile { display: none; }
 
-        .app-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .app-opt {
-            border: 1.5px solid var(--border); padding: 10px; border-radius: 12px;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
-            font-size: 13px; transition: 0.2s;
+        /* 座標顯示區 */
+        .result-area {
+            width: 100%; height: 150px; border: 1.5px solid var(--border);
+            border-radius: 12px; padding: 10px; box-sizing: border-box;
+            font-family: monospace; font-size: 13px; resize: none;
+            background: #f1f3f5; color: #495057;
         }
-        .app-opt:hover { border-color: var(--primary); }
-        .app-opt input[type="checkbox"] { accent-color: var(--primary); width: 18px; height: 18px; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-sub {
+            padding: 10px; border: none; border-radius: 10px; font-weight: bold;
+            cursor: pointer; font-size: 13px; transition: 0.2s;
+        }
+        .btn-copy { background: var(--blue); color: white; }
+        .btn-select { background: #adb5bd; color: white; }
+        .btn-sub:active { opacity: 0.8; }
 
         #fileNameInput {
             width: 100%; padding: 12px; border: 2px solid var(--border);
@@ -128,10 +133,11 @@
         }
     </style>
 </head>
-<body onselectstart="return false"> <div class="container">
+<body>
+<div class="container">
     <header>
-        <h1>🌱 皮克敏 GPX 批次轉換器</h1>
-        <p>上傳一次檔案，同時生成多種格式</p>
+        <h1>🌱 皮克敏 GPX 座標提取器</h1>
+        <p>上傳檔案，複製所有座標</p>
     </header>
 
     <div class="step-card">
@@ -148,27 +154,24 @@
 
     <div class="step-card">
         <div class="step-number">2</div>
-        <label>選擇飛機格式 (可複選)</label>
-        <div class="app-grid">
-            <label class="app-opt"><input type="checkbox" name="appType" value="JoyStick"> <span>JoyStick (A)</span></label>
-            <label class="app-opt"><input type="checkbox" name="appType" value="PoGoskill"> <span>PoGoskill (B)</span></label>
-            <label class="app-opt"><input type="checkbox" name="appType" value="Flashman"> <span>Flashman (C)</span></label>
-            <label class="app-opt"><input type="checkbox" name="appType" value="魅影"> <span>魅影 (D)</span></label>
-            <label class="app-opt"><input type="checkbox" name="appType" value="iAnyGo"> <span>iAnyGo (E)</span></label>
-            <label class="app-opt"><input type="checkbox" name="appType" value="FakeGPS"> <span>FakeGPS (F)</span></label>
+        <label>提取結果 (緯度,經度)</label>
+        <textarea id="resultText" class="result-area" readonly placeholder="等待檔案上傳..."></textarea>
+        <div class="action-grid">
+            <button class="btn-sub btn-select" onclick="selectAllText()">全選座標</button>
+            <button class="btn-sub btn-copy" onclick="copyToClipboard()">一鍵複製</button>
         </div>
     </div>
 
     <div class="step-card">
         <div class="step-number">3</div>
-        <label>基礎檔名預覽</label>
+        <label>修改/確認檔名</label>
         <input type="text" id="fileNameInput" placeholder="等待解析...">
-        <p class="hint">※ 下載時會自動在前方補上 (飛機名稱)</p>
+        <p class="hint">※ 點擊下方按鈕將下載為 .txt 純文字檔</p>
         <div id="status"></div>
     </div>
 
-    <button id="convertBtn" class="btn-convert" onclick="batchDownload()">
-        🚀 批次轉換並下載
+    <button id="convertBtn" class="btn-convert" onclick="downloadTxt()">
+        💾 下載 Txt 座標檔
     </button>
 </div>
 
@@ -177,7 +180,10 @@
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('gpxFile');
     const nameInput = document.getElementById('fileNameInput');
+    const resultText = document.getElementById('resultText');
+    const status = document.getElementById('status');
 
+    // 拖曳上傳處理
     dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
     dropZone.ondragleave = () => dropZone.classList.remove('dragover');
     dropZone.ondrop = (e) => {
@@ -185,17 +191,19 @@
         dropZone.classList.remove('dragover');
         if (e.dataTransfer.files.length > 0) {
             fileInput.files = e.dataTransfer.files;
-            autoGenerateName();
+            processGpxFile();
         }
     };
 
-    fileInput.onchange = autoGenerateName;
+    fileInput.onchange = processGpxFile;
 
     function resetAll() {
-        fileInput.value = ""; extractedPts = []; nameInput.value = "";
+        fileInput.value = ""; 
+        extractedPts = []; 
+        nameInput.value = "";
+        resultText.value = "";
         document.getElementById('fileLabel').innerText = "選取或拖入檔案";
-        document.getElementById('status').style.display = "none";
-        document.querySelectorAll('input[name="appType"]').forEach(cb => cb.checked = false);
+        status.style.display = "none";
     }
 
     async function getCombinedCountryNames(lat, lon) {
@@ -209,84 +217,86 @@
         } catch (e) { return "Unknown(未知)"; }
     }
 
-    async function autoGenerateName() {
+    async function processGpxFile() {
         if (fileInput.files.length === 0) return;
-        const status = document.getElementById('status');
-        const fileLabel = document.getElementById('fileLabel');
         
+        const fileLabel = document.getElementById('fileLabel');
         fileLabel.innerText = "已選：" + fileInput.files[0].name;
-        status.innerText = "正在進行雙語辨識與去重計算...";
+        status.innerText = "正在提取座標與辨識位置...";
         status.style.display = "block";
 
         const text = await fileInput.files[0].text();
+        // 匹配 lat 和 lon 屬性
         const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']|lon=["']([\d.-]+)["']\s+lat=["']([\d.-]+)["']/g;
         extractedPts = [];
         let m;
         while ((m = regex.exec(text)) !== null) {
             if (m[1] !== undefined) {
-                extractedPts.push({ lat: parseFloat(m[1]), lon: parseFloat(m[2]) });
+                extractedPts.push({ lat: m[1], lon: m[2] });
             } else {
-                extractedPts.push({ lat: parseFloat(m[4]), lon: parseFloat(m[3]) });
+                extractedPts.push({ lat: m[4], lon: m[3] });
             }
         }
 
         if (extractedPts.length === 0) {
             status.innerText = "❌ 無法解析座標資料";
+            resultText.value = "無座標資料";
             return;
         }
 
+        // 生成顯示用的字串 (緯度,經度 無空白)
+        const coordString = extractedPts.map(p => `${p.lat},${p.lon}`).join('\n');
+        resultText.value = coordString;
+
+        // 計算去重後的個數 (用於檔名)
         const uniqueCount = extractedPts.filter((pt, idx, self) =>
             idx === self.findIndex((t) => t.lat === pt.lat && t.lon === pt.lon)
         ).length;
 
+        // 生成預設檔名
         const now = new Date();
         const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
         const countryTag = await getCombinedCountryNames(extractedPts[0].lat, extractedPts[0].lon);
         
-        const finalBase = `${countryTag}_${uniqueCount}苗_${dStr}_${Math.random().toString(36).substring(2, 6)}`;
+        const finalBase = `${countryTag}_${uniqueCount}點_${dStr}`;
         nameInput.value = finalBase;
-        status.innerText = `✨ 解析成功：${uniqueCount} 苗 (國家：${countryTag})`;
+        status.innerText = `✨ 提取成功：${extractedPts.length} 個點位 (國家：${countryTag})`;
     }
 
-    async function batchDownload() {
-        const selectedApps = Array.from(document.querySelectorAll('input[name="appType"]:checked')).map(cb => cb.value);
-        const baseName = nameInput.value.trim();
+    function selectAllText() {
+        resultText.select();
+        resultText.setSelectionRange(0, 99999);
+    }
 
-        if (extractedPts.length === 0 || selectedApps.length === 0 || !baseName) {
-            return alert("請檢查檔案與格式選取！");
+    function copyToClipboard() {
+        if (!resultText.value || resultText.value === "無座標資料") return;
+        resultText.select();
+        resultText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(resultText.value).then(() => {
+            const oldStatus = status.innerText;
+            status.innerText = "✅ 座標已複製到剪貼簿！";
+            setTimeout(() => { status.innerText = oldStatus; }, 2000);
+        });
+    }
+
+    function downloadTxt() {
+        const content = resultText.value;
+        const fileName = nameInput.value.trim() || "extracted_coords";
+
+        if (!content || content === "無座標資料") {
+            return alert("沒有可下載的座標！");
         }
 
-        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請不要用來產生別人的花田路徑，請自律當一個友善的飛人\nhttps://flowergpx.pages.dev/`;
-
-        for (const app of selectedApps) {
-            const finalFileName = `(${app})${baseName}`;
-            let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PikminTool">\n`;
-            gpx += `  <metadata><name>${finalFileName}</name><desc>${copyright}</desc></metadata>\n`;
-
-            if (['JoyStick', 'PoGoskill', 'iAnyGo'].includes(app)) {
-                gpx += `  <trk><name>${finalFileName}</name><trkseg>\n`;
-                extractedPts.forEach(p => gpx += `    <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"></trkpt>\n`);
-                gpx += `  </trkseg></trk>\n`;
-            } else {
-                extractedPts.forEach((p, i) => {
-                    gpx += `  <wpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"><name>P${i+1}_${finalFileName}</name></wpt>\n`;
-                });
-            }
-            gpx += `</gpx>`;
-
-            const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${finalFileName}.gpx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            await new Promise(r => setTimeout(r, 500));
-        }
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileName}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 </script>
-
 </body>
 </html>
