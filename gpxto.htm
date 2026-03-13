@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>皮克敏 GPX 進階轉換器</title>
+    <style>
+        :root { --p-green: #2f9e44; --p-blue: #1971c2; --p-dark: #343a40; }
+        body { font-family: -apple-system, sans-serif; max-width: 650px; margin: 20px auto; padding: 20px; background: #f1f3f5; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 8px solid var(--p-green); }
+        h2 { color: var(--p-green); text-align: center; margin-bottom: 25px; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 10px; }
+        label { font-weight: bold; display: block; margin-bottom: 10px; color: var(--p-dark); }
+        
+        .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .app-opt { border: 1.5px solid #dee2e6; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .app-opt:hover { border-color: var(--p-green); background: #f8f9fa; }
+        input[type="radio"]:checked + span { font-weight: bold; color: var(--p-green); }
+
+        #fileNameInput { width: 100%; padding: 12px; border: 1.5px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-top: 5px; background: #f8f9fa; }
+        
+        .btn-convert { width: 100%; padding: 16px; background: var(--p-green); color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 0 #237a35; }
+        .btn-convert:active { transform: translateY(2px); box-shadow: 0 2px 0 #237a35; }
+        .btn-convert:disabled { background: #adb5bd; box-shadow: none; cursor: not-allowed; }
+
+        #status { text-align: center; font-size: 13px; color: #666; margin-top: 10px; min-height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>GPX 專業轉換工具</h2>
+    
+    <div class="section">
+        <label>1. 上傳原始 GPX 檔案</label>
+        <input type="file" id="gpxFile" accept=".gpx" onchange="autoGenerateName()">
+    </div>
+
+    <div class="section">
+        <label>2. 選擇飛機程式</label>
+        <div class="app-grid">
+            <label class="app-opt"><input type="radio" name="appType" value="JoyStick" checked onchange="autoGenerateName()"> <span>(A) JoyStick</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="PoGoskill" onchange="autoGenerateName()"> <span>(B) PoGoskill</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="Flashman" onchange="autoGenerateName()"> <span>(C) Flashman</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="魅影" onchange="autoGenerateName()"> <span>(D) 魅影</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="iAnyGo" onchange="autoGenerateName()"> <span>(E) iAnyGo</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="FakeGPS" onchange="autoGenerateName()"> <span>(F) FakeGPS</span></label>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>3. 檔案名稱預覽 (可自行修改)</label>
+        <input type="text" id="fileNameInput" placeholder="上傳檔案後將自動生成名稱">
+    </div>
+
+    <button id="convertBtn" class="btn-convert" onclick="processConversion()">執行轉換並下載</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    let extractedPts = [];
+
+    // 取得隨機碼
+    const getRand = () => Math.random().toString(36).substring(2, 6);
+
+    // 取得國家英文名稱 (逆向地理編碼)
+    async function getCountryName(lat, lon) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=3&addressdetails=1`, {
+                headers: { 'Accept-Language': 'en' }
+            });
+            const data = await res.json();
+            return data.address.country || "Unknown";
+        } catch (e) {
+            return "Unknown";
+        }
+    }
+
+    // 自動生成檔名
+    async function autoGenerateName() {
+        const fileInput = document.getElementById('gpxFile');
+        const status = document.getElementById('status');
+        const nameInput = document.getElementById('fileNameInput');
+        
+        if (fileInput.files.length === 0) return;
+
+        status.innerText = "分析座標與獲取國家資訊中...";
+        
+        const text = await fileInput.files[0].text();
+        const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
+        extractedPts = [];
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+            extractedPts.push({ lat: parseFloat(m[1]), lon: parseFloat(m[2]) });
+        }
+
+        if (extractedPts.length === 0) {
+            status.innerText = "錯誤：檔案中找不到有效座標。";
+            return;
+        }
+
+        const count = extractedPts.length;
+        const app = document.querySelector('input[name="appType"]:checked').value;
+        const now = new Date();
+        const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
+        const country = await getCountryName(extractedPts[0].lat, extractedPts[0].lon);
+        const rand = getRand();
+
+        // 格式：Pikmin_主座標數量+苗_主座標國家名英文_選擇的飛機名稱_當日日期_隨機碼
+        const defaultName = `Pikmin_${count}苗_${country.replace(/\s+/g, '')}_${app}_${dStr}_${rand}`;
+        nameInput.value = defaultName;
+        status.innerText = "座標解析完成，準備就緒。";
+    }
+
+    async function processConversion() {
+        const nameInput = document.getElementById('fileNameInput').value;
+        const appType = document.querySelector('input[name="appType"]:checked').value;
+        
+        if (extractedPts.length === 0) return alert("請先選擇有效的 GPX 檔案！");
+        if (!nameInput) return alert("請輸入檔案名稱！");
+
+        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請自律當一個友善的飛人`;
+        
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        gpx += `<gpx version="1.1" creator="PikminConverter">\n`;
+        gpx += `  <metadata>\n    <name>${nameInput}</name>\n    <desc>${copyright}</desc>\n  </metadata>\n`;
+
+        // 判斷格式
+        const isTrk = ['JoyStick', 'PoGoskill', 'iAnyGo'].includes(appType);
+
+        if (isTrk) {
+            gpx += `  <trk>\n    <name>${nameInput}</name>\n    <trkseg>\n`;
+            extractedPts.forEach(p => {
+                gpx += `      <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"></trkpt>\n`;
+            });
+            gpx += `    </trkseg>\n  </trk>\n`;
+        } else {
+            extractedPts.forEach((p, i) => {
+                gpx += `  <wpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}">\n    <name>P${i + 1}_${nameInput}</name>\n  </wpt>\n`;
+            });
+        }
+
+        gpx += `</gpx>`;
+
+        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${nameInput}.gpx`;
+        a.click();
+        
+        document.getElementById('status').innerText = "下載完成！";
+    }
+</script>
+
+</body>
+</html>
