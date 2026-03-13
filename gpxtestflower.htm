@@ -55,29 +55,32 @@
         .action-row { display: flex; gap: 6px; justify-content: center; width: 100%; }
         .btn-act { flex: 1; padding: 13px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
 
-        /* --- 主座標數字圖標 強化框線部分 --- */
-        .number-icon { 
-            background: var(--p-red); 
-            border: 2.5px solid white !important; /* 強制原本的白色框線 */
-            border-radius: 50%; 
-            color: white; 
-            font-weight: 800; 
-            text-align: center; 
-            font-size: 14px; 
+        /* --- 座標數字圖標 最終加強版邊框 --- */
+        div.number-icon { 
+            background-color: var(--p-red) !important; 
+            border: 3px solid #ffffff !important; /* 增加寬度到 3px 確保看得到 */
+            border-radius: 50% !important; 
+            color: #ffffff !important; 
+            font-weight: 800 !important; 
+            text-align: center !important; 
+            font-size: 14px !important; 
             width: 34px !important; 
             height: 34px !important; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            box-sizing: border-box; /* 確保框線在圓圈內 */
-            box-shadow: 0 0 2px rgba(0,0,0,0.8), 0 3px 8px rgba(0,0,0,0.3); /* 增加黑色外陰影讓白色框線浮現 */
+            display: flex !important; 
+            align-items: center !important; 
+            justify-content: center !important; 
+            box-sizing: border-box !important; 
+            background-clip: padding-box !important; /* 關鍵：防止紅底滲出到邊框 */
+            /* 雙重陰影：外圈淡淡的黑圈能把白色邊框「頂」出來 */
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.2), 0 3px 8px rgba(0,0,0,0.4) !important;
         }
-        .number-icon.selected { 
-            background: var(--p-green); 
-            border-color: white !important;
-            transform: scale(1.15); 
+
+        div.number-icon.selected { 
+            background-color: var(--p-green) !important; 
+            border-color: #ffffff !important;
+            transform: scale(1.15) !important; 
             z-index: 1000 !important; 
-            box-shadow: 0 0 4px rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 0 0 1.5px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.5) !important;
         }
         /* ---------------------------------- */
 
