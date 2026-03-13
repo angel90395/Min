@@ -3,62 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>皮克敏 GPX 專業轉換器</title>
+    <title>皮克敏花農工具｜GPX 專業轉換</title>
     <style>
-        :root { --p-green: #2f9e44; --p-blue: #1971c2; --p-dark: #343a40; }
-        body { font-family: -apple-system, "Segoe UI", "微軟正黑體", sans-serif; max-width: 650px; margin: 20px auto; padding: 20px; background: #f1f3f5; }
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 8px solid var(--p-green); }
-        h2 { color: var(--p-green); text-align: center; margin-bottom: 25px; }
-        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 10px; }
-        label { font-weight: bold; display: block; margin-bottom: 10px; color: var(--p-dark); }
-        
-        .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .app-opt { border: 1.5px solid #dee2e6; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; background: #fff; }
-        .app-opt:hover { border-color: var(--p-green); background: #f8f9fa; }
-        input[type="radio"]:checked + span { font-weight: bold; color: var(--p-green); }
+        :root {
+            --primary: #2f9e44;
+            --primary-light: #ebfbee;
+            --secondary: #1971c2;
+            --bg: #f8f9fa;
+            --text: #212529;
+            --card-bg: #ffffff;
+            --border: #e9ecef;
+        }
 
-        #fileNameInput { width: 100%; padding: 12px; border: 1.5px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-top: 5px; background: #fdfdfd; color: #444; }
-        
-        .btn-convert { width: 100%; padding: 16px; background: var(--p-green); color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 0 #237a35; }
-        .btn-convert:active { transform: translateY(2px); box-shadow: 0 2px 0 #237a35; }
-        .btn-convert:disabled { background: #adb5bd; box-shadow: none; cursor: not-allowed; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "微軟正黑體", sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
 
-        #status { text-align: center; font-size: 13px; color: #666; margin-top: 12px; min-height: 20px; font-style: italic; }
+        .container {
+            width: 100%;
+            max-width: 550px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            color: #868e96;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* 步驟卡片設計 */
+        .step-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .step-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -12px;
+            left: 24px;
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(47, 158, 68, 0.3);
+        }
+
+        label {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        /* 拖曳上傳區 */
+        .upload-area {
+            border: 2px dashed #ced4da;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            background: var(--primary-light);
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: #d3f9d8;
+        }
+
+        .upload-area p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        #gpxFile { display: none; }
+
+        /* 飛機程式選擇器 */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .app-opt {
+            border: 1.5px solid var(--border);
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .app-opt:hover {
+            border-color: var(--primary);
+        }
+
+        input[type="radio"] {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+        }
+
+        input[type="radio"]:checked + span {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* 預覽輸入框 */
+        #fileNameInput {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 14px;
+            background: #f1f3f5;
+            color: #495057;
+            font-family: monospace;
+        }
+
+        /* 按鈕設計 */
+        .btn-convert {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(47, 158, 68, 0.2);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-convert:hover {
+            background: #2b8a3e;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(47, 158, 68, 0.3);
+        }
+
+        .btn-convert:active {
+            transform: translateY(0);
+        }
+
+        #status {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+            color: #868e96;
+            background: #fdf2f2;
+            padding: 8px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        #status.info {
+            background: var(--primary-light);
+            color: var(--primary);
+            display: block;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>GPX 專業轉換工具</h2>
-    
-    <div class="section">
-        <label>1. 上傳原始 GPX 檔案</label>
-        <input type="file" id="gpxFile" accept=".gpx" onchange="autoGenerateName()">
-    </div>
+<div class="container">
+    <header>
+        <h1>🌱 皮克敏 GPX 專業轉換</h1>
+        <p>優化路徑格式・自動命名命名系統</p>
+    </header>
 
-    <div class="section">
-        <label>2. 選擇飛機程式</label>
-        <div class="app-grid">
-            <label class="app-opt"><input type="radio" name="appType" value="JoyStick" checked onchange="autoGenerateName()"> <span>(A) JoyStick</span></label>
-            <label class="app-opt"><input type="radio" name="appType" value="PoGoskill" onchange="autoGenerateName()"> <span>(B) PoGoskill</span></label>
-            <label class="app-opt"><input type="radio" name="appType" value="Flashman" onchange="autoGenerateName()"> <span>(C) Flashman</span></label>
-            <label class="app-opt"><input type="radio" name="appType" value="魅影" onchange="autoGenerateName()"> <span>(D) 魅影</span></label>
-            <label class="app-opt"><input type="radio" name="appType" value="iAnyGo" onchange="autoGenerateName()"> <span>(E) iAnyGo</span></label>
-            <label class="app-opt"><input type="radio" name="appType" value="FakeGPS" onchange="autoGenerateName()"> <span>(F) FakeGPS</span></label>
+    <div class="step-card">
+        <div class="step-number">1</div>
+        <label>導入原始檔案</label>
+        <div class="upload-area" id="dropZone" onclick="document.getElementById('gpxFile').click()">
+            <p id="fileLabel">點擊或拖拽 GPX 檔案至此</p>
+            <input type="file" id="gpxFile" accept=".gpx">
         </div>
     </div>
 
-    <div class="section">
-        <label>3. 檔案名稱預覽 (可自行修改)</label>
-        <input type="text" id="fileNameInput" placeholder="上傳檔案後將依公式生成名稱">
+    <div class="step-card">
+        <div class="step-number">2</div>
+        <label>選擇飛機程式格式</label>
+        <div class="app-grid">
+            <label class="app-opt"><input type="radio" name="appType" value="JoyStick" checked> <span>JoyStick (A)</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="PoGoskill"> <span>PoGoskill (B)</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="Flashman"> <span>Flashman (C)</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="魅影"> <span>魅影 (D)</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="iAnyGo"> <span>iAnyGo (E)</span></label>
+            <label class="app-opt"><input type="radio" name="appType" value="FakeGPS"> <span>FakeGPS (F)</span></label>
+        </div>
     </div>
 
-    <button id="convertBtn" class="btn-convert" onclick="processConversion()">執行轉換並下載</button>
-    <div id="status"></div>
+    <div class="step-card">
+        <div class="step-number">3</div>
+        <label>檔案與路徑命名預覽</label>
+        <input type="text" id="fileNameInput" readonly placeholder="等待上傳解析...">
+        <div id="status"></div>
+    </div>
+
+    <button id="convertBtn" class="btn-convert" onclick="processConversion()">
+        🚀 開始轉換並下載
+    </button>
 </div>
 
 <script>
     let extractedPts = [];
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('gpxFile');
+    const appRadios = document.querySelectorAll('input[name="appType"]');
+
+    // 拖拽事件處理
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            autoGenerateName();
+        }
+    };
+
+    fileInput.onchange = autoGenerateName;
+    appRadios.forEach(r => r.onchange = autoGenerateName);
 
     const getRand = () => Math.random().toString(36).substring(2, 6);
 
@@ -70,20 +281,20 @@
             const data = await res.json();
             let country = data.address && data.address.country ? data.address.country : "Unknown";
             return country.replace(/\s+/g, '');
-        } catch (e) {
-            return "Unknown";
-        }
+        } catch (e) { return "Unknown"; }
     }
 
     async function autoGenerateName() {
-        const fileInput = document.getElementById('gpxFile');
-        const status = document.getElementById('status');
-        const nameInput = document.getElementById('fileNameInput');
-        
         if (fileInput.files.length === 0) return;
 
-        status.innerText = "正在分析座標資料...";
+        const status = document.getElementById('status');
+        const nameInput = document.getElementById('fileNameInput');
+        const fileLabel = document.getElementById('fileLabel');
         
+        fileLabel.innerText = "已選擇：" + fileInput.files[0].name;
+        status.innerText = "正在進行去重計算與國家識別...";
+        status.className = "info";
+
         const text = await fileInput.files[0].text();
         const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']/g;
         extractedPts = [];
@@ -93,59 +304,45 @@
         }
 
         if (extractedPts.length === 0) {
-            status.innerText = "❌ 檔案中找不到有效座標。";
+            status.innerText = "❌ 檔案格式錯誤或查無座標";
+            status.className = "";
             return;
         }
 
-        // --- 核心邏輯更新：移除重複座標來計算苗數 ---
-        const uniqueCoords = extractedPts.filter((pt, index, self) =>
-            index === self.findIndex((t) => (
-                t.lat === pt.lat && t.lon === pt.lon
-            ))
-        );
-        const count = uniqueCoords.length;
-        // ------------------------------------------
+        // 去重計算
+        const uniqueCount = extractedPts.filter((pt, idx, self) =>
+            idx === self.findIndex((t) => t.lat === pt.lat && t.lon === pt.lon)
+        ).length;
 
         const app = document.querySelector('input[name="appType"]:checked').value;
         const now = new Date();
         const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
-        
-        status.innerText = "正在辨識國家資訊...";
         const country = await getCountryName(extractedPts[0].lat, extractedPts[0].lon);
-        const rand = getRand();
-
-        const finalName = `(${app})${country}_${count}苗_${dStr}_${rand}`;
+        
+        const finalName = `(${app})${country}_${uniqueCount}苗_${dStr}_${getRand()}`;
         nameInput.value = finalName;
-        status.innerText = `✅ 解析完成！總點數：${extractedPts.length}，去重後苗數：${count}`;
+        status.innerText = `✨ 解析成功：${uniqueCount} 苗 (已移除重複點)`;
     }
 
     async function processConversion() {
-        const nameInput = document.getElementById('fileNameInput').value.trim();
-        const appType = document.querySelector('input[name="appType"]:checked').value;
-        
-        if (extractedPts.length === 0) return alert("請先上傳 GPX 檔案！");
-        if (!nameInput) return alert("請輸入檔案名稱！");
+        const nameInput = document.getElementById('fileNameInput').value;
+        if (!nameInput) return alert("請先上傳檔案！");
 
-        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請自律當一個友善的飛人`;
+        const appType = document.querySelector('input[name="appType"]:checked').value;
+        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n方便產生收果、種花的GPX生成器\n請自律當一個友善的飛人`;
         
-        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-        gpx += `<gpx version="1.1" creator="PikminConverter">\n`;
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PikminTool">\n`;
         gpx += `  <metadata>\n    <name>${nameInput}</name>\n    <desc>${copyright}</desc>\n  </metadata>\n`;
 
-        const isTrk = ['JoyStick', 'PoGoskill', 'iAnyGo'].includes(appType);
-
-        if (isTrk) {
-            gpx += `  <trk>\n    <name>${nameInput}</name>\n    <trkseg>\n`;
-            extractedPts.forEach(p => {
-                gpx += `      <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"></trkpt>\n`;
-            });
-            gpx += `    </trkseg>\n  </trk>\n`;
+        if (['JoyStick', 'PoGoskill', 'iAnyGo'].includes(appType)) {
+            gpx += `  <trk><name>${nameInput}</name><trkseg>\n`;
+            extractedPts.forEach(p => gpx += `    <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"></trkpt>\n`);
+            gpx += `  </trkseg></trk>\n`;
         } else {
             extractedPts.forEach((p, i) => {
-                gpx += `  <wpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}">\n    <name>P${i + 1}_${nameInput}</name>\n  </wpt>\n`;
+                gpx += `  <wpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}"><name>P${i+1}_${nameInput}</name></wpt>\n`;
             });
         }
-
         gpx += `</gpx>`;
 
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
@@ -154,8 +351,6 @@
         a.href = url;
         a.download = `${nameInput}.gpx`;
         a.click();
-        
-        document.getElementById('status').innerText = "✨ 轉換成功！(點數已精簡計算)";
     }
 </script>
 
