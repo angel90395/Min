@@ -4,6 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>皮克敏飛人小工具-Gpx飛機格式轉換</title>
+    
+    <script>
+        // 1. 禁止右鍵選單
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // 2. 禁止開發者工具快捷鍵
+        document.onkeydown = function(e) {
+            // 封鎖 F12
+            if (e.keyCode == 123) return false;
+            // 封鎖 Ctrl+Shift+I, J, C
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false;
+            // 封鎖 Ctrl+U (查看原始碼)
+            if (e.ctrlKey && e.keyCode == 85) return false;
+        };
+
+        // 3. 偵測開發者工具 (Debugger 陷阱)
+        (function() {
+            var check = function() {
+                const start = new Date();
+                debugger; // 如果開啟開發者工具，會卡在這一行
+                const end = new Date();
+                if (end - start > 100) {
+                    // 偵測到停留時間過長，可能是開啟了檢查工具
+                    window.location.href = "about:blank";
+                }
+            };
+            setInterval(check, 2000);
+        })();
+    </script>
+
     <style>
         :root {
             --primary: #2f9e44;
@@ -81,7 +111,7 @@
             border-radius: 10px; box-sizing: border-box; font-size: 14px;
             background: #fff; -webkit-appearance: none;
         }
-        #fileNameInput:focus { outline: none; border-color: var(--primary); }
+        #fileNameInput:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
 
         .hint { font-size: 12px; color: #868e96; margin-top: 10px; line-height: 1.5; font-weight: 500; }
 
@@ -98,9 +128,7 @@
         }
     </style>
 </head>
-<body>
-
-<div class="container">
+<body onselectstart="return false"> <div class="container">
     <header>
         <h1>🌱 皮克敏 GPX 批次轉換器</h1>
         <p>上傳一次檔案，同時生成多種格式</p>
@@ -228,7 +256,7 @@
             return alert("請檢查檔案與格式選取！");
         }
 
-        const copyright = `皮克敏 GPX 批次轉換工具\n請自律當一個友善的飛人`;
+        const copyright = `這是專為皮克敏的空軍玩家打造的路徑工具\n主要是方便皮克敏飛人產生收果、種花的GPX生成器\n請不要用來產生別人的花田路徑，請自律當一個友善的飛人\nhttps://flowergpx.pages.dev/`;
 
         for (const app of selectedApps) {
             const finalFileName = `(${app})${baseName}`;
