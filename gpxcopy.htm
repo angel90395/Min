@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>GPX 座標提取助手 - 自動去重版</title>
+    <style>
+        :root {
+            --primary: #2f9e44;
+            --primary-light: #ebfbee;
+            --bg: #f8f9fa;
+            --text: #212529;
+            --card-bg: #ffffff;
+            --border: #e9ecef;
+            --danger: #e03131;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 550px; }
+
+        header { text-align: center; margin-bottom: 25px; margin-top: 10px; }
+        header h1 { color: var(--primary); margin: 0; font-size: 22px; letter-spacing: 0.5px; }
+        header p { color: #868e96; font-size: 14px; margin-top: 6px; font-weight: 500; }
+
+        .step-card {
+            background: var(--card-bg); border-radius: 20px; padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-bottom: 18px;
+            border: 1px solid var(--border); position: relative;
+        }
+
+        .step-number {
+            position: absolute; top: -10px; left: 20px;
+            background: var(--primary); color: white;
+            width: 22px; height: 22px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: bold;
+        }
+
+        label { font-weight: 700; display: block; margin-bottom: 12px; font-size: 15px; }
+
+        .upload-row { display: flex; gap: 8px; align-items: stretch; }
+        .upload-area {
+            flex: 1; border: 2px dashed #ced4da; border-radius: 12px;
+            padding: 18px; text-align: center; cursor: pointer;
+            background: var(--primary-light); transition: 0.2s;
+        }
+        .upload-area.dragover { border-color: var(--primary); background: #d3f9d8; }
+        .upload-area p { margin: 0; font-size: 13px; color: var(--primary); font-weight: 600; }
+        
+        .btn-clear {
+            background: #fff; color: var(--danger); border: 1.5px solid var(--danger);
+            border-radius: 12px; padding: 0 15px; cursor: pointer; font-weight: bold;
+            font-size: 13px;
+        }
+
+        #gpxFile { display: none; }
+
+        .result-area {
+            width: 100%; height: 250px;
+            background: #f1f3f5; border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px;
+            font-family: "SF Mono", Monaco, Consolas, monospace;
+            font-size: 13px; line-height: 1.6;
+            overflow-y: auto; white-space: pre;
+            margin-bottom: 15px;
+        }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .btn-action {
+            padding: 14px; border: none; border-radius: 12px; 
+            font-size: 15px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: 0.2s;
+        }
+
+        .btn-select { background: #e9ecef; color: #495057; }
+        .btn-copy { background: var(--primary); color: white; }
+        .btn-copy:active { transform: scale(0.98); opacity: 0.9; }
+
+        #status {
+            margin-top: 15px; text-align: center; font-size: 13px; color: var(--primary);
+            background: var(--primary-light); padding: 10px; border-radius: 10px; display: none;
+        }
+
+        .hint { font-size: 12px; color: #868e96; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📍 GPX 座標提取助手</h1>
+        <p>上傳檔案，自動去重並按順序排列</p>
+    </header>
+
+    <div class="step-card">
+        <div class="step-number">1</div>
+        <label>上傳 GPX 檔案</label>
+        <div class="upload-row">
+            <div class="upload-area" id="dropZone" onclick="document.getElementById('gpxFile').click()">
+                <p id="fileLabel">選取或拖入 .gpx 檔案</p>
+                <input type="file" id="gpxFile" accept=".gpx,.xml">
+            </div>
+            <button class="btn-clear" onclick="resetAll()">清空</button>
+        </div>
+    </div>
+
+    <div class="step-card">
+        <div class="step-number">2</div>
+        <label>提取結果 (緯度,經度)</label>
+        <div id="resultBox" class="result-area"></div>
+        
+        <div class="action-grid">
+            <button class="btn-action btn-select" onclick="selectAllText()">全選文字</button>
+            <button class="btn-action btn-copy" onclick="copyToClipboard()">📋 一鍵複製所有座標</button>
+        </div>
+        
+        <div id="status"></div>
+        <p class="hint">※ 系統已自動移除重複座標，並移除經緯度間的空白</p>
+    </div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('gpxFile');
+    const resultBox = document.getElementById('resultBox');
+    const status = document.getElementById('status');
+    const fileLabel = document.getElementById('fileLabel');
+
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            processGPX();
+        }
+    };
+
+    fileInput.onchange = processGPX;
+
+    function resetAll() {
+        fileInput.value = "";
+        resultBox.innerText = "";
+        fileLabel.innerText = "選取或拖入 .gpx 檔案";
+        status.style.display = "none";
+    }
+
+    async function processGPX() {
+        if (fileInput.files.length === 0) return;
+        
+        const file = fileInput.files[0];
+        fileLabel.innerText = "已選：" + file.name;
+        
+        try {
+            const text = await file.text();
+            const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']|lon=["']([\d.-]+)["']\s+lat=["']([\d.-]+)["']/g;
+            
+            let rawCoords = [];
+            let m;
+            while ((m = regex.exec(text)) !== null) {
+                let lat = m[1] !== undefined ? m[1] : m[4];
+                let lon = m[1] !== undefined ? m[2] : m[3];
+                rawCoords.push(`${lat},${lon}`);
+            }
+
+            if (rawCoords.length === 0) {
+                resultBox.innerText = "無法解析座標。";
+                return;
+            }
+
+            // --- 去重邏輯 ---
+            // 使用 Set 來紀錄已經出現過的座標字串，保留原始順序
+            const uniqueCoords = [];
+            const seen = new Set();
+
+            rawCoords.forEach(coord => {
+                if (!seen.has(coord)) {
+                    seen.add(coord);
+                    uniqueCoords.push(coord);
+                }
+            });
+
+            resultBox.innerText = uniqueCoords.join('\n');
+            
+            const dupCount = rawCoords.length - uniqueCoords.length;
+            status.innerText = `✅ 提取完成！原始：${rawCoords.length} 點 / 去重後：${uniqueCoords.length} 點 (移除 ${dupCount} 個重複)`;
+            status.style.display = "block";
+
+        } catch (err) {
+            resultBox.innerText = "讀取檔案錯誤。";
+        }
+    }
+
+    function selectAllText() {
+        const range = document.createRange();
+        range.selectNodeContents(resultBox);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    function copyToClipboard() {
+        const text = resultBox.innerText;
+        if (!text) return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const originalMsg = status.innerText;
+            status.innerText = "🚀 座標已成功複製！";
+            setTimeout(() => { status.innerText = originalMsg; }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
