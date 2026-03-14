@@ -1,5 +1,5 @@
 {
-  "short_name": "GPX格式轉換",
+  "short_name": "GPX轉換",
   "name": "皮克敏 GPX 格式轉換器",
   "start_url": "./gpxto.htm",
   "display": "standalone",
