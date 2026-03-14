@@ -1,6 +1,6 @@
 {
-  "short_name": "GPX 生成",
-  "name": "皮克敏 GPX 路徑生成助手",
+  "short_name": "GPX格式轉換",
+  "name": "皮克敏 GPX 格式轉換器",
   "start_url": "./gpxto.htm",
   "display": "standalone",
   "theme_color": "#16a34a",
