@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>皮克敏飛人小工具-Gpx座標提取器</title>
-    
+    <link rel="manifest" href="manifest-copy.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+
     <script>
         // 1. 禁止右鍵選單
         document.addEventListener('contextmenu', e => e.preventDefault());
