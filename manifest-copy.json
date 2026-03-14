@@ -1,5 +1,5 @@
 {
-  "short_name": "GPX 提取",
+  "short_name": "GPX座標",
   "name": "皮克敏 GPX 座標提取助手",
   "start_url": "./gpxcopy.htm",
   "display": "standalone",
