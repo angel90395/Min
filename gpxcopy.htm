@@ -113,7 +113,13 @@
         }
 
         .hint { font-size: 12px; color: #868e96; margin-top: 10px; text-align: center; }
-    </style>
+    </style><link rel="manifest" href="manifest-copy.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+
 </head>
 <body oncontextmenu="return false;"> <div class="container">
     <header>
