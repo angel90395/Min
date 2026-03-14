@@ -1,0 +1,12 @@
+{
+  "short_name": "GPX 提取",
+  "name": "皮克敏 GPX 座標提取助手",
+  "start_url": "./gpxcopy.htm",
+  "display": "standalone",
+  "theme_color": "#16a34a",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "icon-copy-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-copy-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}
