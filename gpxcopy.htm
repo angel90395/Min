@@ -16,7 +16,7 @@
             if (e.ctrlKey && e.keyCode == 85) return false;
         };
 
-        // 3. 偵測開發者工具
+        // 3. 偵測開發者工具 (Debugger 陷阱)
         (function() {
             var check = function() {
                 const start = new Date();
@@ -37,12 +37,12 @@
             --bg: #f8f9fa;
             --text: #212529;
             --card-bg: #ffffff;
-            --border: #e9ecef;
+            --border: #dee2e6;
             --danger: #e03131;
             --blue: #1c7ed6;
         }
 
-        * { -webkit-tap-highlight-color: transparent; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -64,7 +64,7 @@
         .step-card {
             background: var(--card-bg); border-radius: 20px; padding: 20px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-bottom: 18px;
-            border: 1px solid var(--border); position: relative;
+            border: 1px solid #e9ecef; position: relative;
         }
 
         .step-number {
@@ -94,34 +94,37 @@
 
         #gpxFile { display: none; }
 
+        /* 輸入框底色改為白色 */
         .result-area {
             width: 100%; height: 150px; border: 1.5px solid var(--border);
-            border-radius: 12px; padding: 10px; box-sizing: border-box;
-            font-family: monospace; font-size: 13px; resize: none;
-            background: #f1f3f5; color: #495057;
+            border-radius: 12px; padding: 12px; box-sizing: border-box;
+            font-family: 'SF Mono', Menlo, monospace; font-size: 13px; resize: none;
+            background: #ffffff; color: #495057; transition: border-color 0.2s;
         }
+        .result-area:focus { border-color: var(--primary); }
 
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-sub {
-            padding: 10px; border: none; border-radius: 10px; font-weight: bold;
+            padding: 12px; border: none; border-radius: 10px; font-weight: bold;
             cursor: pointer; font-size: 13px; transition: 0.2s;
         }
         .btn-copy { background: var(--blue); color: white; }
         .btn-select { background: #adb5bd; color: white; }
+        .btn-sub:active { opacity: 0.8; }
 
         #fileNameInput {
-            width: 100%; padding: 12px; border: 2px solid var(--border);
+            width: 100%; padding: 12px; border: 1.5px solid var(--border);
             border-radius: 10px; box-sizing: border-box; font-size: 14px;
-            background: #fff;
+            background: #ffffff; -webkit-appearance: none;
         }
-        #fileNameInput:focus { outline: none; border-color: var(--primary); }
+        #fileNameInput:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 
         .hint { font-size: 12px; color: #868e96; margin-top: 10px; line-height: 1.5; font-weight: 500; }
 
         .btn-convert {
             width: 100%; padding: 16px; background: var(--primary); color: white;
             border: none; border-radius: 15px; font-size: 17px; font-weight: bold;
-            cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .btn-convert:active { opacity: 0.8; transform: scale(0.98); }
 
@@ -131,7 +134,7 @@
         }
     </style>
 </head>
-<body>
+<body onselectstart="return false">
 <div class="container">
     <header>
         <h1>🌱 皮克敏 GPX 座標提取器</h1>
@@ -140,7 +143,7 @@
 
     <div class="step-card">
         <div class="step-number">1</div>
-        <label>上傳原始檔案</label>
+        <label>上傳原始檔案(支援 .gpx / .xml)</label>
         <div class="upload-row">
             <div class="upload-area" id="dropZone" onclick="document.getElementById('gpxFile').click()">
                 <p id="fileLabel">選取或拖入檔案</p>
@@ -162,9 +165,9 @@
 
     <div class="step-card">
         <div class="step-number">3</div>
-        <label>修改檔名</label>
+        <label>修改/確認檔名</label>
         <input type="text" id="fileNameInput" placeholder="等待解析...">
-        <p class="hint">※ 系統已自動過濾重複點位</p>
+        <p class="hint">※ 點擊下方按鈕將下載為 .txt 純文字檔</p>
         <div id="status"></div>
     </div>
 
@@ -218,7 +221,7 @@
         if (fileInput.files.length === 0) return;
         
         document.getElementById('fileLabel').innerText = "已選：" + fileInput.files[0].name;
-        status.innerText = "正在分析並移除重複座標...";
+        status.innerText = "正在提取並移除重複座標...";
         status.style.display = "block";
 
         const text = await fileInput.files[0].text();
@@ -232,7 +235,7 @@
             rawPts.push({ lat, lon });
         }
 
-        // --- 核心：移除重複座標 ---
+        // 移除重複座標
         extractedPts = rawPts.filter((pt, idx, self) =>
             idx === self.findIndex((t) => t.lat === pt.lat && t.lon === pt.lon)
         );
@@ -251,33 +254,37 @@
         const countryTag = await getCombinedCountryNames(extractedPts[0].lat, extractedPts[0].lon);
         
         nameInput.value = `${countryTag}_${extractedPts.length}點_${dStr}`;
-        status.innerText = `✨ 提取成功！原始 ${rawPts.length} 點，去重後剩下 ${extractedPts.length} 點`;
+        status.innerText = `✨ 成功：原始 ${rawPts.length} 點 ➔ 去重後 ${extractedPts.length} 點`;
     }
 
     function selectAllText() {
+        resultText.focus();
         resultText.select();
+        resultText.setSelectionRange(0, 99999);
     }
 
     function copyToClipboard() {
         if (!resultText.value || resultText.value === "無座標資料") return;
         navigator.clipboard.writeText(resultText.value).then(() => {
             const oldStatus = status.innerText;
-            status.innerText = "✅ 已複製唯一座標！";
-            setTimeout(() => { status.innerText = oldStatus; }, 2000);
+            status.innerText = "✅ 座標已複製！";
+            setTimeout(() => { status.innerText = oldStatus; }, 1500);
         });
     }
 
     function downloadTxt() {
         const content = resultText.value;
-        const fileName = nameInput.value.trim() || "coords";
-        if (!content || content === "無座標資料") return alert("無內容");
+        const fileName = nameInput.value.trim() || "extracted_coords";
+        if (!content || content === "無座標資料") return;
 
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${fileName}.txt`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
 </script>
