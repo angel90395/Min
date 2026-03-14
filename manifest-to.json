@@ -1,0 +1,12 @@
+{
+  "short_name": "GPX 生成",
+  "name": "皮克敏 GPX 路徑生成助手",
+  "start_url": "./gpxto.htm",
+  "display": "standalone",
+  "theme_color": "#16a34a",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "icon-to-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-to-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}
