@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>皮克敏 GPX 座標提取助手</title>
+    
+    <link rel="manifest" href="manifest-copy.json">
+    
     <style>
         :root {
             --primary: #2f9e44;
@@ -78,7 +81,6 @@
             font-size: 13px; line-height: 1.6;
             overflow-y: auto; white-space: pre;
             margin-bottom: 15px;
-            /* 結果區域允許選取，方便手動複製 */
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
@@ -113,15 +115,11 @@
         }
 
         .hint { font-size: 12px; color: #868e96; margin-top: 10px; text-align: center; }
-    </style><link rel="manifest" href="manifest-copy.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
-  }
-</script>
-
+    </style>
 </head>
-<body oncontextmenu="return false;"> <div class="container">
+<body oncontextmenu="return false;">
+
+<div class="container">
     <header>
         <h1>🌱 皮克敏 GPX 座標提取助手</h1>
         <p>上傳檔案，提取全部座標</p>
@@ -159,29 +157,23 @@
 </div>
 
 <script>
-    /* --- 防護功能區 --- */
-    
-    // 1. 禁止右鍵選單
-    document.addEventListener('contextmenu', event => event.preventDefault());
+    /* --- Service Worker 註冊 --- */
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+    }
 
-    // 2. 禁止常用開發者快捷鍵
+    /* --- 防護功能區 --- */
+    document.addEventListener('contextmenu', event => event.preventDefault());
     document.onkeydown = function(e) {
-        // 禁止 F12
         if (e.keyCode == 123) return false;
-        // 禁止 Ctrl+Shift+I (檢閱元素)
         if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-        // 禁止 Ctrl+Shift+C (檢閱元素)
         if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
-        // 禁止 Ctrl+Shift+J (開發者工具控制台)
         if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-        // 禁止 Ctrl+U (檢視原始碼)
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
-        // 禁止 Ctrl+S (儲存網頁)
         if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) return false;
     };
 
     /* --- GPX 處理功能區 --- */
-
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('gpxFile');
     const resultBox = document.getElementById('resultBox');
@@ -223,7 +215,6 @@
 
     async function processGPX() {
         if (fileInput.files.length === 0) return;
-        
         const file = fileInput.files[0];
         fileLabel.innerText = "已選：" + file.name;
         status.innerText = "正在進行位置辨識與去重...";
@@ -232,7 +223,6 @@
         try {
             const text = await file.text();
             const regex = /lat=["']([\d.-]+)["']\s+lon=["']([\d.-]+)["']|lon=["']([\d.-]+)["']\s+lat=["']([\d.-]+)["']/g;
-            
             let rawCoords = [];
             let m;
             while ((m = regex.exec(text)) !== null) {
@@ -240,13 +230,11 @@
                 let lon = m[1] !== undefined ? m[2] : m[3];
                 rawCoords.push(`${lat},${lon}`);
             }
-
             if (rawCoords.length === 0) {
                 resultBox.innerText = "無法解析座標。";
                 status.innerText = "❌ 解析失敗";
                 return;
             }
-
             const uniqueCoords = [];
             const seen = new Set();
             rawCoords.forEach(coord => {
@@ -255,18 +243,14 @@
                     uniqueCoords.push(coord);
                 }
             });
-
             resultBox.innerText = uniqueCoords.join('\n');
-
             const firstPt = uniqueCoords[0].split(',');
             const countryTag = await getCombinedCountryNames(firstPt[0], firstPt[1]);
             const now = new Date();
             const dStr = now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
             const randomID = Math.random().toString(36).substring(2, 6);
-            
             nameInput.value = `${countryTag}_${uniqueCoords.length}苗_${dStr}_${randomID}`;
             status.innerText = "✅ 提取完成！";
-
         } catch (err) {
             resultBox.innerText = "讀取檔案錯誤。";
             status.innerText = "❌ 發生錯誤";
@@ -294,10 +278,8 @@
     function downloadTxt() {
         const text = resultBox.innerText;
         if (!text) return alert("沒有座標資料");
-
         const baseName = nameInput.value.trim() || "coordinates";
         const finalFileName = `(純座標)${baseName}.txt`;
-        
         const blob = new Blob([text], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
